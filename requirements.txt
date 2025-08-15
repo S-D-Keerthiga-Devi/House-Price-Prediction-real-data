@@ -1,0 +1,12 @@
+requests
+fake-useragent
+beautifulsoup4
+requests-html
+lxml_html_clean
+selenium
+scrapy
+pathlib
+pandas
+webdriver-manager
+undetected-chromedriver
+playwright
