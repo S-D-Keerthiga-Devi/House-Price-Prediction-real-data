@@ -15,32 +15,32 @@ const App = () => {
   return (
     <div>
       {/* Comparison Table */}
-      <ComparisonTable
+      {/* <ComparisonTable
         properties={properties}
         onRemoveProperty={(id) =>
           setProperties((prev) => prev.filter((p) => p.id !== id))
         }
         onClose={() => setProperties([])}
-      />
+      /> */}
 
       {/* Property Cards */}
-      {properties.map((property) => (
+      {/* {properties.map((property) => (
         <PropertyCard key={property.id || property.title} property={property} />
-      ))}
+      ))} */}
 
       {/* Example: Pass the first property to the graph */}
-      {properties[0] && (
+      {/* {properties[0] && (
         <PropertyGraph
           rentalYield={properties[0].rental_yield}
           fairValue={properties[0].fair_value}
         />
-      )}
+      )} */}
 
       {/* Search Section */}
       {/* <SearchSection /> */}
 
       {/* Comparator Page */}
-      <PropertyComparator />
+      {/* <PropertyComparator /> */}
     </div>
   );
 }
