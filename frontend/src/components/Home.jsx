@@ -1,12 +1,11 @@
 // Home.jsx
 import Banner from "./Banner";
 import PropertySearchBar from "./PropertySearchBar";
+import Services from "./Services";
 
 export default function Home() {
   const handleSearch = (query) => {
-    // For now, just log the query
     console.log("Search query:", query);
-    // Later: call backend API or filter local data
   };
 
   return (
@@ -20,6 +19,9 @@ export default function Home() {
           <PropertySearchBar onSearch={handleSearch} />
         </div>
       </div>
+
+      {/* Services Section */}
+      <Services />
     </div>
   );
 }

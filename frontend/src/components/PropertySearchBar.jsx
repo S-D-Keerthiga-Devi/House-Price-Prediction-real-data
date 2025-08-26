@@ -1,21 +1,19 @@
 import React, { useState } from "react";
-import { Search, Mic } from "lucide-react";
+import { Search, Mic, MapPin } from "lucide-react";
 
 const PropertySearchBar = () => {
   const [selectedType, setSelectedType] = useState("buy");
 
+  // Row 1 categories
   const categories = [
-    "buy",
-    "rent",
-    "pg/coliving",
-    "post property (free)",
-    "residential",
-    "commercial",
-    "plots/lands",
-    "new projects",
-    "luxury",
-    "property in auction",
-    "invest",
+    "Buy",
+    "Rent",
+    "PG Coliving",
+    "Post Property Free",
+    "Plots Lands",
+    "New Projects",
+    "Property In Auction",
+    "Invest",
   ];
 
   return (
@@ -39,12 +37,32 @@ const PropertySearchBar = () => {
 
       {/* Row 2: Search Filters */}
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        {/* City */}
-        <input
-          type="text"
-          placeholder="Enter city"
-          className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
+        {/* Property Type Dropdown */}
+        <select className="border rounded-lg px-3 py-2">
+          <option value="">Property Type</option>
+          <option value="residential">Residential</option>
+          <option value="commercial">Commercial</option>
+          <option value="luxury">Luxury</option>
+        </select>
+
+        {/* City Dropdown */}
+        <select className="border rounded-lg px-3 py-2">
+          <option value="">Select City</option>
+          <option value="mumbai">Mumbai</option>
+          <option value="delhi">Delhi</option>
+          <option value="bangalore">Bangalore</option>
+          <option value="chennai">Chennai</option>
+        </select>
+
+        {/* Location Search (with icon) */}
+        <div className="flex items-center border rounded-lg px-3 py-2 flex-1">
+          <MapPin size={18} className="text-gray-500 mr-2" />
+          <input
+            type="text"
+            placeholder="Enter location"
+            className="flex-1 focus:outline-none"
+          />
+        </div>
 
         {/* Budget */}
         <select className="border rounded-lg px-3 py-2">
@@ -54,13 +72,6 @@ const PropertySearchBar = () => {
           <option value="50L-1Cr">₹50L - ₹1Cr</option>
           <option value="1Cr+">₹1Cr+</option>
         </select>
-
-        {/* Nearby */}
-        <input
-          type="text"
-          placeholder="Nearby location"
-          className="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
 
         {/* Mic */}
         <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200">
