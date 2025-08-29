@@ -38,7 +38,7 @@ const services = [
 
 export default function Services() {
   return (
-    <div className="px-6 py-10 max-w-7xl mx-auto">
+    <div className="px-6 py-10 max-w-7xl mx-auto mt-10">
       <h2 className="text-2xl font-semibold mb-6 text-center">Explore Properties</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
         {services.map((service, idx) => (
