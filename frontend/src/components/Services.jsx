@@ -1,62 +1,158 @@
-// Services.jsx
 import { Card, CardContent } from "@/components/ui/card";
 
-const services = [
+const smartServices = [
   {
-    name: "Apartments",
-    image: "https://images.pexels.com/photos/259950/pexels-photo-259950.jpeg"
+    name: "Property Valuation",
+    image: "https://images.pexels.com/photos/3760069/pexels-photo-3760069.jpeg"
   },
   {
-    name: "Independent Builder Floor",
-    image: "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg"
+    name: "Virtual Tours",
+    image: "https://images.pexels.com/photos/4491461/pexels-photo-4491461.jpeg"
   },
   {
-    name: "Residential Land",
-    image: "https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg"
+    name: "Legal Assistance",
+    image: "https://images.pexels.com/photos/5668842/pexels-photo-5668842.jpeg"
   },
   {
-    name: "Independent House/Villa",
+    name: "Home Loans",
+    image: "https://images.pexels.com/photos/4386431/pexels-photo-4386431.jpeg"
+  }
+];
+
+const insightServices = [
+  {
+    name: "Market Analysis",
+    image: "https://images.pexels.com/photos/590022/pexels-photo-590022.jpeg"
+  },
+  {
+    name: "Price Trends",
+    image: "https://images.pexels.com/photos/7947664/pexels-photo-7947664.jpeg"
+  },
+  {
+    name: "Investment Reports",
+    image: "https://images.pexels.com/photos/6802042/pexels-photo-6802042.jpeg"
+  },
+  {
+    name: "Area Demographics",
+    image: "https://images.pexels.com/photos/3182773/pexels-photo-3182773.jpeg"
+  }
+];
+
+const trendingServices = [
+  {
+    name: "Smart Homes",
+    image: "https://images.pexels.com/photos/6782351/pexels-photo-6782351.jpeg"
+  },
+  {
+    name: "Co-working Spaces",
+    image: "https://images.pexels.com/photos/3182782/pexels-photo-3182782.jpeg"
+  },
+  {
+    name: "Sustainable Living",
+    image: "https://images.pexels.com/photos/2724749/pexels-photo-2724749.jpeg"
+  },
+  {
+    name: "Luxury Condos",
+    image: "https://images.pexels.com/photos/1029599/pexels-photo-1029599.jpeg"
+  }
+];
+
+const curatedServices = [
+  {
+    name: "Premium Locations",
+    image: "https://images.pexels.com/photos/18246434/pexels-photo-18246434.jpeg"
+  },
+  {
+    name: "Budget Friendly",
     image: "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg"
   },
   {
-    name: "Farm House",
-    image: "https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg"
+    name: "Family Homes",
+    image: "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg"
   },
   {
-    name: "1BHK / Studio Apartment",
-    image: "https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg"
-  },
-  {
-    name: "Service Apartments",
-    image: "https://images.pexels.com/photos/271618/pexels-photo-271618.jpeg"
-  },
-  {
-  name: "Penthouse",
-  image: "https://images.pexels.com/photos/33561824/pexels-photo-33561824.jpeg",
-  },
+    name: "Investment Properties",
+    image: "https://images.pexels.com/photos/3760067/pexels-photo-3760067.jpeg"
+  }
 ];
 
-export default function Services() {
-  return (
-    <div className="px-6 py-10 max-w-7xl mx-auto mt-10">
-      <h2 className="text-2xl font-semibold mb-6 text-center">Explore Properties</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+const ServiceSection = ({ title, description, services, bgColor = "bg-white" }) => (
+  <div className={`px-6 py-14 ${bgColor}`}>
+    <div className="max-w-7xl mx-auto">
+      {/* Heading + Description */}
+      <div className="text-left mb-10">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          {title}
+        </h2>
+        <p className="text-gray-700 text-lg max-w-2xl">
+          {description}
+        </p>
+        {/* Neutral underline accent */}
+        <div className="mt-3 w-20 h-1 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full"></div>
+      </div>
+
+      {/* Cards Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {services.map((service, idx) => (
           <Card
             key={idx}
-            className="overflow-hidden rounded-2xl shadow-md hover:shadow-xl cursor-pointer transition-transform transform hover:scale-105"
+            className="overflow-hidden rounded-2xl shadow-md hover:shadow-lg cursor-pointer transition-all duration-300 transform hover:-translate-y-2 border border-gray-200 group"
           >
-            <img
-              src={service.image}
-              alt={service.name}
-              className="h-28 w-full object-cover"
-            />
-            <CardContent className="p-3 text-center">
-              <p className="text-sm font-medium">{service.name}</p>
+            <div className="relative overflow-hidden">
+              <img
+                src={service.image}
+                alt={service.name}
+                className="h-36 w-full object-cover transform transition-transform duration-500 group-hover:scale-110"
+              />
+            </div>
+            <CardContent className="p-4 text-center">
+              <p className="text-sm font-semibold text-gray-800 group-hover:text-black transition">
+                {service.name}
+              </p>
             </CardContent>
           </Card>
         ))}
       </div>
+    </div>
+  </div>
+);
+
+
+
+export default function Services() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Smart Services Section */}
+      <ServiceSection
+        title="Smart Services"
+        description="Explore technology-driven solutions that simplify your property journey."
+        services={smartServices}
+        bgColor="bg-white"
+      />
+
+      {/* Insights Section */}
+      <ServiceSection
+        title="Data-Driven Insights"
+        description="Leverage real-time analytics and expert insights to make informed decisions."
+        services={insightServices}
+        bgColor="bg-gray-50"
+      />
+
+      {/* What's Trending Section */}
+      <ServiceSection
+        title="What's Trending"
+        description="Discover the latest trends shaping modern real estate."
+        services={trendingServices}
+        bgColor="bg-white"
+      />
+
+      {/* Curated Recommendations Section */}
+      <ServiceSection
+        title="Curated Recommendations"
+        description="Handpicked properties tailored to your lifestyle and investment goals."
+        services={curatedServices}
+        bgColor="bg-gray-50"
+      />
     </div>
   );
 }
