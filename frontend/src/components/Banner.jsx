@@ -13,22 +13,27 @@ export default function Banner({ onScrollToForm }) {
 
   return (
     <div className="relative min-h-[80vh] flex items-center justify-center overflow-hidden mt-16">
-      {/* Lighter Background Gradient with Overlay */}
-      <div className="absolute inset-0 z-0">
-        <div
-          className="w-full h-full bg-cover bg-center"
-          style={{
-            backgroundImage: `linear-gradient(135deg, rgba(255, 248, 240, 0.9) 0%, rgba(255, 242, 230, 0.9) 100%), 
-                            url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><rect fill="%23fefcf9" width="1200" height="800"/><polygon fill="%23fef7ed" points="0,400 300,200 600,350 900,150 1200,300 1200,800 0,800"/></svg>')`
-          }}
-        />
-      </div>
+      {/* Background Image with Subtle Overlay */}
+<div className="absolute inset-0 z-0">
+  <div
+    className="w-full h-full bg-cover bg-center"
+    style={{
+      backgroundImage: `
+        linear-gradient(to bottom right, rgba(255,255,255,0.44), rgba(240,240,255,0.3)),
+        url('https://images.pexels.com/photos/3646913/pexels-photo-3646913.jpeg')
+      `,
+    }}
+  />
+</div>
+
+
+
 
       {/* Main Content Container */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 w-full">
         <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden px-8 py-12 md:px-12 md:py-16 transition-all hover:shadow-2xl">
           <div className="grid lg:grid-cols-3 gap-10 items-start">
-            
+
             {/* Quote */}
             <div className="space-y-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-8 leading-snug">
