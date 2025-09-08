@@ -6,12 +6,14 @@ import { Route, RouterProvider, createBrowserRouter, createRoutesFromElements } 
 import Layout from './Layout'
 import PropertyComparator from './components/PropertyComparator'
 import Home from './components/Home'
+import PriceTrends from './components/PriceTrends'
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<Layout />}> 
       <Route index element={<Home />} />
       <Route path="compare" element={<PropertyComparator />} />
+      <Route path="price-trends" element={<PriceTrends />} />
     </Route>
   )
 )

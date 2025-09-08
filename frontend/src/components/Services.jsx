@@ -17,6 +17,7 @@ import {
   FileCheck,
   Columns3,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 // Smart Services Tabs
 const smartServicesTabs = {
@@ -46,7 +47,7 @@ const smartServicesTabs = {
 // Extra Services
 const insightServices = [
   { name: "Market Analysis", image: "https://images.pexels.com/photos/590022/pexels-photo-590022.jpeg" },
-  { name: "Price Trends", image: "https://images.pexels.com/photos/7947664/pexels-photo-7947664.jpeg" },
+  { name: "Price Trends", image: "https://images.pexels.com/photos/7947664/pexels-photo-7947664.jpeg", link: "/price-trends" },
   { name: "Investment Reports", image: "https://images.pexels.com/photos/6802042/pexels-photo-6802042.jpeg" },
   { name: "Area Demographics", image: "https://images.pexels.com/photos/3182773/pexels-photo-3182773.jpeg" },
 ];
@@ -75,29 +76,40 @@ const ServiceSection = ({ title, description, services, bgColor }) => (
         <div className="mt-3 w-20 h-1 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full"></div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {services.map((service, idx) => (
-          <Card
-            key={idx}
-            className="overflow-hidden shadow-md hover:shadow-lg cursor-pointer transition-all duration-300 transform hover:-translate-y-2 border border-gray-200 group"
-          >
-            <div className="h-40 bg-gray-100">
-              <img
-                src={service.image}
-                alt={service.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-            <CardContent className="p-4 text-center">
-              <p className="text-sm font-semibold text-gray-800 group-hover:text-black transition">
-                {service.name}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        {services.map((service, idx) => {
+          const cardContent = (
+            <Card
+              key={idx}
+              className="overflow-hidden shadow-md hover:shadow-lg cursor-pointer transition-all duration-300 transform hover:-translate-y-2 border border-gray-200 group"
+            >
+              <div className="h-40 bg-gray-100">
+                <img
+                  src={service.image}
+                  alt={service.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <CardContent className="p-4 text-center">
+                <p className="text-sm font-semibold text-gray-800 group-hover:text-black transition">
+                  {service.name}
+                </p>
+              </CardContent>
+            </Card>
+          );
+
+          return service.link ? (
+            <Link to={service.link} key={idx}>
+              {cardContent}
+            </Link>
+          ) : (
+            cardContent
+          );
+        })}
       </div>
     </div>
   </div>
 );
+
 
 const Services = () => {
   const [activeTab, setActiveTab] = useState("Buyers");
