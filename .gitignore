@@ -1,2 +1,9 @@
 venv/
 notebook/data/data_formatted.csv
+frontend/public/data/data_formatted.csv
+frontend/public/data/price_monthly.csv
+frontend/public/data/price_timeseries.csv
+frontend/public/data/price_yearly.csv
+frontend/public/data/price_quarterly.csv
+frontend/public/data/property_master.csv
+frontend/public/data/raw_property.csv

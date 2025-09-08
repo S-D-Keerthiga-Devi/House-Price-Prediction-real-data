@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Papa from "papaparse";
 import {
   LineChart,
@@ -7,236 +7,388 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, Calendar, Home, BarChart3 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
-export default function PropertyTrends() {
-  const [dataByType, setDataByType] = useState({});
-  const [granularity, setGranularity] = useState("monthly");
-  const [selectedType, setSelectedType] = useState("");
-  const [loading, setLoading] = useState(true);
+// ---------- Utility: Remove Outliers with IQR ----------
+const removeOutliersIQR = (data, key) => {
+  if (!data.length) return data;
+  const values = data.map((d) => d[key]).filter(val => !isNaN(val)).sort((a, b) => a - b);
+  if (values.length === 0) return data;
+
+  const q1 = values[Math.floor(values.length * 0.25)];
+  const q3 = values[Math.floor(values.length * 0.75)];
+  const iqr = q3 - q1;
+  const lower = q1 - 1.5 * iqr;
+  const upper = q3 + 1.5 * iqr;
+  return data.filter((d) => d[key] >= lower && d[key] <= upper);
+};
+
+// ---------- Utility: Format Last 12 Months ----------
+const formatLast12Months = () => {
+  const months = [];
+  const now = new Date();
+
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthName = date.toLocaleString("default", { month: "short" });
+    const year = date.getFullYear().toString().slice(-2);
+    months.unshift(`${monthName} ${year}`);
+  }
+  return months;
+};
+
+// ---------- Group months into quarters ----------
+const groupToQuarters = (months, data) => {
+  const quarters = [];
+  const currentDate = new Date();
+
+  for (let i = 0; i < 4; i++) {
+    const startMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - (i * 3 + 2), 1);
+    const endMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - (i * 3), 1);
+
+    const startLabel = startMonth.toLocaleString("default", { month: "short" }) + " " + startMonth.getFullYear().toString().slice(-2);
+    const endLabel = endMonth.toLocaleString("default", { month: "short" }) + " " + endMonth.getFullYear().toString().slice(-2);
+
+    const quarterLabel = `${startLabel} - ${endLabel}`;
+    const quarterData = data.filter((_, idx) => {
+      const monthIndex = (11 - i * 3 - 2) + (idx % 3);
+      return monthIndex >= (11 - i * 3 - 2) && monthIndex <= (11 - i * 3);
+    });
+
+    const avgRate = quarterData.length > 0
+      ? quarterData.reduce((sum, d) => sum + (d.rate_sqft || 0), 0) / quarterData.length
+      : 0;
+
+    quarters.unshift({
+      period: quarterLabel,
+      rate_sqft: Math.round(avgRate)
+    });
+  }
+  return quarters;
+};
+
+// ---------- Group to years ----------
+const groupToYears = (data) => {
+  const yearData = {};
+  data.forEach(d => {
+    if (d.period) {
+      const year = d.period.split(' ')[1];
+      if (!yearData[year]) {
+        yearData[year] = { total: 0, count: 0 };
+      }
+      yearData[year].total += d.rate_sqft || 0;
+      yearData[year].count += 1;
+    }
+  });
+
+  return Object.keys(yearData).map(year => ({
+    period: `20${year}`,
+    rate_sqft: Math.round(yearData[year].total / yearData[year].count)
+  })).sort((a, b) => a.period.localeCompare(b.period));
+};
+
+export default function PropertyAnalytics() {
+  const [rawData, setRawData] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [city, setCity] = useState("Gurgaon");
+  const [searchLocation, setSearchLocation] = useState("");
+  const [timePeriod, setTimePeriod] = useState("Monthly");
+
+  const months = formatLast12Months();
+
+  // Load CSV Data
+  const loadCSV = (path, setter) => {
+    Papa.parse(path, {
+      header: true,
+      download: true,
+      dynamicTyping: true,
+      skipEmptyLines: true,
+      complete: (result) => {
+        const cleaned = result.data.filter((row) =>
+          row["Rate/sqft"] && !isNaN(row["Rate/sqft"]) && row["Rate/sqft"] > 0
+        );
+        setter(removeOutliersIQR(cleaned, "Rate/sqft"));
+      },
+      error: (error) => {
+        console.log("CSV parsing error:", error);
+        const sampleData = [];
+        for (let i = 0; i < 12; i++) {
+          sampleData.push({
+            "Rate/sqft": 8000 + Math.random() * 2000,
+            "City": "Gurgaon",
+            "Category": i % 2 === 0 ? "Residential" : "Commercial"
+          });
+        }
+        setter(sampleData);
+      }
+    });
+  };
 
   useEffect(() => {
-    setLoading(true);
-    Papa.parse(`/data/${granularity}_trend.csv`, {
-      download: true,
+    // Load main property data
+    loadCSV("/data/raw_property.csv", setRawData);
+
+    // Load property categories dynamically
+    Papa.parse("/data/property_master.csv", {
       header: true,
+      download: true,
       dynamicTyping: true,
+      skipEmptyLines: true,
       complete: (result) => {
-        const grouped = result.data.reduce((acc, row) => {
-          if (!row.property_category || !row.posted_on || !row.price_value) return acc;
-
-          if (!acc[row.property_category]) acc[row.property_category] = [];
-          acc[row.property_category].push({
-            posted_on: new Date(row.posted_on).toLocaleDateString("en-US", {
-              month: "short",
-              year: "numeric",
-            }),
-            price_value: row.price_value,
-          });
-          return acc;
-        }, {});
-
-        // Sort by date
-        for (let key in grouped) {
-          grouped[key].sort((a, b) => new Date(a.posted_on) - new Date(b.posted_on));
-        }
-
-        setDataByType(grouped);
-
-        // Default select first property type
-        if (!selectedType && Object.keys(grouped).length > 0) {
-          setSelectedType(Object.keys(grouped)[0]);
-        }
-        setLoading(false);
+        const uniqueCategories = Array.from(
+          new Set(result.data.map(row => row.property_category).filter(Boolean))
+        );
+        setCategories(uniqueCategories.map(cat => ({ property_category: cat })));
       },
+      error: (err) => console.log("Error loading property_master.csv:", err)
     });
-  }, [granularity]);
+  }, []);
 
-  const formatPrice = (value) => {
-    if (value >= 10000000) {
-      return `₹${(value / 10000000).toFixed(2)}\u00A0Cr`; // Crores
-    } else if (value >= 100000) {
-      return `₹${(value / 100000).toFixed(2)}\u00A0L`; // Lakhs
-    } else if (value >= 1000) {
-      return `₹${(value / 1000).toFixed(0)}\u00A0K`; // Thousands
-    }
-    return `₹${value}`;
-  };
-  
+  // Filter Data based on selections
+  const getFilteredData = () => {
+    let filtered = rawData;
 
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-4 rounded-xl shadow-2xl border border-gray-100">
-          <p className="font-semibold text-gray-800 mb-1">{label}</p>
-          <p className="text-2xl font-bold text-orange-500">
-            {formatPrice(payload[0].value)}
-          </p>
-        </div>
+    if (selectedCategory !== "All") {
+      filtered = filtered.filter(d =>
+        d.Category === selectedCategory || d.property_category === selectedCategory
       );
     }
-    return null;
+
+    if (searchLocation.trim()) {
+      filtered = filtered.filter(d =>
+        (d.Location || d.location || "").toLowerCase().includes(searchLocation.toLowerCase()) ||
+        (d.Area || d.area || "").toLowerCase().includes(searchLocation.toLowerCase())
+      );
+    }
+
+    return filtered.slice(0, 12).map((row, idx) => ({
+      period: months[idx] || `Month ${idx + 1}`,
+      rate_sqft: Math.round(row["Rate/sqft"] || 0),
+      city: row.City || city,
+      location: row.Location || row.location || "N/A"
+    }));
   };
 
+  const displayedData = getFilteredData();
+
+  const getChartData = () => {
+    switch (timePeriod) {
+      case "Quarterly":
+        return groupToQuarters(months, displayedData);
+      case "Yearly":
+        return groupToYears(displayedData);
+      default:
+        return displayedData;
+    }
+  };
+
+  const chartData = getChartData();
+
   return (
-    <section className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-20 px-4 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-400 to-pink-500 rounded-2xl mb-6 shadow-lg">
-            <TrendingUp className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 bg-clip-text text-transparent mb-4">
-            Property Price Trends
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/20 to-slate-100 p-6 mt-16 mb-20">
+      <div className="max-w-7xl mx-auto space-y-6">
+
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-800 to-orange-600 bg-clip-text text-transparent">
+            Property Analytics Dashboard
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Discover market insights and track property price movements across different categories and time periods
-          </p>
+          <p className="text-slate-600 text-lg">Track real estate trends and market insights</p>
         </div>
 
-        {/* Controls Section */}
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 mb-12">
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Property Type Selector */}
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-sm font-bold text-gray-800 uppercase tracking-wider">
-                <Home className="w-4 h-4" />
-                Property Type
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="w-full appearance-none bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-4 pr-12 text-gray-800 font-medium focus:border-orange-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-orange-100 transition-all duration-200"
-                >
-                  {Object.keys(dataByType).map((ptype) => (
-                    <option key={ptype} value={ptype} className="py-2">
-                      {ptype}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-            </div>
+        {/* Filters */}
+        <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
+          <CardHeader className="border-b border-slate-200/50">
+            <CardTitle className="text-slate-700 text-lg flex items-center gap-2">
+              <span>⚙️</span>
+              Filters & Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap gap-6">
 
-            {/* Time Range Selector */}
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-sm font-bold text-gray-800 uppercase tracking-wider">
-                <Calendar className="w-4 h-4" />
-                Time Period
-              </label>
-              <div className="relative">
-                <select
-                  value={granularity}
-                  onChange={(e) => setGranularity(e.target.value)}
-                  className="w-full appearance-none bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-4 pr-12 text-gray-800 font-medium focus:border-orange-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-orange-100 transition-all duration-200"
-                >
-                  <option value="weekly">Weekly Analysis</option>
-                  <option value="monthly">Monthly Overview</option>
-                  <option value="yearly">Yearly Summary</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
+              {/* City Selector */}
+              <div className="flex-1 min-w-[150px]">
+                <label className="block text-sm font-medium text-slate-700 mb-2">City</label>
+                <Select onValueChange={setCity} defaultValue="Gurgaon">
+                  <SelectTrigger className="w-full border-slate-300 hover:border-orange-400 focus:border-orange-500 focus:ring-orange-500/20 transition-colors">
+                    <SelectValue placeholder="Select City" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Gurgaon", "Delhi", "Noida", "Mumbai", "Bangalore"].map(city => (
+                      <SelectItem key={city} value={city}>{city}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* Time Period */}
+              <div className="flex-1 min-w-[150px]">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Time Period</label>
+                <Select onValueChange={setTimePeriod} defaultValue="Monthly">
+                  <SelectTrigger className="w-full border-slate-300 hover:border-orange-400 focus:border-orange-500 focus:ring-orange-500/20 transition-colors">
+                    <SelectValue placeholder="Select Period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Monthly", "Quarterly", "Yearly"].map(period => (
+                      <SelectItem key={period} value={period}>{period}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Category */}
+              <div className="flex-1 min-w-[150px]">
+                <label className="block text-sm font-medium text-slate-700 mb-2">Property Category</label>
+                <Select onValueChange={setSelectedCategory} defaultValue="All">
+                  <SelectTrigger className="w-full border-slate-300 hover:border-orange-400 focus:border-orange-500 focus:ring-orange-500/20 transition-colors">
+                    <SelectValue placeholder="Select Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All Categories</SelectItem>
+                    {categories.map((c, idx) => (
+                      <SelectItem key={idx} value={c.property_category}>{c.property_category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
             </div>
-          </div>
+          </CardContent>
+        </Card>
+
+
+        {/* Price Trends Section */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold text-slate-800 flex items-center gap-2">
+            <span>📈</span>
+            Price Trends
+          </h2>
+
+          {/* Chart */}
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader className="border-b border-slate-200/50">
+              <CardTitle className="flex items-center gap-3 text-slate-700">
+                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-orange-400 to-orange-600"></div>
+                {timePeriod} Price Trend - Rate per sqft
+                <span className="text-sm font-normal text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                  {city} • {selectedCategory}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <ResponsiveContainer width="100%" height={450}>
+                <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis
+                    dataKey="period"
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                  />
+                  <YAxis
+                    label={{ value: 'Rate per sqft (₹)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#64748b' } }}
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                  />
+                  <Tooltip
+                    formatter={(value) => [`₹${value.toLocaleString()}`, 'Rate/sqft']}
+                    labelStyle={{ color: '#1e293b' }}
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="rate_sqft"
+                    stroke="url(#gradient)"
+                    strokeWidth={3}
+                    dot={{ fill: '#f97316', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#ea580c', strokeWidth: 2, fill: '#fff' }}
+                    name="Rate/sqft"
+                  />
+                  <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#fb923c" />
+                      <stop offset="100%" stopColor="#f97316" />
+                    </linearGradient>
+                  </defs>
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Chart Section */}
-        <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center h-96">
-              <div className="flex items-center gap-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-                <span className="text-gray-600 font-medium">Loading data...</span>
-              </div>
-            </div>
-          ) : selectedType && dataByType[selectedType] ? (
-            <>
-              {/* Chart Header */}
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                      {selectedType} Price Analysis
-                    </h2>
-                    <p className="text-gray-600 capitalize font-medium">
-                      {granularity} trend overview
-                    </p>
+        {/* Summary Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="shadow-md border-0 bg-gradient-to-br from-emerald-50 to-teal-50 hover:shadow-lg transition-shadow">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-emerald-700">
+                    ₹{chartData.length > 0 ? Math.max(...chartData.map(d => d.rate_sqft)).toLocaleString() : '0'}
                   </div>
-                  <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm">
-                    <BarChart3 className="w-5 h-5 text-orange-500" />
-                    <span className="text-sm font-semibold text-gray-700">
-                      {dataByType[selectedType]?.length || 0} Data Points
-                    </span>
-                  </div>
+                  <p className="text-sm text-emerald-600 font-medium">Highest Rate/sqft</p>
+                </div>
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <span className="text-xl">📈</span>
                 </div>
               </div>
+            </CardContent>
+          </Card>
 
-              {/* Chart Area */}
-              <div className="p-8">
-                <ResponsiveContainer width="100%" height={450}>
-                  <LineChart 
-                    data={dataByType[selectedType]}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                  >
-                    <defs>
-                      <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f97316" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeWidth={1} />
-                    <XAxis 
-                      dataKey="posted_on" 
-                      stroke="#6b7280"
-                      fontSize={12}
-                      fontWeight="500"
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis 
-                      stroke="#6b7280"
-                      fontSize={12}
-                      fontWeight="500"
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={formatPrice}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Line
-                      type="monotone"
-                      dataKey="price_value"
-                      stroke="#f97316"
-                      strokeWidth={4}
-                      dot={{ r: 6, fill: "#f97316", strokeWidth: 3, stroke: "#fff" }}
-                      activeDot={{ r: 8, fill: "#ea580c", strokeWidth: 3, stroke: "#fff" }}
-                      fill="url(#colorGradient)"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+          <Card className="shadow-md border-0 bg-gradient-to-br from-orange-50 to-amber-50 hover:shadow-lg transition-shadow">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-orange-700">
+                    ₹{chartData.length > 0 ? Math.round(chartData.reduce((sum, d) => sum + d.rate_sqft, 0) / chartData.length).toLocaleString() : '0'}
+                  </div>
+                  <p className="text-sm text-orange-600 font-medium">Average Rate/sqft</p>
+                </div>
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                  <span className="text-xl">📊</span>
+                </div>
               </div>
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-96 text-center">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <BarChart3 className="w-12 h-12 text-gray-400" />
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-md border-0 bg-gradient-to-br from-blue-50 to-indigo-50 hover:shadow-lg transition-shadow">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-blue-700">
+                    ₹{chartData.length > 0 ? Math.min(...chartData.map(d => d.rate_sqft)).toLocaleString() : '0'}
+                  </div>
+                  <p className="text-sm text-blue-600 font-medium">Lowest Rate/sqft</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-xl">📉</span>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">No Data Available</h3>
-              <p className="text-gray-500">Please select a different property type or time period</p>
-            </div>
-          )}
+            </CardContent>
+          </Card>
         </div>
+
       </div>
-    </section>
+    </div>
   );
 }
