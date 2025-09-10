@@ -27,30 +27,34 @@ export default function PropertyTrends() {
   const [timePeriod, setTimePeriod] = useState("Monthly");
 
   useEffect(() => {
-    Papa.parse("/data/price_timeseries.csv", {
-      header: true,
-      download: true,
-      dynamicTyping: true,
-      complete: (result) => {
+    fetch("/data/price_timeseries.csv")
+      .then((res) => res.text())
+      .then((csvText) => {
+        const result = Papa.parse(csvText, {
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+        });
         const filteredData = result.data.filter(d => d.city && d.rate_sqft);
         filteredData.forEach(d => {
           d.city = d.city.trim();
           d.property_category = d.property_category?.trim();
         });
+  
         setTimeSeriesData(filteredData);
-
-        const uniqueCities = Array.from(new Set(filteredData.map(d => d.city)));
+  
+        const uniqueCities = [...new Set(filteredData.map(d => d.city))];
         setCities(uniqueCities);
-        setSelectedCity(""); // wait for user
-
-        const uniqueCategories = Array.from(new Set(
+        setSelectedCity("");
+  
+        const uniqueCategories = [...new Set(
           filteredData.map(d => d.property_category).filter(Boolean)
-        ));
+        )];
         setCategories(uniqueCategories);
         setSelectedType("All");
-      },
-    });
-  }, []);
+      })
+      .catch((err) => console.error("CSV load failed:", err));
+  }, []);  
 
   // Last 12 months
   const last12Months = useMemo(() => {
