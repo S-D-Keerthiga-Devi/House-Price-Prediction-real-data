@@ -126,9 +126,6 @@ export default function PropertyTrends() {
     return quartersArray;
   };
 
-
-
-
   // Chart data
   const chartData = useMemo(() => {
     if (!selectedCity) return [];
@@ -192,7 +189,7 @@ export default function PropertyTrends() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-400 to-pink-500 rounded-2xl mb-6 shadow-lg">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-900 via-blue-700 to-blue-500 rounded-2xl mb-6 shadow-lg">
             <TrendingUp className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-5xl font-bold text-gray-800 mb-4">Property Price Trends</h1>
@@ -205,7 +202,7 @@ export default function PropertyTrends() {
         <div className="bg-gradient-to-r from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-6 mb-12 hover:shadow-xl transition-all duration-300">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center mb-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full flex items-center justify-center mr-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-900 via-blue-700 to-blue-500 rounded-full flex items-center justify-center mr-3">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -220,7 +217,7 @@ export default function PropertyTrends() {
             <CitySearch
               cities={cities}
               onCitySelect={setSelectedCity}
-              className="w-full [&>div]:bg-white [&>div]:border-2 [&>div]:border-gray-200 [&>div]:rounded-xl [&>div]:shadow-sm hover:[&>div]:border-orange-400 focus-within:[&>div]:border-orange-500 focus-within:[&>div]:ring-4 focus-within:[&>div]:ring-orange-500/10 [&>div]:transition-all [&>div]:duration-200 [&_input]:text-gray-800 [&_input]:placeholder-gray-400 [&_input]:py-3 [&_input]:px-4 [&_input]:text-base"
+              className="w-full [&>div]:bg-white [&>div]:border-2 [&>div]:border-gray-200 [&>div]:rounded-xl [&>div]:shadow-sm hover:[&>div]:border-blue-800 focus-within:[&>div]:border-blue-700 focus-within:[&>div]:ring-4 focus-within:[&>div]:ring-orange-500/10 [&>div]:transition-all [&>div]:duration-200 [&_input]:text-gray-800 [&_input]:placeholder-gray-400 [&_input]:py-3 [&_input]:px-4 [&_input]:text-base"
             />
 
             {selectedCity && (
@@ -256,7 +253,7 @@ export default function PropertyTrends() {
                   <select
                     value={timePeriod}
                     onChange={(e) => setTimePeriod(e.target.value)}
-                    className="bg-white border-2 border-gray-200 rounded-xl px-4 py-2 focus:border-orange-400 focus:outline-none shadow-sm"
+                    className="bg-white border-2 border-gray-200 rounded-xl px-4 py-2 focus:border-blue-800 focus:outline-none shadow-sm"
                   >
                     <option value="Monthly">Monthly</option>
                     <option value="Quarterly">Quarterly</option>
@@ -266,7 +263,7 @@ export default function PropertyTrends() {
                   <select
                     value={selectedType}
                     onChange={(e) => setSelectedType(e.target.value)}
-                    className="bg-white border-2 border-gray-200 rounded-xl px-4 py-2 focus:border-orange-400 focus:outline-none shadow-sm"
+                    className="bg-white border-2 border-gray-200 rounded-xl px-4 py-2 focus:border-blue-700 focus:outline-none shadow-sm"
                   >
                     <option value="All">All Categories</option>
                     {categories.map((ptype, i) => (
@@ -280,19 +277,19 @@ export default function PropertyTrends() {
                 <ResponsiveContainer width="100%" height={450}>
                   {timePeriod === "Yearly" ? (
                     <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" opacity={0.8} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" opacity={0.8} />
 
                       <XAxis dataKey="period">
-                        <Label value="Year" offset={0} position="insideBottom" fontSize={14} fill="#64748b" />
+                        <Label value="Year" offset={0} position="insideBottom" fontSize={14} fill= "#1e3a8a" />
                       </XAxis>
 
-                      <YAxis stroke="#64748b" fontSize={12} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}>
+                      <YAxis stroke="#1e3a8a" fontSize={12} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}>
                         <Label
                           value="Price per sqft"
                           angle={-90}
                           position="insideLeft"
                           offset={0}
-                          style={{ textAnchor: "middle", fill: "#64748b", fontSize: 14 }}
+                          style={{ textAnchor: "middle", fill: "#1e3a8a", fontSize: 14 }}
                         />
                       </YAxis>
 
@@ -301,8 +298,8 @@ export default function PropertyTrends() {
                       <Area
                         type="monotone"
                         dataKey="rate_sqft"
-                        stroke="#f97316"
-                        fill="rgba(249,115,22,0.3)"
+                        stroke="#1e3a8a"
+                        fill="rgba(30,58,138,0.3)"
                         strokeWidth={3}
                       />
                     </AreaChart>
@@ -375,10 +372,10 @@ export default function PropertyTrends() {
                       <Line
                         type="monotone"
                         dataKey="rate_sqft"
-                        stroke="#f97316"
+                        stroke="#1e3a8a"
                         strokeWidth={3}
-                        dot={{ fill: "#f97316", strokeWidth: 2, r: 5 }}
-                        activeDot={{ r: 7, stroke: "#f97316", strokeWidth: 2, fill: "white" }}
+                        dot={{ fill: "#1e3a8a", strokeWidth: 2, r: 5 }}
+                        activeDot={{ r: 7, stroke: "#1e3a8a", strokeWidth: 2, fill: "white" }}
                       />
                     </LineChart>
                   )}

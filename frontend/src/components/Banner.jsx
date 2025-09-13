@@ -5,7 +5,7 @@ import {
   Building2,
   PieChart,
   Lightbulb,
-  Briefcase
+  Briefcase,
 } from "lucide-react";
 
 export default function Banner({ onScrollToForm }) {
@@ -13,27 +13,23 @@ export default function Banner({ onScrollToForm }) {
 
   return (
     <div className="relative min-h-[80vh] flex items-center justify-center overflow-hidden mt-16">
-      {/* Background Image with Subtle Overlay */}
-<div className="absolute inset-0 z-0">
-  <div
-    className="w-full h-full bg-cover bg-center"
-    style={{
-      backgroundImage: `
-        linear-gradient(to bottom right, rgba(255,255,255,0.44), rgba(240,240,255,0.3)),
-        url('https://images.pexels.com/photos/3646913/pexels-photo-3646913.jpeg')
-      `,
-    }}
-  />
-</div>
-
-
-
+      {/* Background Image with Subtle Navy Overlay */}
+      <div className="absolute inset-0 z-0">
+        <div
+          className="w-full h-full bg-cover bg-center"
+          style={{
+            backgroundImage: `
+              linear-gradient(to bottom right, rgba(0,28,64,0.65), rgba(0,48,96,0.65)),
+              url('https://images.pexels.com/photos/3646913/pexels-photo-3646913.jpeg')
+            `,
+          }}
+        />
+      </div>
 
       {/* Main Content Container */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 w-full">
         <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden px-8 py-12 md:px-12 md:py-16 transition-all hover:shadow-2xl">
           <div className="grid lg:grid-cols-3 gap-10 items-start">
-
             {/* Quote */}
             <div className="space-y-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-8 leading-snug">
@@ -44,7 +40,7 @@ export default function Banner({ onScrollToForm }) {
                 new investment opportunities
               </h1>
 
-              {/* Clean & Minimalist Search Bar */}
+              {/* Navy Search Bar */}
               <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all max-w-xl">
                 <div className="flex items-center">
                   {/* Buy/Rent Selector */}
@@ -80,7 +76,7 @@ export default function Banner({ onScrollToForm }) {
                   />
 
                   {/* Search Button */}
-                  <button className="bg-orange-400 text-white px-4 py-4 hover:bg-orange-500 transition-colors flex items-center justify-center flex-shrink-0">
+                  <button className="bg-blue-800 text-white px-4 py-4 hover:bg-blue-900 transition-colors flex items-center justify-center flex-shrink-0">
                     <Search className="w-4 h-4" />
                   </button>
                 </div>
@@ -91,26 +87,30 @@ export default function Banner({ onScrollToForm }) {
             <div className="lg:col-span-1 space-y-6">
               <h2 className="text-2xl font-bold text-gray-900">Services</h2>
               <div className="space-y-3">
-                <button className="group w-full bg-orange-50 hover:bg-orange-100 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 border border-orange-100 hover:border-orange-200 hover:shadow-md text-left">
+                <button className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <Building2 className="w-5 h-5 text-orange-600" />
+                    <Building2 className="w-5 h-5 text-blue-800" />
                   </div>
-                  <span className="font-medium text-gray-800">Property Valuation Report</span>
+                  <span className="font-medium text-gray-800">
+                    Property Valuation Report
+                  </span>
                 </button>
-                <button className="group w-full bg-orange-50 hover:bg-orange-100 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 border border-orange-100 hover:border-orange-200 hover:shadow-md text-left">
+                <button className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <BarChart3 className="w-5 h-5 text-orange-600" />
+                    <BarChart3 className="w-5 h-5 text-blue-800" />
                   </div>
                   <span className="font-medium text-gray-800">Comparator</span>
                 </button>
-                <button className="group w-full bg-orange-50 hover:bg-orange-100 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 border border-orange-100 hover:border-orange-200 hover:shadow-md text-left">
+                <button className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <Lightbulb className="w-5 h-5 text-orange-600" />
+                    <Lightbulb className="w-5 h-5 text-blue-800" />
                   </div>
-                  <span className="font-medium text-gray-800">Smart Insights</span>
+                  <span className="font-medium text-gray-800">
+                    Smart Insights
+                  </span>
                 </button>
               </div>
-              <button className="text-orange-600 hover:text-orange-700 font-medium flex items-center gap-2">
+              <button className="text-blue-800 hover:text-blue-900 font-medium flex items-center gap-2">
                 More Services →
               </button>
             </div>
@@ -119,30 +119,33 @@ export default function Banner({ onScrollToForm }) {
             <div className="lg:col-span-1 space-y-6">
               <h2 className="text-2xl font-bold text-gray-900">Investments</h2>
               <div className="space-y-3">
-                <button className="group w-full bg-orange-50 hover:bg-orange-100 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 border border-orange-100 hover:border-orange-200 hover:shadow-md text-left">
+                <button className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <PieChart className="w-5 h-5 text-orange-600" />
+                    <PieChart className="w-5 h-5 text-blue-800" />
                   </div>
-                  <span className="font-medium text-gray-800">Fractional Investment</span>
+                  <span className="font-medium text-gray-800">
+                    Fractional Investment
+                  </span>
                 </button>
-                <button className="group w-full bg-orange-50 hover:bg-orange-100 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 border border-orange-100 hover:border-orange-200 hover:shadow-md text-left">
+                <button className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <Building2 className="w-5 h-5 text-orange-600" />
+                    <Building2 className="w-5 h-5 text-blue-800" />
                   </div>
                   <span className="font-medium text-gray-800">REIT / SM REIT</span>
                 </button>
-                <button className="group w-full bg-orange-50 hover:bg-orange-100 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 border border-orange-100 hover:border-orange-200 hover:shadow-md text-left">
+                <button className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all duration-200 border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <Briefcase className="w-5 h-5 text-orange-600" />
+                    <Briefcase className="w-5 h-5 text-blue-800" />
                   </div>
-                  <span className="font-medium text-gray-800">Venture Invest</span>
+                  <span className="font-medium text-gray-800">
+                    Venture Invest
+                  </span>
                 </button>
               </div>
-              <button className="text-orange-600 hover:text-orange-700 font-medium flex items-center gap-2">
+              <button className="text-blue-800 hover:text-blue-900 font-medium flex items-center gap-2">
                 More Investments →
               </button>
             </div>
-
           </div>
         </div>
       </div>

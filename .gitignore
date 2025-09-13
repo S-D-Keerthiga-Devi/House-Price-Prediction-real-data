@@ -1,2 +1,4 @@
 venv/
 notebook/data/data_formatted.csv
+backend/.env
+frontend/.env

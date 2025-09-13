@@ -135,7 +135,7 @@ const Services = () => {
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition ${
                   activeTab === tab
-                    ? "bg-orange-500 text-white"
+                    ? "bg-blue-900 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
