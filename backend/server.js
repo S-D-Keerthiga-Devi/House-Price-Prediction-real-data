@@ -8,7 +8,7 @@ import userRouter from "./routes/userRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 4000
-const allowedOrigins = ['http://localhost:5173']
+const allowedOrigins = ['http://localhost:5173', 'https://keerthiga-house-price-prediction.vercel.app']
 connectDB()
 
 app.use(express.json());
