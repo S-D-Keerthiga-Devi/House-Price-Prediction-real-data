@@ -1,0 +1,19 @@
+{
+    "rewrites": [
+      {
+        "source": "/(.*)",
+        "destination": "/index.html"
+      }
+    ]
+  }
+  ```
+
+3.  **Deploy the Changes:**
+  * Save the `vercel.json` file.
+  * Commit this new file to your Git repository and push the changes.
+
+  ```bash
+  git add vercel.json
+  git commit -m "feat: Add vercel.json for SPA routing"
+  git push
+  
