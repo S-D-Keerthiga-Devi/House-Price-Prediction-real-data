@@ -8,6 +8,9 @@ import { logout, updateUser } from "../store/authSlice.js";
 import { userDetails } from "../api/user.js";
 import { logoutUser } from "../api/auth.js";
 import { useLocation } from "react-router-dom";
+import Slider from "@mui/material/Slider";
+import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import Location from "./Location.jsx";
 
 const Header = () => {
   const { userData } = useSelector((state) => state.auth);
@@ -19,18 +22,29 @@ const Header = () => {
   const [selectedType, setSelectedType] = useState("Buy");
   const [showFilters, setShowFilters] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [budget, setBudget] = useState(5000000);
   const [propertyCategory, setPropertyCategory] = useState("Residential");
   const [selectedSubTypes, setSelectedSubTypes] = useState([]);
   const [possession, setPossession] = useState("");
   const [postedBy, setPostedBy] = useState("");
+  const [constructionStatus, setConstructionStatus] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+
 
   const filtersRef = useRef(null);
   const advFiltersRef = useRef(null);
 
   const propertyTypes = ["Buy", "Rent", "Auction"];
-  const residentialOptions = ["Apartment", "Villa", "Plot", "Studio"];
-  const commercialOptions = ["Office", "Shop", "Warehouse"];
+  const residentialOptions = ["Apartment", "Villa", "Plot", "Studio", "Independent House", "Builder Floor", "Penthouse"];
+  const commercialOptions = ["Office", "Shop", "Warehouse", "Office Space", "Industrial Land/Plot", "Showroom", "Co-working Space"];
+
+  const [budget, setBudget] = useState([10, 100]);
+  const formatLabel = (value) => `${value}L`;
+
+  const handleChange = (event, newValue) => {
+    setBudget(newValue);
+  };
+
 
   // Fetch fresh user data on mount
   useEffect(() => {
@@ -119,184 +133,291 @@ const Header = () => {
 
         {/* CENTER: Search bar (keep your existing code here) */}
         <div className="flex-1 max-w-3xl relative" ref={advFiltersRef}>
-  <div
-    className="flex items-center border border-blue-200 px-2 py-1 rounded-md shadow-sm w-full cursor-pointer"
-    onClick={() => setShowAdvancedFilters(true)}
-  >
-    {/* Type Selector */}
-    <div className="relative flex items-center border-r border-blue-200 pr-3">
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowFilters(!showFilters);
-        }}
-        className="flex items-center gap-1 text-sm font-medium text-blue-700 focus:outline-none"
-      >
-        {selectedType}
-        <ChevronDown size={14} className="text-blue-600" />
-      </button>
-      {showFilters && (
-        <div
-          ref={filtersRef}
-          className="absolute top-full left-0 mt-2 bg-white border border-gray-200 shadow-lg rounded-md z-50 w-32"
-        >
-          {propertyTypes
-            .filter((type) => type !== selectedType)
-            .map((type) => (
+          <div
+            className="flex items-center border border-blue-200 px-2 py-1 rounded-md shadow-sm w-full cursor-pointer"
+            onClick={() => setShowAdvancedFilters(true)}
+          >
+            {/* Type Selector */}
+            <div className="relative flex items-center border-r border-blue-200 pr-3">
               <button
-                key={type}
-                onClick={() => {
-                  setSelectedType(type);
-                  setShowFilters(false);
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowFilters((prev) => {
+                    if (!prev) {
+                      setShowAdvancedFilters(false); // close filters if opening Buy/Rent
+                    }
+                    return !prev;
+                  });
                 }}
-                className="block w-full text-left px-3 py-2 text-sm hover:bg-blue-50"
+                className="flex items-center gap-1 text-sm font-medium text-blue-700 focus:outline-none"
               >
-                {type}
+                {selectedType}
+                <ChevronDown size={14} className="text-blue-600" />
               </button>
-            ))}
-        </div>
-      )}
-    </div>
 
-    {/* Search Input (white center) */}
-    <div className="flex-1 flex items-center px-3 bg-white">
-      <MapPin size={18} className="text-blue-600 mr-2" />
-      <input
-        type="text"
-        placeholder={`Search ${selectedType.toLowerCase()} properties, location, project...`}
-        className="flex-1 text-sm bg-transparent outline-none placeholder-gray-500 cursor-pointer"
-        readOnly
-      />
-    </div>
+              {/* Buy / Rent / Auction Dropdown */}
+              {showFilters && (
+                <div
+                  ref={filtersRef}
+                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 shadow-lg rounded-md z-[60] w-32"
+                >
+                  {propertyTypes
+                    .filter((type) => type !== selectedType)
+                    .map((type) => (
+                      <button
+                        key={type}
+                        onClick={(e) => {
+                          setSelectedType(type);
+                          setShowFilters(false);
+                          e.stopPropagation();
+                        }}
+                        className="block w-full text-left px-3 py-2 text-sm hover:bg-blue-50"
+                      >
+                        {type}
+                      </button>
+                    ))}
+                </div>
+              )}
 
-    {/* Search Button */}
-    <button className="bg-blue-700 text-white px-4 py-2 hover:bg-blue-800 transition-colors flex items-center justify-center">
-      <Search size={16} />
-    </button>
+            </div>
 
-    {/* Filter Button */}
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        setShowAdvancedFilters(!showAdvancedFilters);
-      }}
-      className="ml-2 p-2 bg-white border border-blue-300 rounded-md hover:bg-blue-50"
-    >
-      <Filter size={16} className="text-blue-600" />
-    </button>
-  </div>
 
-  {/* Advanced Filter Panel */}
-  {showAdvancedFilters && (
-    <div className="absolute top-full left-0 mt-2 w-full bg-white shadow-lg rounded-lg border border-gray-200 z-50 p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Budget */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Budget (₹)
-          </label>
-          <input
-            type="range"
-            min="500000"
-            max="20000000"
-            step="500000"
-            value={budget}
-            onChange={(e) => setBudget(Number(e.target.value))}
-            className="w-full accent-blue-600"
-          />
-          <p className="text-sm text-gray-600 mt-1">
-            Up to ₹{budget.toLocaleString()}
-          </p>
-        </div>
+            {/* Search Input (white center) */}
+            <div
+              className="flex-1 flex items-center px-3 bg-white relative"
+              onClick={(e) => e.stopPropagation()} // ⛔ stop bubbling up
+            >
+              <MapPin
+                size={18}
+                className="text-blue-600 mr-2 cursor-pointer"
+                onClick={() => document.getElementById("location-input")?.focus()}
+              />
 
-        {/* Category & Subtypes */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Property Type
-          </label>
-          <div className="flex gap-4 mb-3">
-            {["Residential", "Commercial"].map((cat) => (
+              {/* City Search Component */}
+              <Location onCitySelect={(city) => setSearchQuery(city)} />
+            </div>
+
+
+            {/* Search Button */}
+            <button
+              onClick={(e) => e.stopPropagation()}
+              className="p-2 bg-blue-700 text-white rounded-md shadow hover:bg-blue-700 flex items-center justify-center">
+              <Search size={18} />
+            </button>
+
+            {/* Filter Button (Icon only) */}
+            <div className="ml-3">
               <button
-                key={cat}
-                className={`px-4 py-1 rounded-md text-sm border ${
-                  propertyCategory === cat
-                    ? "bg-blue-100 border-blue-500 text-blue-700"
-                    : "bg-white border-gray-300"
-                }`}
-                onClick={() => {
-                  setPropertyCategory(cat);
-                  setSelectedSubTypes([]);
+                onClick={(e) => {
+                  e.stopPropagation(); // ✅ don’t clash with Location
+                  setShowAdvancedFilters((prev) => !prev); // strictly controls filter
                 }}
+                className="p-2 bg-blue-700 text-white rounded-md shadow hover:bg-blue-700 flex items-center justify-center"
               >
-                {cat}
+                <Filter size={18} />
               </button>
-            ))}
+            </div>
+
+
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            {(propertyCategory === "Residential"
-              ? residentialOptions
-              : commercialOptions
-            ).map((option) => (
-              <label key={option} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="accent-blue-600"
-                  checked={selectedSubTypes.includes(option)}
-                  onChange={() => toggleSelection(option)}
-                />
-                {option}
-              </label>
-            ))}
-          </div>
-        </div>
+          {/* Advanced Filter Panel */}
+          {showAdvancedFilters && (
+            <div className="absolute top-[110%] left-0 mt-2 w-full bg-white shadow-lg rounded-lg border border-gray-200 z-[50] p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Budget */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Budget (₹)
+                  </label>
+                  <Slider
+                    value={budget}
+                    onChange={handleChange}
+                    valueLabelDisplay="auto"
+                    valueLabelFormat={formatLabel}
+                    min={10}
+                    max={100}
+                    step={5}
+                    sx={{
+                      color: "#1d4ed8", // Tailwind `blue-700`
+                      "& .MuiSlider-thumb": {
+                        backgroundColor: "#1d4ed8",
+                        border: "2px solid white",
+                      },
+                      "& .MuiSlider-track": {
+                        backgroundColor: "#1d4ed8",
+                      },
+                      "& .MuiSlider-rail": {
+                        backgroundColor: "#dbeafe", // Tailwind `blue-100`
+                      },
+                    }}
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    {budget[0]}L - {budget[1]}L
+                  </p>
+                </div>
 
-        {/* Possession */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Possession Status
-          </label>
-          <select
-            className="w-40 border-gray-300 rounded-md text-sm px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
-            value={possession}
-            onChange={(e) => setPossession(e.target.value)}
-          >
-            <option value="">Select</option>
-            <option value="Under Construction">Under Construction</option>
-            <option value="Ready to Move">Ready to Move</option>
-          </select>
-        </div>
+                {/* Category & Subtypes */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Property Type
+                  </label>
+                  <div className="flex gap-4 mb-3">
+                    {["Residential", "Commercial"].map((cat) => (
+                      <button
+                        key={cat}
+                        className={`px-4 py-1 rounded-md text-sm border ${propertyCategory === cat
+                          ? "bg-blue-100 border-blue-500 text-blue-700"
+                          : "bg-white border-gray-300"
+                          }`}
+                        onClick={() => {
+                          setPropertyCategory(cat);
+                          setSelectedSubTypes([]);
+                        }}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
 
-        {/* Posted By */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Posted By
-          </label>
-          <select
-            className="w-40 border-gray-300 rounded-md text-sm px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
-            value={postedBy}
-            onChange={(e) => setPostedBy(e.target.value)}
-          >
-            <option value="">Select</option>
-            <option value="Builder">Builder</option>
-            <option value="Agent">Agent</option>
-            <option value="Owner">Owner</option>
-          </select>
-        </div>
-      </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(propertyCategory === "Residential"
+                      ? residentialOptions
+                      : commercialOptions
+                    ).map((option) => (
+                      <label key={option} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          className="accent-blue-600"
+                          checked={selectedSubTypes.includes(option)}
+                          onChange={() => toggleSelection(option)}
+                        />
+                        {option}
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
-      {/* Apply Button */}
-      <div className="flex justify-end mt-4">
-        <button
-          onClick={() => setShowAdvancedFilters(false)}
-          className="bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-800"
-        >
-          Apply Filters
-        </button>
-      </div>
-    </div>
-  )}
-</div>
+                <FormControl fullWidth>
+                  <InputLabel id="possession-label">Possession Status</InputLabel>
+                  <Select
+                    labelId="possession-label"
+                    value={possession}
+                    onChange={(e) => setPossession(e.target.value)}
+                    label="Possession Status"
+                    sx={{
+                      backgroundColor: "white",
+                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
+                      "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#2563eb" },
+                    }}
+                    MenuProps={{
+                      disablePortal: true, // ✅ Keeps dropdown inside the same container
+                      PaperProps: {
+                        sx: {
+                          bgcolor: "white",
+                          "& .MuiMenuItem-root:hover": {
+                            backgroundColor: "#f3f4f6", // Tailwind gray-100 hover effect
+                          },
+                        },
+                      },
+                    }}
+                  >
+                    <MenuItem value="Under Construction">Under Construction</MenuItem>
+                    <MenuItem value="Ready to Move">Ready to Move</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* Posted By */}
+                <FormControl fullWidth>
+                  <InputLabel id="postedby-label">Posted By</InputLabel>
+                  <Select
+                    labelId="postedby-label"
+                    value={postedBy}
+                    onChange={(e) => setPostedBy(e.target.value)}
+                    label="Posted By"
+                    sx={{
+                      backgroundColor: "white",
+                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
+                      "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#2563eb" },
+                    }}
+                    MenuProps={{
+                      disablePortal: true, // ✅ Keeps dropdown inside the same container
+                      PaperProps: {
+                        sx: {
+                          bgcolor: "white",
+                          "& .MuiMenuItem-root:hover": {
+                            backgroundColor: "#f3f4f6", // Tailwind gray-100 hover effect
+                          },
+                        },
+                      },
+                    }}
+                  >
+                    <MenuItem value="Builder">Builder</MenuItem>
+                    <MenuItem value="Agent">Agent</MenuItem>
+                    <MenuItem value="Owner">Owner</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* Construction Status */}
+                <FormControl fullWidth>
+                  <InputLabel id="construction-label">Construction Status</InputLabel>
+                  <Select
+                    labelId="construction-label"
+                    value={constructionStatus}
+                    onChange={(e) => setConstructionStatus(e.target.value)}
+                    label="Construction Status"
+                    sx={{
+                      backgroundColor: "white",
+                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
+                      "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#2563eb" },
+                    }}
+                    MenuProps={{
+                      disablePortal: true, // ✅ Keeps dropdown inside the same container
+                      PaperProps: {
+                        sx: {
+                          bgcolor: "white",
+                          "& .MuiMenuItem-root:hover": {
+                            backgroundColor: "#f3f4f6", // Tailwind gray-100 hover effect
+                          },
+                        },
+                      },
+                    }}
+                  >
+                    <MenuItem value="New Launch">New Launch</MenuItem>
+                    <MenuItem value="Resale">Resale</MenuItem>
+                    <MenuItem value="Under Renovation">Under Renovation</MenuItem>
+                    <MenuItem value="Ready to Move">Ready to Move</MenuItem>
+                  </Select>
+                </FormControl>
+              </div>
+
+              {/* Buttons: Reset & Apply */}
+              <div className="flex justify-center gap-3 mt-4">
+                <button
+                  onClick={() => {
+                    setBudget([10, 100]);
+                    setPropertyCategory("Residential");
+                    setSelectedSubTypes([]);
+                    setPossession("");
+                    setPostedBy("");
+                    setConstructionStatus("");
+                  }}
+                  className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400"
+                >
+                  Reset
+                </button>
+
+                <button
+                  onClick={() => setShowAdvancedFilters(false)}
+                  className="bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-800"
+                >
+                  Apply Filters
+                </button>
+              </div>
+
+            </div>
+          )}
+        </div>
 
 
         {/* RIGHT: Actions */}

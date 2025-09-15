@@ -7,9 +7,11 @@ import {
   Lightbulb,
   Briefcase,
 } from "lucide-react";
+import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 
 export default function Banner({ onScrollToForm }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState("buy");
 
   return (
     <div className="relative min-h-[80vh] flex items-center justify-center overflow-hidden mt-16">
@@ -45,25 +47,33 @@ export default function Banner({ onScrollToForm }) {
                 <div className="flex items-center">
                   {/* Buy/Rent Selector */}
                   <div className="relative bg-gray-50 border-r border-gray-200 flex-shrink-0">
-                    <select className="bg-transparent text-gray-700 px-4 py-3 text-sm font-medium cursor-pointer focus:outline-none appearance-none hover:bg-gray-100 transition-colors pr-8">
-                      <option value="buy">Buy</option>
-                      <option value="rent">Rent</option>
-                    </select>
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <svg
-                        className="w-3 h-3 text-gray-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    <FormControl
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        minWidth: 100,
+                        backgroundColor: "white",
+                        "& .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
+                        "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#2563eb" }, // darker blue
+                      }}
+                    >
+                      <Select
+                        value={selectedType}
+                        onChange={(e) => setSelectedType(e.target.value)}
+                        sx={{
+                          paddingY: "8px",
+                          paddingX: "12px",
+                          fontSize: "0.875rem", // text-sm
+                          borderRadius: "12px 0 0 12px",
+                        }}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </div>
+                        <MenuItem value="buy">Buy</MenuItem>
+                        <MenuItem value="rent">Rent</MenuItem>
+                        <MenuItem value="auction">Auction</MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    
                   </div>
 
                   {/* Search Input */}
@@ -77,7 +87,7 @@ export default function Banner({ onScrollToForm }) {
 
                   {/* Search Button */}
                   <button className="bg-blue-800 text-white px-4 py-4 hover:bg-blue-900 transition-colors flex items-center justify-center flex-shrink-0">
-                    <Search className="w-4 h-4" />
+                    <Search className="w-4 h-5" />
                   </button>
                 </div>
               </div>

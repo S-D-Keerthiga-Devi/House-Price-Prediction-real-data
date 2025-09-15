@@ -16,10 +16,12 @@ import {
   Gavel,
   FileCheck,
   Columns3,
+  Lightbulb
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // Smart Services Tabs
+// Updated Smart Services Tabs
 const smartServicesTabs = {
   Buyers: [
     { name: "Property Valuation", icon: <Home className="w-10 h-10 text-blue-600" /> },
@@ -42,29 +44,39 @@ const smartServicesTabs = {
     { name: "Channel Partners", icon: <Briefcase className="w-10 h-10 text-purple-600" /> },
     { name: "Registration & Docs", icon: <ScrollText className="w-10 h-10 text-pink-600" /> },
   ],
+  Owners: [
+    { name: "Know Your Property Value", icon: <Scale className="w-10 h-10 text-blue-600" /> }, // valuation/fairness
+    { name: "Property Management", icon: <Briefcase className="w-10 h-10 text-green-600" /> }, // management/business
+    { name: "Home Interior", icon: <Lightbulb className="w-10 h-10 text-orange-600" /> }, // ideas/interior
+    { name: "Post Property", icon: <Building2 className="w-10 h-10 text-purple-600" /> }, // property posting
+    { name: "Property Legal Services", icon: <Gavel className="w-10 h-10 text-red-600" /> }, // legal matters
+  ],
+
 };
+
 
 // Extra Services
 const insightServices = [
-  { name: "Market Analysis", image: "https://images.pexels.com/photos/590022/pexels-photo-590022.jpeg" },
+  { name: "Market Analysis", image: "https://images.pexels.com/photos/590022/pexels-photo-590022.jpeg", link: "/market-analysis" },
   { name: "Price Trends", image: "https://images.pexels.com/photos/7947664/pexels-photo-7947664.jpeg", link: "/price-trends" },
-  { name: "Investment Reports", image: "https://images.pexels.com/photos/6802042/pexels-photo-6802042.jpeg" },
-  { name: "Area Demographics", image: "https://images.pexels.com/photos/3182773/pexels-photo-3182773.jpeg" },
+  { name: "Investment Reports", image: "https://images.pexels.com/photos/6802042/pexels-photo-6802042.jpeg", link: "/investment-reports" },
+  { name: "Area Demographics", image: "https://images.pexels.com/photos/3182773/pexels-photo-3182773.jpeg", link: "/area-demographics" },
 ];
 
 const trendingServices = [
-  { name: "Smart Homes", image: "https://images.pexels.com/photos/6782351/pexels-photo-6782351.jpeg" },
-  { name: "Co-working Spaces", image: "https://images.pexels.com/photos/3182782/pexels-photo-3182782.jpeg" },
-  { name: "Sustainable Living", image: "https://images.pexels.com/photos/2724749/pexels-photo-2724749.jpeg" },
-  { name: "Luxury Condos", image: "https://images.pexels.com/photos/1029599/pexels-photo-1029599.jpeg" },
+  { name: "Smart Homes", image: "https://images.pexels.com/photos/6782351/pexels-photo-6782351.jpeg", link: "/smart-homes" },
+  { name: "Co-working Spaces", image: "https://images.pexels.com/photos/3182782/pexels-photo-3182782.jpeg", link: "/coworking" },
+  { name: "Sustainable Living", image: "https://images.pexels.com/photos/2724749/pexels-photo-2724749.jpeg", link: "/sustainable-living" },
+  { name: "Luxury Condos", image: "https://images.pexels.com/photos/1029599/pexels-photo-1029599.jpeg", link: "/luxury-condos" },
 ];
 
 const curatedServices = [
-  { name: "Premium Locations", image: "https://images.pexels.com/photos/18246434/pexels-photo-18246434.jpeg" },
-  { name: "Budget Friendly", image: "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg" },
-  { name: "Family Homes", image: "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg" },
-  { name: "Investment Properties", image: "https://images.pexels.com/photos/3760067/pexels-photo-3760067.jpeg" },
+  { name: "Premium Locations", image: "https://images.pexels.com/photos/18246434/pexels-photo-18246434.jpeg", link: "/premium-locations" },
+  { name: "Budget Friendly", image: "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg", link: "/budget-friendly" },
+  { name: "Family Homes", image: "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg", link: "/family-homes" },
+  { name: "Investment Properties", image: "https://images.pexels.com/photos/3760067/pexels-photo-3760067.jpeg", link: "/investment-properties" },
 ];
+
 
 // Section Component
 const ServiceSection = ({ title, description, services, bgColor }) => (
@@ -133,11 +145,10 @@ const Services = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                  activeTab === tab
+                className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === tab
                     ? "bg-blue-900 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -146,22 +157,60 @@ const Services = () => {
 
           {/* Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {smartServicesTabs[activeTab].map((service, idx) => (
-              <Card
-                key={idx}
-                className="overflow-hidden shadow-md hover:shadow-lg cursor-pointer transition-all duration-300 transform hover:-translate-y-2 border border-gray-200 group"
-              >
-                <div className="flex items-center justify-center h-28 bg-gray-50">
-                  {service.icon}
-                </div>
-                <CardContent className="p-4 text-center">
-                  <p className="text-sm font-semibold text-gray-800 group-hover:text-black transition">
-                    {service.name}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+            {smartServicesTabs[activeTab].map((service, idx) => {
+              // ✅ add path mapping here
+              const routesMap = {
+                "Property Valuation": "/property-valuation",
+                "Rent Agreement": "/rent-agreement",
+                "Auctioned Property": "/auctioned-property",
+                "Escrow Services": "/escow-services",
+                "Comparator": "/comparator",
+
+                "Advertize With Us": "/advertise-with-us",
+                "Venture Investment": "/venture-invest",
+                "Data Insights": "/data-insights",
+                "Market Trends": "/market-trends",
+                "Property Valuation Dev": "/property-valuation", // optional alias
+
+                "Listings": "/listings",
+                "Dealer Connect": "/dealer-connect",
+                "Contact Developers": "/contact-developers",
+                "Channel Partners": "/channel-partners",
+                "Registration & Docs": "/registration-docs",
+
+                "Know Your Property Value": "/know-property",
+                "Property Management": "/property-manage",
+                "Home Interior": "/home-interior",
+                "Post Property": "/post-property",
+                "Property Legal Services": "/property-legal",
+              };
+
+              const cardContent = (
+                <Card
+                  key={idx}
+                  className="overflow-hidden shadow-md hover:shadow-lg cursor-pointer transition-all duration-300 transform hover:-translate-y-2 border border-gray-200 group"
+                >
+                  <div className="flex items-center justify-center h-28 bg-gray-50">
+                    {service.icon}
+                  </div>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-sm font-semibold text-gray-800 group-hover:text-black transition">
+                      {service.name}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+
+              return routesMap[service.name] ? (
+                <Link to={routesMap[service.name]} key={idx}>
+                  {cardContent}
+                </Link>
+              ) : (
+                cardContent
+              );
+            })}
           </div>
+
         </div>
       </div>
 
