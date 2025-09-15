@@ -1,79 +1,38 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { useForm } from "react-hook-form";
-import { loginUser, signupUser } from "../api/auth";
+import { loginUser } from "../api/auth";
 import { login as authLogin } from "../store/authSlice";
 import { toast } from "react-toastify";
 
 const Login = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { register, handleSubmit, reset } = useForm();
   const [step, setStep] = useState("mobile"); // "mobile" or "otp"
   const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState("");
 
-  const handleSendOtp = async () => {
-    try {
-      if (!mobile || mobile.length !== 10) {
-        toast.error("Enter a valid 10-digit mobile number");
-        return;
-      }
-      const res = await requestOtp({ mobile });
-      if (res.success) {
-        toast.success("OTP sent successfully");
-        setStep("otp");
-      } else {
-        toast.error(res.message || "Failed to send OTP");
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+  // Step 1: Simulate sending OTP
+  const handleSendOtp = () => {
+    if (!mobile || mobile.length !== 10) {
+      toast.error("Enter a valid 10-digit mobile number");
+      return;
     }
+    toast.success("OTP sent successfully (use 1234)");
+    setStep("otp");
   };
 
+  // Step 2: Verify OTP with backend
   const handleVerifyOtp = async () => {
     try {
-      const res = await verifyOtp({ mobile, otp });
+      const res = await loginUser({ phone: mobile, otp });
       if (res.success) {
         dispatch(authLogin({ userData: res.user }));
         localStorage.setItem("token", res.token);
-        toast.success("Login Successful");
+        toast.success(res.message || "Login Successful");
         navigate("/dashboard");
       } else {
         toast.error(res.message || "Invalid OTP");
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
-    }
-  };
-
-  const onSubmit = async (data) => {
-    try {
-      let res;
-      if (isLogin) {
-        res = await loginUser({
-          email: data.email,
-          password: data.password,
-        });
-      } else {
-        res = await signupUser({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-        });
-      }
-
-      if (res?.success) {
-        dispatch(authLogin({ userData: res.user }));
-        localStorage.setItem("token", res.token);
-        toast.success(
-          res.message || (isLogin ? "Login Successful" : "Signup Successful")
-        );
-        navigate("/dashboard");
-      } else {
-        toast.error(res?.message || "Something went wrong");
       }
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
@@ -88,12 +47,15 @@ const Login = () => {
           <div className="w-14 h-14 mx-auto flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-800 to-blue-600 text-white font-bold text-2xl shadow">
             H
           </div>
-          <h2 className="text-2xl font-bold text-blue-800 mt-3">Login to HousePredict</h2>
-          <p className="text-sm text-gray-500">Smart way to explore properties</p>
+          <h2 className="text-2xl font-bold text-blue-800 mt-3">
+            Login to HousePredict
+          </h2>
+          <p className="text-sm text-gray-500">
+            Smart way to explore properties
+          </p>
         </div>
 
         {step === "mobile" ? (
-          // Step 1: Enter mobile number
           <div className="space-y-6">
             <div>
               <label
@@ -120,7 +82,6 @@ const Login = () => {
             </button>
           </div>
         ) : (
-          // Step 2: Enter OTP
           <div className="space-y-6">
             <div>
               <label
@@ -132,7 +93,7 @@ const Login = () => {
               <input
                 type="text"
                 id="otp"
-                placeholder="6-digit OTP"
+                placeholder="Enter OTP (1234)"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"

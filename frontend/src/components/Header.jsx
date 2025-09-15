@@ -298,34 +298,6 @@ const Header = () => {
                   </div>
                 </div>
 
-                <FormControl fullWidth>
-                  <InputLabel id="possession-label">Possession Status</InputLabel>
-                  <Select
-                    labelId="possession-label"
-                    value={possession}
-                    onChange={(e) => setPossession(e.target.value)}
-                    label="Possession Status"
-                    sx={{
-                      backgroundColor: "white",
-                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
-                      "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#2563eb" },
-                    }}
-                    MenuProps={{
-                      disablePortal: true, // ✅ Keeps dropdown inside the same container
-                      PaperProps: {
-                        sx: {
-                          bgcolor: "white",
-                          "& .MuiMenuItem-root:hover": {
-                            backgroundColor: "#f3f4f6", // Tailwind gray-100 hover effect
-                          },
-                        },
-                      },
-                    }}
-                  >
-                    <MenuItem value="Under Construction">Under Construction</MenuItem>
-                    <MenuItem value="Ready to Move">Ready to Move</MenuItem>
-                  </Select>
-                </FormControl>
 
                 {/* Posted By */}
                 <FormControl fullWidth>
@@ -384,8 +356,7 @@ const Header = () => {
                     }}
                   >
                     <MenuItem value="New Launch">New Launch</MenuItem>
-                    <MenuItem value="Resale">Resale</MenuItem>
-                    <MenuItem value="Under Renovation">Under Renovation</MenuItem>
+                    <MenuItem value="Under Renovation">Under Construction</MenuItem>
                     <MenuItem value="Ready to Move">Ready to Move</MenuItem>
                   </Select>
                 </FormControl>
@@ -453,21 +424,13 @@ const Header = () => {
               />
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10">
-                  {userData?.isAccountVerified ? (
-                    <p className="block w-full text-left px-4 py-2 text-green-600">
-                      ✅ Email Verified
-                    </p>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setMenuOpen(false);
-                        navigate("/email-verify");
-                      }}
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                    >
-                      Verify Email
-                    </button>
-                  )}
+                  <p className="flex items-center gap-2 w-full px-4 py-2 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-semibold">
+                      📞
+                    </span>
+                    {userData?.phone || "No number"}
+                  </p>
+
                   <button
                     onClick={() => {
                       setMenuOpen(false);
