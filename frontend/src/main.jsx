@@ -12,8 +12,6 @@ import store from './store/store'
 import { Provider } from 'react-redux'
 import { ToastContainer, toast } from 'react-toastify'
 import Dashboard from './pages/Dashboard'
-import EmailVerify from './pages/EmailVerify'
-import ResetPassword from './pages/ResetPassword'
 import PropertyValuation from './pages/PropertyValuation'
 import RentAgreement from './pages/RentAgreement'
 import AuctionedProperty from './pages/AuctionedProperty'
@@ -51,8 +49,6 @@ const router = createBrowserRouter(
     <Route path="/" element={<Layout />}>
       <Route path='login' element={<Login/>}/> 
       <Route index element={<Home />} />
-      <Route path='email-verify' element={<EmailVerify/>}/>
-      <Route path='reset-password' element={<ResetPassword/>}/>
       <Route path='dashboard' element={<Dashboard/>}/>
       <Route path="compare" element={<PropertyComparator />} />
       <Route path="price-trends" element={<PriceTrends />} />
