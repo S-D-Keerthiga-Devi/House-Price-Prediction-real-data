@@ -11,6 +11,7 @@ import { useLocation } from "react-router-dom";
 import Slider from "@mui/material/Slider";
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import Location from "./Location.jsx";
+import { Box, Paper } from "@mui/material";
 
 const Header = () => {
   const { userData } = useSelector((state) => state.auth);
@@ -118,18 +119,54 @@ const Header = () => {
   return (
     <header className="w-full fixed top-0 left-0 z-50 bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-6">
-        {/* LEFT: Logo */}
-        <a href="/" className="flex items-center gap-2">
-          <div className="w-9 h-9 bg-gradient-to-br from-blue-700 to-blue-900 rounded-md flex items-center justify-center text-white font-bold text-lg shadow">
-            H
-          </div>
-          <div className="hidden sm:block">
-            <div className="font-bold text-gray-800 text-lg">HousePredict</div>
-            <div className="text-xs text-blue-700 font-medium -mt-0.5">
-              Smart Property Search
+        {/* LEFT: Logo + Location */}
+        <div className="flex items-center gap-3">
+          {/* Logo */}
+          <a href="/" className="flex items-center gap-2">
+            <div className="w-9 h-9 bg-gradient-to-br from-blue-700 to-blue-900 rounded-md flex items-center justify-center text-white font-bold text-lg shadow">
+              H
             </div>
-          </div>
-        </a>
+            <div className="hidden sm:block">
+              <div className="font-bold text-gray-800 text-lg">HousePredict</div>
+              <div className="text-xs text-blue-700 font-medium -mt-0.5">
+                Smart Property Search
+              </div>
+            </div>
+          </a>
+
+          <Paper
+            elevation={2}
+            onClick={(e) => e.stopPropagation()}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              width: 140,       // similar to w-36
+              height: 40,       // similar to h-10
+              px: 1,            // horizontal padding
+              borderRadius: 2,  // rounded-lg
+              bgcolor: "white",
+              cursor: "pointer",
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                boxShadow: 3,
+                border: "2px solid #2563eb"
+              },
+            }}
+          >
+            <MapPin
+              size={18}
+              color="#2563eb"
+              style={{ cursor: "pointer" }}
+              onClick={() => document.getElementById("location-input")?.focus()}
+            />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Location onCitySelect={(city) => setSearchQuery(city)} />
+            </Box>
+          </Paper>
+
+        </div>
+
 
         {/* CENTER: Search bar (keep your existing code here) */}
         <div className="flex-1 max-w-3xl relative" ref={advFiltersRef}>
@@ -181,22 +218,13 @@ const Header = () => {
 
             </div>
 
-
-            {/* Search Input (white center) */}
-            <div
-              className="flex-1 flex items-center px-3 bg-white relative"
-              onClick={(e) => e.stopPropagation()} // ⛔ stop bubbling up
-            >
-              <MapPin
-                size={18}
-                className="text-blue-600 mr-2 cursor-pointer"
-                onClick={() => document.getElementById("location-input")?.focus()}
-              />
-
-              {/* City Search Component */}
-              <Location onCitySelect={(city) => setSearchQuery(city)} />
-            </div>
-
+            {/* Input Box */}
+            <input
+              type="text"
+              placeholder="Search properties..."
+              className="flex-1 px-3 py-2 text-sm outline-none"
+              onClick={(e) => e.stopPropagation()}
+            />
 
             {/* Search Button */}
             <button

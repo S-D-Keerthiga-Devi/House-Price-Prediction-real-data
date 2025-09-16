@@ -102,7 +102,7 @@ export default function Location({ onCitySelect }) {
           setQuery(e.target.value);
           fetchCities(e.target.value);
         }}
-        placeholder="Search city in India..."
+        placeholder="Search city..."
         className="w-full border-0 bg-transparent text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
       />
 
