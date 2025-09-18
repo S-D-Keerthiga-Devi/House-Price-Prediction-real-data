@@ -29,7 +29,7 @@ const Header = () => {
   const [postedBy, setPostedBy] = useState("");
   const [constructionStatus, setConstructionStatus] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-
+  const [countryCode, setCountryCode] = useState("+91");
 
 
   const filtersRef = useRef(null);
@@ -39,8 +39,15 @@ const Header = () => {
   const residentialOptions = ["Apartment", "Villa", "Plot", "Studio", "Independent House", "Builder Floor", "Penthouse"];
   const commercialOptions = ["Office", "Shop", "Warehouse", "Office Space", "Industrial Land/Plot", "Showroom", "Co-working Space"];
 
-  const [budget, setBudget] = useState([10, 100]);
-  const formatLabel = (value) => `${value}L`;
+  const [budget, setBudget] = useState([10, 10100]);
+  const formatBudget = (value) => {
+    if (value >= 10100) {
+      return "100Cr+";
+    } else if (value >= 100) {
+      return `${(value / 100).toFixed(0)} Cr`;
+    }
+    return `${value} L`;
+  };
 
   const handleChange = (event, newValue) => {
     setBudget(newValue);
@@ -251,23 +258,25 @@ const Header = () => {
 
           {/* Advanced Filter Panel */}
           {showAdvancedFilters && (
-            <div className="absolute top-[110%] left-0 mt-2 w-full bg-white shadow-lg rounded-lg border border-gray-200 z-[50] p-6">
+            <div className="absolute top-[110%] left-0 mt-2 w-full bg-white shadow-lg rounded-lg border border-gray-200 z-[50] p-6 text-sm">
+              {/* ✅ text-sm applied globally here */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
                 {/* Budget */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Budget (₹)
+                    Budget
                   </label>
                   <Slider
                     value={budget}
                     onChange={handleChange}
-                    valueLabelDisplay="auto"
-                    valueLabelFormat={formatLabel}
-                    min={10}
-                    max={100}
-                    step={5}
+                    valueLabelDisplay="auto"       // ✅ shows label only on hover/drag
+                    valueLabelFormat={formatBudget}
+                    min={10}                        // 10L
+                    max={10100}                     // 100Cr+
+                    step={10}                       // stepping in 10L increments
                     sx={{
-                      color: "#1d4ed8", // Tailwind `blue-700`
+                      color: "#1d4ed8",
                       "& .MuiSlider-thumb": {
                         backgroundColor: "#1d4ed8",
                         border: "2px solid white",
@@ -276,28 +285,32 @@ const Header = () => {
                         backgroundColor: "#1d4ed8",
                       },
                       "& .MuiSlider-rail": {
-                        backgroundColor: "#dbeafe", // Tailwind `blue-100`
+                        backgroundColor: "#dbeafe",
+                      },
+                      "& .MuiSlider-markLabel": {
+                        fontSize: "0.8rem", // consistent font size
                       },
                     }}
                   />
                   <p className="text-sm text-gray-600 mt-1">
-                    {budget[0]}L - {budget[1]}L
+                    {formatBudget(budget[0])} - {formatBudget(budget[1])}
                   </p>
                 </div>
 
+
                 {/* Category & Subtypes */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block font-medium text-gray-700 mb-2">
                     Property Type
                   </label>
                   <div className="flex gap-4 mb-3">
                     {["Residential", "Commercial"].map((cat) => (
                       <button
                         key={cat}
-                        className={`px-4 py-1 rounded-md text-sm border ${propertyCategory === cat
+                        className={`px-4 py-1 rounded-md border ${propertyCategory === cat
                           ? "bg-blue-100 border-blue-500 text-blue-700"
                           : "bg-white border-gray-300"
-                          }`}
+                          } text-sm`} // ✅ consistent font size
                         onClick={() => {
                           setPropertyCategory(cat);
                           setSelectedSubTypes([]);
@@ -313,7 +326,7 @@ const Header = () => {
                       ? residentialOptions
                       : commercialOptions
                     ).map((option) => (
-                      <label key={option} className="flex items-center gap-2 text-sm">
+                      <label key={option} className="flex items-center gap-2">
                         <input
                           type="checkbox"
                           className="accent-blue-600"
@@ -326,27 +339,44 @@ const Header = () => {
                   </div>
                 </div>
 
-
                 {/* Posted By */}
                 <FormControl fullWidth>
-                  <InputLabel id="postedby-label">Posted By</InputLabel>
+                  <InputLabel
+                    id="postedby-label"
+                    className="text-sm"
+                    sx={{
+                      fontSize: "0.875rem", // ✅ same as text-sm
+                      "&.MuiInputLabel-shrink": {
+                        fontSize: "0.875rem", // ✅ keeps size consistent when floating
+                      },
+                    }}
+                  >
+                    Posted By
+                  </InputLabel>
                   <Select
                     labelId="postedby-label"
                     value={postedBy}
                     onChange={(e) => setPostedBy(e.target.value)}
                     label="Posted By"
+                    className="text-sm"
                     sx={{
                       backgroundColor: "white",
                       "& .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
                       "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#2563eb" },
+                      "& .MuiSelect-select": {
+                        fontSize: "0.875rem", // ✅ keeps selected text same size as menu
+                      },
                     }}
                     MenuProps={{
-                      disablePortal: true, // ✅ Keeps dropdown inside the same container
+                      disablePortal: true,
                       PaperProps: {
                         sx: {
                           bgcolor: "white",
+                          "& .MuiMenuItem-root": {
+                            fontSize: "0.875rem", // ✅ text-sm
+                          },
                           "& .MuiMenuItem-root:hover": {
-                            backgroundColor: "#f3f4f6", // Tailwind gray-100 hover effect
+                            backgroundColor: "#f3f4f6",
                           },
                         },
                       },
@@ -360,24 +390,42 @@ const Header = () => {
 
                 {/* Construction Status */}
                 <FormControl fullWidth>
-                  <InputLabel id="construction-label">Construction Status</InputLabel>
+                  <InputLabel
+                    id="construction-label"
+                    className="text-sm"
+                    sx={{
+                      fontSize: "0.875rem",
+                      "&.MuiInputLabel-shrink": {
+                        fontSize: "0.875rem",
+                      },
+                    }}
+                  >
+                    Construction Status
+                  </InputLabel>
                   <Select
                     labelId="construction-label"
                     value={constructionStatus}
                     onChange={(e) => setConstructionStatus(e.target.value)}
                     label="Construction Status"
+                    className="text-sm"
                     sx={{
                       backgroundColor: "white",
                       "& .MuiOutlinedInput-notchedOutline": { borderColor: "#d1d5db" },
                       "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#2563eb" },
+                      "& .MuiSelect-select": {
+                        fontSize: "0.875rem", // ✅ keeps selected text same size as menu
+                      },
                     }}
                     MenuProps={{
-                      disablePortal: true, // ✅ Keeps dropdown inside the same container
+                      disablePortal: true,
                       PaperProps: {
                         sx: {
                           bgcolor: "white",
+                          "& .MuiMenuItem-root": {
+                            fontSize: "0.875rem", // ✅ text-sm
+                          },
                           "& .MuiMenuItem-root:hover": {
-                            backgroundColor: "#f3f4f6", // Tailwind gray-100 hover effect
+                            backgroundColor: "#f3f4f6",
                           },
                         },
                       },
@@ -388,34 +436,35 @@ const Header = () => {
                     <MenuItem value="Ready to Move">Ready to Move</MenuItem>
                   </Select>
                 </FormControl>
+
               </div>
 
               {/* Buttons: Reset & Apply */}
               <div className="flex justify-center gap-3 mt-4">
                 <button
                   onClick={() => {
-                    setBudget([10, 100]);
+                    setBudget([10, 10000]);
                     setPropertyCategory("Residential");
                     setSelectedSubTypes([]);
                     setPossession("");
                     setPostedBy("");
                     setConstructionStatus("");
                   }}
-                  className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400"
+                  className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 text-sm"
                 >
                   Reset
                 </button>
 
                 <button
                   onClick={() => setShowAdvancedFilters(false)}
-                  className="bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-800"
+                  className="bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-800 text-sm"
                 >
                   Apply Filters
                 </button>
               </div>
-
             </div>
           )}
+
         </div>
 
 
@@ -445,32 +494,71 @@ const Header = () => {
           {/* Conditionally render Login or Profile */}
           {userData ? (
             <div className="relative profile-menu">
-              <FaUserCircle
-                size={32}
-                className="cursor-pointer text-gray-700"
-                onClick={() => setMenuOpen(!menuOpen)}
-              />
-              {menuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10">
-                  <p className="flex items-center gap-2 w-full px-4 py-2 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
-                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-semibold">
-                      📞
-                    </span>
-                    {userData?.phone || "No number"}
-                  </p>
-
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      handleLogout();
-                    }}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
+            <FaUserCircle
+              size={32}
+              className="cursor-pointer text-gray-700"
+              onClick={() => setMenuOpen(!menuOpen)}
+            />
+            {menuOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg z-10">
+                
+                {/* User phone with country code */}
+                <p className="flex items-center gap-2 w-full px-4 py-2 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-semibold">
+                    📞
+                  </span>
+                  {userData?.countryCode} {userData?.phone || "No number"}
+                </p>
+        
+                {/* Profile */}
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate("/profile");
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded-md"
+                >
+                  Profile
+                </button>
+        
+                {/* My Properties */}
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate("/my-properties");
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded-md"
+                >
+                  My Properties
+                </button>
+        
+                {/* Wishlist */}
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate("/wishlist");
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded-md"
+                >
+                  Wishlist
+                </button>
+        
+                {/* Divider */}
+                <div className="border-t border-gray-200 my-1"></div>
+        
+                {/* Logout */}
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-red-600 text-sm hover:bg-gray-100 rounded-md"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
           ) : (
             <a
               href="/login"
