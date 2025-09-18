@@ -57,25 +57,74 @@ const smartServicesTabs = {
 
 // Extra Services
 const insightServices = [
-  { name: "Market Analysis", image: "https://images.pexels.com/photos/590022/pexels-photo-590022.jpeg", link: "/market-analysis" },
-  { name: "Price Trends", image: "https://images.pexels.com/photos/7947664/pexels-photo-7947664.jpeg", link: "/price-trends" },
-  { name: "Investment Reports", image: "https://images.pexels.com/photos/6802042/pexels-photo-6802042.jpeg", link: "/investment-reports" },
-  { name: "Area Demographics", image: "https://images.pexels.com/photos/3182773/pexels-photo-3182773.jpeg", link: "/area-demographics" },
+  { 
+    name: "Price Trends", 
+    image: "https://images.pexels.com/photos/7947664/pexels-photo-7947664.jpeg", 
+    link: "/price-trends" 
+  },
+  { 
+    name: "Heatmaps", 
+    image: "https://images.pexels.com/photos/590022/pexels-photo-590022.jpeg", 
+    link: "/heatmaps" 
+  },
+  { 
+    name: "Price to Income Index", 
+    image: "https://images.pexels.com/photos/6802042/pexels-photo-6802042.jpeg", 
+    link: "/price-income-index" 
+  },
+  { 
+    name: "Emerging Localities", 
+    image: "https://images.unsplash.com/photo-1523217582562-09d0def993a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&q=60", 
+    link: "/emerging-localities" 
+  },
 ];
 
 const trendingServices = [
-  { name: "Smart Homes", image: "https://images.pexels.com/photos/6782351/pexels-photo-6782351.jpeg", link: "/smart-homes" },
-  { name: "Co-working Spaces", image: "https://images.pexels.com/photos/3182782/pexels-photo-3182782.jpeg", link: "/coworking" },
-  { name: "Sustainable Living", image: "https://images.pexels.com/photos/2724749/pexels-photo-2724749.jpeg", link: "/sustainable-living" },
-  { name: "Luxury Condos", image: "https://images.pexels.com/photos/1029599/pexels-photo-1029599.jpeg", link: "/luxury-condos" },
+  { 
+    name: "Trending Projects", 
+    image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&q=60", 
+    link: "/trending-projects" 
+  },
+  { 
+    name: "Trending Localities", 
+    image: "https://images.unsplash.com/photo-1505761671935-60b3a7427bad?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&q=60", 
+    link: "/trending-localities" 
+  },
+  { 
+    name: "Trending Developers", 
+    image: "https://images.unsplash.com/photo-1729838809728-48566c1ef0e9?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", 
+    link: "/trending-developers" 
+  },
+  { 
+    name: "Trending Dealers", 
+    image: "https://plus.unsplash.com/premium_photo-1679857225696-05ce9885bb3b?q=80&w=1742&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", 
+    link: "/trending-dealers" 
+  },
 ];
 
 const curatedServices = [
-  { name: "Premium Locations", image: "https://images.pexels.com/photos/18246434/pexels-photo-18246434.jpeg", link: "/premium-locations" },
-  { name: "Budget Friendly", image: "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg", link: "/budget-friendly" },
-  { name: "Family Homes", image: "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg", link: "/family-homes" },
-  { name: "Investment Properties", image: "https://images.pexels.com/photos/3760067/pexels-photo-3760067.jpeg", link: "/investment-properties" },
+  { 
+    name: "Hot Selling Projects", 
+    image: "https://plus.unsplash.com/premium_photo-1684175656320-5c3f701c082c?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", 
+    link: "/hot-selling-projects" 
+  },
+  { 
+    name: "Affordable Projects", 
+    image: "https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg", 
+    link: "/affordable-projects" 
+  },
+  { 
+    name: "Extra Space, Extra Comfort", 
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&q=60", 
+    link: "/extra-space-comfort" 
+  },
+  { 
+    name: "Special Auction Deals", 
+    image: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&q=60", 
+    link: "/special-auction-deals" 
+  },
 ];
+
 
 
 // Section Component
@@ -216,19 +265,19 @@ const Services = () => {
 
       {/* Other Sections */}
       <ServiceSection
-        title="Data-Driven Insights"
+        title="Smart Insights"
         description="Leverage real-time analytics and expert insights to make informed decisions."
         services={insightServices}
         bgColor="bg-gray-50"
       />
       <ServiceSection
-        title="What's Trending"
+        title="What's Buzzing Today?"
         description="Discover the latest trends shaping modern real estate."
         services={trendingServices}
         bgColor="bg-white"
       />
       <ServiceSection
-        title="Curated Recommendations"
+        title="Our Top Recommendations"
         description="Handpicked properties tailored to your lifestyle and investment goals."
         services={curatedServices}
         bgColor="bg-gray-50"
