@@ -14,7 +14,7 @@ import Location from "./Location.jsx";
 import { Box, Paper } from "@mui/material";
 
 const Header = () => {
-  const { userData } = useSelector((state) => state.auth);
+  const { status, userData } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -70,18 +70,31 @@ const Header = () => {
     fetchUserData();
   }, [dispatch, location.pathname]);
 
-  // Close profile menu when clicking outside
+  // 🔹 Handle outside clicks
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!e.target.closest(".profile-menu")) {
-        setMenuOpen(false);
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileDropdownOpen(false);
       }
     };
-    if (menuOpen) {
-      document.addEventListener("click", handleClickOutside);
-    }
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [menuOpen]);
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsDropdownOpen(false);
+        setIsProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   const toggleSelection = (value) => {
     setSelectedSubTypes((prev) =>
@@ -107,19 +120,17 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // 🔹 Logout handler
   const handleLogout = async () => {
     try {
-      const res = await logoutUser();
-      if (res?.success) {
-        dispatch(logout());
-        localStorage.removeItem("token");
-        toast.success(res.message || "Logout successful");
-        navigate("/");
-      } else {
-        toast.error(res.message || "Something went wrong");
-      }
+      await logoutUser();
+      localStorage.removeItem("token");
+      localStorage.removeItem("userData");
+      localStorage.removeItem("status");
+      dispatch(logout());
+      navigate("/");
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      console.error("Logout failed:", error);
     }
   };
 
@@ -492,7 +503,7 @@ const Header = () => {
           </a>
 
           {/* Conditionally render Login or Profile */}
-          {userData ? (
+          {status ? (
             <div className="relative profile-menu">
             <FaUserCircle
               size={32}
