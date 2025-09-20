@@ -12,12 +12,13 @@ import {
   ResponsiveContainer,
   Label
 } from "recharts";
-import CitySearch from "./CitySearch";
+import Location from "./Location";
 import SubLocalitySearch from "./SubLocalitySearch";
 import { TrendingUp, ChevronLeft, ChevronRight, MapPin, FileText, Building, Target, ShoppingCart, Building2, Calculator, BookOpen, Home } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import dayjs from "dayjs";
 import { FormControl, Select, MenuItem } from "@mui/material";
+import { useLocation } from "react-router-dom";
 
 
 export default function PropertyTrends() {
@@ -25,12 +26,23 @@ export default function PropertyTrends() {
   const [categories, setCategories] = useState([]);
   const [cities, setCities] = useState([]);
   const [selectedType, setSelectedType] = useState("Apartment");
-  const [selectedCity, setSelectedCity] = useState("");
   const [timePeriod, setTimePeriod] = useState("Monthly");
   const [searchType, setSearchType] = useState("");
   const [activeTab, setActiveTab] = useState("price-trends");
   const [tabScrollPosition, setTabScrollPosition] = useState(0);
   const tabContainerRef = useRef(null);
+
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const cityFromURL = params.get("city"); // ✅ get ?city=Delhi
+
+  const [selectedCity, setSelectedCity] = useState("");
+
+  useEffect(() => {
+    if (cityFromURL) {
+      setSelectedCity(cityFromURL);
+    }
+  }, [cityFromURL]);
 
   const tabs = [
     { id: "price-trends", label: "Price Trends", icon: TrendingUp },
@@ -58,7 +70,7 @@ export default function PropertyTrends() {
 
     const scrollAmount = 200; // pixels to scroll
     const currentScroll = container.scrollLeft;
-    
+
     if (direction === 'left') {
       container.scrollTo({
         left: Math.max(0, currentScroll - scrollAmount),
@@ -70,7 +82,7 @@ export default function PropertyTrends() {
         behavior: 'smooth'
       });
     }
-    
+
     // Update scroll position state
     setTimeout(() => {
       setTabScrollPosition(container.scrollLeft);
@@ -103,6 +115,13 @@ export default function PropertyTrends() {
         )];
         setCategories(uniqueCategories);
         setSelectedType(uniqueCategories.includes("Apartment") ? "Apartment" : uniqueCategories[0] || "All");
+
+        // ✅ Set selectedCity AFTER CSV loaded, INSIDE the then()
+        if (cityFromURL && uniqueCities.includes(cityFromURL.trim())) {
+          setSelectedCity(cityFromURL.trim());
+        } else if (!cityFromURL && uniqueCities.length > 0) {
+          setSelectedCity(uniqueCities[0]); // default first city
+        }
       })
       .catch((err) => console.error("CSV load failed:", err));
   }, []);
@@ -241,48 +260,6 @@ export default function PropertyTrends() {
         return (
           <section className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-16 px-4 mt-10">
             <div className="max-w-7xl mx-auto">
-              {/* Search Bar */}
-              <div className="bg-gradient-to-r from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-6 mb-12 hover:shadow-xl transition-all duration-300">
-                <div className="max-w-4xl mx-auto">
-                  <div className="flex items-center mb-4">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-900 via-blue-700 to-blue-500 rounded-full flex items-center justify-center mr-3">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <label className="block text-lg font-bold text-gray-800">Search City</label>
-                      <p className="text-sm text-gray-500">Find property trends in your area</p>
-                    </div>
-                  </div>
-
-                  <CitySearch
-                    cities={cities}
-                    onCitySelect={setSelectedCity}
-                    className="w-full [&>div]:bg-white [&>div]:border-2 [&>div]:border-gray-200 [&>div]:rounded-xl [&>div]:shadow-sm hover:[&>div]:border-blue-800 focus-within:[&>div]:border-blue-700 focus-within:[&>div]:ring-4 focus-within:[&>div]:ring-orange-500/10 [&>div]:transition-all [&>div]:duration-200 [&_input]:text-gray-800 [&_input]:placeholder-gray-400 [&_input]:py-3 [&_input]:px-4 [&_input]:text-base"
-                  />
-
-                  {selectedCity && (
-                    <div className="mt-4 flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-3">
-                      <div className="flex items-center">
-                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mr-3">
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <span className="text-green-700 font-medium">Selected: {selectedCity}</span>
-                      </div>
-                      <button
-                        onClick={() => setSelectedCity("")}
-                        className="text-green-600 hover:text-green-800 font-medium text-sm"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
 
               {/* Chart */}
               <div className="bg-white rounded-3xl shadow-2xl border overflow-hidden">
@@ -547,7 +524,7 @@ export default function PropertyTrends() {
           </div>
           <h1 className="text-5xl font-bold text-gray-800 mb-4">{currentTabLabel}</h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            {activeTab === "price-trends" 
+            {activeTab === "price-trends"
               ? "Track property prices across cities, categories, and time periods"
               : "Comprehensive property insights and market analysis"
             }
@@ -581,8 +558,8 @@ export default function PropertyTrends() {
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex items-center gap-3 px-6 py-4 whitespace-nowrap font-medium transition-all duration-300 border-b-3 ${isActive
-                          ? 'text-blue-700 border-blue-700 bg-blue-50'
-                          : 'text-gray-600 border-transparent hover:text-blue-600 hover:bg-blue-50/50'
+                        ? 'text-blue-700 border-blue-700 bg-blue-50'
+                        : 'text-gray-600 border-transparent hover:text-blue-600 hover:bg-blue-50/50'
                         }`}
                     >
                       <IconComponent className="w-5 h-5" />
@@ -608,8 +585,8 @@ export default function PropertyTrends() {
               <div
                 key={index}
                 className={`w-2 h-2 rounded-full transition-colors duration-300 ${Math.floor(tabs.findIndex(t => t.id === activeTab) / 4) === index
-                    ? 'bg-blue-700'
-                    : 'bg-gray-300'
+                  ? 'bg-blue-700'
+                  : 'bg-gray-300'
                   }`}
               />
             ))}

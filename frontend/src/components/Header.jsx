@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Heart, Search, MapPin, ChevronDown, Filter, Bell } from "lucide-react";
+import { Heart, Search, ChevronDown, Filter, Bell } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -152,37 +152,10 @@ const Header = () => {
             </div>
           </a>
 
-          <Paper
-            elevation={2}
-            onClick={(e) => e.stopPropagation()}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 0.5,
-              width: 140,       // similar to w-36
-              height: 40,       // similar to h-10
-              px: 1,            // horizontal padding
-              borderRadius: 2,  // rounded-lg
-              bgcolor: "white",
-              cursor: "pointer",
-              transition: "all 0.2s ease-in-out",
-              "&:hover": {
-                boxShadow: 3,
-                border: "2px solid #2563eb"
-              },
-            }}
-          >
-            <MapPin
-              size={18}
-              color="#2563eb"
-              style={{ cursor: "pointer" }}
-              onClick={() => document.getElementById("location-input")?.focus()}
-            />
-            <Box sx={{ flex: 1, minWidth: 0 }}>
+          
+          <div className="flex items-center gap-2 w-full">
               <Location onCitySelect={(city) => setSearchQuery(city)} />
-            </Box>
-          </Paper>
-
+            </div>
         </div>
 
 
@@ -505,71 +478,71 @@ const Header = () => {
           {/* Conditionally render Login or Profile */}
           {status ? (
             <div className="relative profile-menu">
-            <FaUserCircle
-              size={32}
-              className="cursor-pointer text-gray-700"
-              onClick={() => setMenuOpen(!menuOpen)}
-            />
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg z-10">
-                
-                {/* User phone with country code */}
-                <p className="flex items-center gap-2 w-full px-4 py-2 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-semibold">
-                    📞
-                  </span>
-                  {userData?.countryCode} {userData?.phone || "No number"}
-                </p>
-        
-                {/* Profile */}
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    navigate("/profile");
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded-md"
-                >
-                  Profile
-                </button>
-        
-                {/* My Properties */}
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    navigate("/my-properties");
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded-md"
-                >
-                  My Properties
-                </button>
-        
-                {/* Wishlist */}
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    navigate("/wishlist");
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded-md"
-                >
-                  Wishlist
-                </button>
-        
-                {/* Divider */}
-                <div className="border-t border-gray-200 my-1"></div>
-        
-                {/* Logout */}
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-red-600 text-sm hover:bg-gray-100 rounded-md"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
+              <FaUserCircle
+                size={32}
+                className="cursor-pointer text-gray-700"
+                onClick={() => setMenuOpen(!menuOpen)}
+              />
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg z-10">
+
+                  {/* User phone with country code */}
+                  <p className="flex items-center gap-2 w-full px-4 py-2 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-semibold">
+                      📞
+                    </span>
+                    {userData?.countryCode} {userData?.phone || "No number"}
+                  </p>
+
+                  {/* Profile */}
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate("/profile");
+                    }}
+                    className="flex items-center w-full px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded-md"
+                  >
+                    Profile
+                  </button>
+
+                  {/* My Properties */}
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate("/my-properties");
+                    }}
+                    className="flex items-center w-full px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded-md"
+                  >
+                    My Properties
+                  </button>
+
+                  {/* Wishlist */}
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate("/wishlist");
+                    }}
+                    className="flex items-center w-full px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded-md"
+                  >
+                    Wishlist
+                  </button>
+
+                  {/* Divider */}
+                  <div className="border-t border-gray-200 my-1"></div>
+
+                  {/* Logout */}
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="flex items-center w-full px-4 py-2 text-red-600 text-sm hover:bg-gray-100 rounded-md"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <a
               href="/login"
