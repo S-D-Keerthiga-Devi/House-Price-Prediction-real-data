@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import SearchIcon from "@mui/icons-material/Search";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"; // ✅ Dropdown icon
-import LocationOnIcon from "@mui/icons-material/LocationOn"; // ✅ Replace Lucide MapPin
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
 
-export default function Location({ onCitySelect }) {
+export default function Location({ onCitySelect, priceMode = false }) {
   const [query, setQuery] = useState("");
   const [detectedCity, setDetectedCity] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // ✅ Fetch Indian cities once
   useEffect(() => {
@@ -63,17 +64,50 @@ export default function Location({ onCitySelect }) {
     }
   }, []);
 
+  // ✅ Listen for price mode activation
+  useEffect(() => {
+    const handlePriceModeActivation = () => {
+      // Set price mode when the event is triggered
+      if (window.priceTrendsMode) {
+        // This is set by the Services component when Price Trends is clicked
+        window.priceTrendsMode = true;
+      }
+    };
+
+    // Listen for custom event
+    window.addEventListener('activatePriceMode', handlePriceModeActivation);
+    return () => window.removeEventListener('activatePriceMode', handlePriceModeActivation);
+  }, []);
+
   const handleSelect = (city) => {
     setQuery(city);
     setOpen(false);
     if (onCitySelect) onCitySelect(city);
-    navigate(`/price-trends?city=${encodeURIComponent(city)}`); // ✅ redirect on select
+    
+    // Only redirect if priceMode is true OR if window.priceTrendsMode is true
+    if (priceMode || window.priceTrendsMode) {
+      navigate(`/price-trends?city=${encodeURIComponent(city)}`);
+      // Reset the global flag
+      window.priceTrendsMode = false;
+    }
   };
 
   const handleSearch = () => {
     if (query.trim() !== "") {
       if (onCitySelect) onCitySelect(query);
-      navigate(`/price-trends?city=${encodeURIComponent(query)}`);
+      
+      // Only redirect if priceMode is true OR if window.priceTrendsMode is true
+      if (priceMode || window.priceTrendsMode) {
+        navigate(`/price-trends?city=${encodeURIComponent(query)}`);
+        // Reset the global flag
+        window.priceTrendsMode = false;
+      }
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
     }
   };
 
@@ -96,33 +130,30 @@ export default function Location({ onCitySelect }) {
     >
       <LocationOnIcon
         sx={{
-          color: "#2563eb",           // blue icon
-          mr: 1,                      // margin-right
-          fontSize: 24,               // override size (px)
-          backgroundColor: "#eff6ff", // light blue background
-          borderRadius: "50%",        // circle background
-          padding: "4px",             // spacing inside circle
-          boxShadow: "0 2px 6px rgba(0,0,0,0.1)", // subtle shadow
+          color: "#2563eb",
+          mr: 1,
+          fontSize: 24,
+          backgroundColor: "#eff6ff",
+          borderRadius: "50%",
+          padding: "4px",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
           cursor: "pointer",
           transition: "all 0.2s ease-in-out",
           "&:hover": {
-            backgroundColor: "#dbeafe", // darker blue background on hover
-            transform: "scale(1.1)",   // zoom effect
+            backgroundColor: "#dbeafe",
+            transform: "scale(1.1)",
           },
         }}
       />
 
-
-      {/* Input box (smaller size) */}
+      {/* Input box */}
       <input
         id="location-input"
         type="text"
         value={query}
         onClick={() => setOpen(true)}
         onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") handleSearch();
-        }}
+        onKeyDown={handleKeyDown}
         onBlur={() => {
           if (query.trim() === "" && detectedCity) {
             setQuery(detectedCity);
@@ -133,8 +164,8 @@ export default function Location({ onCitySelect }) {
         className="h-7 w-20 px-2 border-0 bg-transparent text-xs text-gray-800 placeholder-gray-400 focus:outline-none"
       />
 
-      {/* Search button (only show when user types a city, not just detected one) */}
-      {query.trim() !== "" && query !== detectedCity && (
+      {/* Search button - show when user types and either priceMode is true or priceTrendsMode is active */}
+      {(priceMode || window.priceTrendsMode) && query.trim() !== "" && query !== detectedCity && (
         <button
           onClick={handleSearch}
           className="p-1 text-gray-500 hover:text-blue-600"
@@ -142,8 +173,6 @@ export default function Location({ onCitySelect }) {
           <SearchIcon fontSize="small" />
         </button>
       )}
-
-
 
       {/* Dropdown toggle button */}
       <button

@@ -1,3 +1,4 @@
+// priceTrends.jsx
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import Papa from "papaparse";
 import {
@@ -14,12 +15,13 @@ import {
 } from "recharts";
 import Location from "./Location";
 import SubLocalitySearch from "./SubLocalitySearch";
+import CityInfoCard from "./CityInfoCard";
 import { TrendingUp, ChevronLeft, ChevronRight, MapPin, FileText, Building, Target, ShoppingCart, Building2, Calculator, BookOpen, Home } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import dayjs from "dayjs";
-import { FormControl, Select, MenuItem } from "@mui/material";
+import { FormControl, Select, MenuItem, Typography, Box } from "@mui/material";
 import { useLocation } from "react-router-dom";
-
+import { houseDetails } from "../api/house.js";
 
 export default function PropertyTrends() {
   const [timeSeriesData, setTimeSeriesData] = useState([]);
@@ -30,11 +32,12 @@ export default function PropertyTrends() {
   const [searchType, setSearchType] = useState("");
   const [activeTab, setActiveTab] = useState("price-trends");
   const [tabScrollPosition, setTabScrollPosition] = useState(0);
+  const [selectedSubLocality, setSelectedSubLocality] = useState("");
   const tabContainerRef = useRef(null);
 
   const { search } = useLocation();
   const params = new URLSearchParams(search);
-  const cityFromURL = params.get("city"); // ✅ get ?city=Delhi
+  const cityFromURL = params.get("city");
 
   const [selectedCity, setSelectedCity] = useState("");
 
@@ -58,17 +61,15 @@ export default function PropertyTrends() {
     { id: "property-types", label: "Property Types", icon: Home },
   ];
 
-  // Get current tab info for dynamic heading
   const currentTab = tabs.find(tab => tab.id === activeTab);
   const currentTabIcon = currentTab?.icon || TrendingUp;
   const currentTabLabel = currentTab?.label || "Property Dashboard";
 
-  // Scroll tabs function
   const scrollTabs = (direction) => {
     const container = tabContainerRef.current;
     if (!container) return;
 
-    const scrollAmount = 200; // pixels to scroll
+    const scrollAmount = 200;
     const currentScroll = container.scrollLeft;
 
     if (direction === 'left') {
@@ -83,11 +84,14 @@ export default function PropertyTrends() {
       });
     }
 
-    // Update scroll position state
     setTimeout(() => {
       setTabScrollPosition(container.scrollLeft);
     }, 300);
   };
+
+  useEffect(() => {
+    setSelectedSubLocality("");
+  }, [selectedCity]);
 
   useEffect(() => {
     fetch("/data/price_timeseries.csv")
@@ -102,8 +106,8 @@ export default function PropertyTrends() {
         filteredData.forEach(d => {
           d.city = d.city.trim();
           d.property_category = d.property_category?.trim();
+          d.sub_locality = d.location?.trim();
         });
-
         setTimeSeriesData(filteredData);
 
         const uniqueCities = [...new Set(filteredData.map(d => d.city))];
@@ -116,17 +120,15 @@ export default function PropertyTrends() {
         setCategories(uniqueCategories);
         setSelectedType(uniqueCategories.includes("Apartment") ? "Apartment" : uniqueCategories[0] || "All");
 
-        // ✅ Set selectedCity AFTER CSV loaded, INSIDE the then()
         if (cityFromURL && uniqueCities.includes(cityFromURL.trim())) {
           setSelectedCity(cityFromURL.trim());
         } else if (!cityFromURL && uniqueCities.length > 0) {
-          setSelectedCity(uniqueCities[0]); // default first city
+          setSelectedCity(uniqueCities[0]);
         }
       })
       .catch((err) => console.error("CSV load failed:", err));
   }, []);
 
-  // Last 12 months
   const last12Months = useMemo(() => {
     const months = [];
     let current = dayjs().subtract(1, "month");
@@ -137,9 +139,7 @@ export default function PropertyTrends() {
     return months;
   }, []);
 
-  // Quarter labels
   const getQuarterMonths = (quarterStr) => {
-    // quarterStr example: "2024Q3"
     const year = quarterStr.slice(0, 4);
     const q = parseInt(quarterStr.slice(5), 10);
 
@@ -153,7 +153,6 @@ export default function PropertyTrends() {
     return `${quarterMap[q]} ${year}`;
   };
 
-  // Helper: convert monthly data to quarterly averages
   const groupToQuarters = (data) => {
     if (!data || !data.length) return [];
 
@@ -164,13 +163,12 @@ export default function PropertyTrends() {
       4: "Oct-Dec",
     };
 
-    // Group by year and quarter
     const quartersObj = {};
 
     data.forEach(d => {
       if (!d.month || !d.year || !d.rate_sqft) return;
 
-      const monthNum = dayjs(`${d.month}-${d.year}`, "MMM-YYYY").month() + 1; // 1-12
+      const monthNum = dayjs(`${d.month}-${d.year}`, "MMM-YYYY").month() + 1;
       const quarter = Math.floor((monthNum - 1) / 3) + 1;
       const key = `${d.year}-Q${quarter}`;
 
@@ -178,7 +176,6 @@ export default function PropertyTrends() {
       quartersObj[key].push(d.rate_sqft);
     });
 
-    // Convert to array with average
     const quartersArray = Object.keys(quartersObj)
       .sort()
       .map(key => {
@@ -196,82 +193,313 @@ export default function PropertyTrends() {
     return quartersArray;
   };
 
-  // Chart data
-  const chartData = useMemo(() => {
-    if (!selectedCity) return [];
+  // Interpolate missing values to fill gaps
+  const interpolateData = (data) => {
+    if (!data || data.length === 0) return data;
+    
+    // Find first and last non-null values
+    let firstNonNull = -1;
+    let lastNonNull = -1;
+    
+    for (let i = 0; i < data.length; i++) {
+      if (data[i] !== null) {
+        if (firstNonNull === -1) firstNonNull = i;
+        lastNonNull = i;
+      }
+    }
+    
+    // If no data or only one point, return as is
+    if (firstNonNull === -1 || firstNonNull === lastNonNull) return data;
+    
+    // Forward fill from first non-null
+    for (let i = 0; i < firstNonNull; i++) {
+      data[i] = data[firstNonNull];
+    }
+    
+    // Backward fill from last non-null
+    for (let i = lastNonNull + 1; i < data.length; i++) {
+      data[i] = data[lastNonNull];
+    }
+    
+    // Interpolate between non-null values
+    let prevNonNull = firstNonNull;
+    for (let i = firstNonNull + 1; i < lastNonNull; i++) {
+      if (data[i] === null) {
+        // Find next non-null
+        let nextNonNull = i + 1;
+        while (nextNonNull <= lastNonNull && data[nextNonNull] === null) {
+          nextNonNull++;
+        }
+        
+        if (nextNonNull <= lastNonNull) {
+          // Linear interpolation
+          const prevValue = data[prevNonNull];
+          const nextValue = data[nextNonNull];
+          const steps = nextNonNull - prevNonNull;
+          
+          for (let j = prevNonNull + 1; j < nextNonNull; j++) {
+            const ratio = (j - prevNonNull) / steps;
+            data[j] = Math.round(prevValue + ratio * (nextValue - prevValue));
+          }
+          
+          i = nextNonNull - 1; // Skip the filled values
+          prevNonNull = nextNonNull;
+        }
+      } else {
+        prevNonNull = i;
+      }
+    }
+    
+    return data;
+  };
 
-    const filtered = timeSeriesData.filter(d => {
+  // Get valid localities with at least 2 data points
+  const validLocalities = useMemo(() => {
+    if (!selectedCity) return [];
+    
+    const cityData = timeSeriesData.filter(d => {
       const matchCity = d.city.toLowerCase() === selectedCity.toLowerCase();
       const matchCategory = selectedType === "All" || d.property_category === selectedType;
       return matchCity && matchCategory;
     });
-    if (!filtered.length) return [];
+
+    const localityCounts = {};
+    
+    cityData.forEach(d => {
+      if (!d.sub_locality) return;
+      
+      let key;
+      if (timePeriod === "Monthly") {
+        key = dayjs(`${d.month}-${d.year}`, "MMM-YYYY").format("MMM-YY");
+      } else if (timePeriod === "Quarterly") {
+        const monthNum = dayjs(`${d.month}-${d.year}`, "MMM-YYYY").month() + 1;
+        const quarter = Math.floor((monthNum - 1) / 3) + 1;
+        const quarterMap = { 1: "Jan-Mar", 2: "Apr-Jun", 3: "Jul-Sep", 4: "Oct-Dec" };
+        key = `${quarterMap[quarter]} ${d.year}`;
+      } else {
+        key = d.year.toString();
+      }
+      
+      if (!localityCounts[d.sub_locality]) {
+        localityCounts[d.sub_locality] = new Set();
+      }
+      localityCounts[d.sub_locality].add(key);
+    });
+
+    return Object.keys(localityCounts)
+      .filter(locality => localityCounts[locality].size >= 2)
+      .sort();
+  }, [selectedCity, selectedType, timePeriod, timeSeriesData]);
+
+  // Reset selected sub-locality if it's no longer valid
+  useEffect(() => {
+    if (selectedSubLocality && !validLocalities.includes(selectedSubLocality)) {
+      setSelectedSubLocality("");
+    }
+  }, [validLocalities, selectedSubLocality]);
+
+  const chartData = useMemo(() => {
+    if (!selectedCity) return [];
+
+    const cityData = timeSeriesData.filter(d => {
+      const matchCity = d.city.toLowerCase() === selectedCity.toLowerCase();
+      const matchCategory = selectedType === "All" || d.property_category === selectedType;
+      return matchCity && matchCategory;
+    });
+
+    const localityData = selectedSubLocality ? timeSeriesData.filter(d => {
+      const matchCity = d.city.toLowerCase() === selectedCity.toLowerCase();
+      const matchCategory = selectedType === "All" || d.property_category === selectedType;
+      const matchSubLocality = d.sub_locality && d.sub_locality.toLowerCase() === selectedSubLocality.toLowerCase();
+      return matchCity && matchCategory && matchSubLocality;
+    }) : [];
+
+    if (!cityData.length) return [];
+
+    const processData = (data) => {
+      const dataMap = new Map();
+
+      data.forEach(d => {
+        let key;
+        if (timePeriod === "Monthly") {
+          key = dayjs(`${d.month}-${d.year}`, "MMM-YYYY").format("MMM-YY");
+        } else if (timePeriod === "Quarterly") {
+          const monthNum = dayjs(`${d.month}-${d.year}`, "MMM-YYYY").month() + 1;
+          const quarter = Math.floor((monthNum - 1) / 3) + 1;
+          const quarterMap = { 1: "Jan-Mar", 2: "Apr-Jun", 3: "Jul-Sep", 4: "Oct-Dec" };
+          key = `${quarterMap[quarter]} ${d.year}`;
+        } else {
+          key = d.year.toString();
+        }
+
+        if (!dataMap.has(key)) dataMap.set(key, []);
+        dataMap.get(key).push(d.rate_sqft);
+      });
+
+      const result = new Map();
+      dataMap.forEach((rates, key) => {
+        const avgRate = Math.round(rates.reduce((sum, rate) => sum + rate, 0) / rates.length);
+        result.set(key, avgRate);
+      });
+
+      return result;
+    };
+
+    const cityProcessed = processData(cityData);
+    const localityProcessed = selectedSubLocality ? processData(localityData) : new Map();
 
     if (timePeriod === "Monthly") {
-      return last12Months.map(monthStr => {
+      const result = last12Months.map(monthStr => {
         const [m, y] = monthStr.split("-");
-        const monthData = filtered.filter(d =>
-          dayjs(`${d.month}-${d.year}`, "MMM-YYYY").format("MMM-YY") === monthStr
-        );
-        const avgRate = monthData.length
-          ? Math.round(monthData.reduce((sum, d) => sum + d.rate_sqft, 0) / monthData.length)
-          : null;
         const fullDate = dayjs(`${m}-20${y}`, "MMM-YYYY");
-        return { period: fullDate.format("MMM YYYY"), rate_sqft: avgRate, sortKey: monthStr };
-      }).filter(d => d.rate_sqft !== null);
+
+        return {
+          period: fullDate.format("MMM YYYY"),
+          city_rate: cityProcessed.get(monthStr) || null,
+          locality_rate: selectedSubLocality ? (localityProcessed.get(monthStr) || null) : null,
+          sortKey: monthStr
+        };
+      });
+      
+      // Interpolate missing values
+      const cityRates = result.map(d => d.city_rate);
+      const interpolatedCityRates = [...interpolateData([...cityRates])];
+      const localityRates = result.map(d => d.locality_rate);
+      const interpolatedLocalityRates = selectedSubLocality ? [...interpolateData([...localityRates])] : null;
+      
+      return result.map((d, i) => ({
+        ...d,
+        city_rate: interpolatedCityRates[i],
+        locality_rate: interpolatedLocalityRates ? interpolatedLocalityRates[i] : null
+      }));
     }
 
     if (timePeriod === "Quarterly") {
-      const filtered = timeSeriesData.filter(d => {
-        const matchCity = d.city.toLowerCase() === selectedCity.toLowerCase();
-        const matchCategory = selectedType === "All" || d.property_category === selectedType;
-        return matchCity && matchCategory;
-      });
+      const allPeriods = new Set([
+        ...Array.from(cityProcessed.keys()),
+        ...Array.from(localityProcessed.keys())
+      ]);
 
-      return groupToQuarters(filtered);
+      const periods = Array.from(allPeriods).sort();
+      const result = periods.map(period => ({
+        period,
+        city_rate: cityProcessed.get(period) || null,
+        locality_rate: selectedSubLocality ? (localityProcessed.get(period) || null) : null
+      }));
+      
+      // Interpolate missing values
+      const cityRates = result.map(d => d.city_rate);
+      const interpolatedCityRates = [...interpolateData([...cityRates])];
+      const localityRates = result.map(d => d.locality_rate);
+      const interpolatedLocalityRates = selectedSubLocality ? [...interpolateData([...localityRates])] : null;
+      
+      return result.map((d, i) => ({
+        ...d,
+        city_rate: interpolatedCityRates[i],
+        locality_rate: interpolatedLocalityRates ? interpolatedLocalityRates[i] : null
+      }));
     }
 
-
-
     if (timePeriod === "Yearly") {
-      const years = {};
-      filtered.forEach(d => {
-        if (!years[d.year]) years[d.year] = [];
-        years[d.year].push(d.rate_sqft);
-      });
-      return Object.keys(years).sort().map(y => ({
-        period: y.toString(),
-        rate_sqft: Math.round(years[y].reduce((a, b) => a + b, 0) / years[y].length)
+      const allPeriods = new Set([
+        ...Array.from(cityProcessed.keys()),
+        ...Array.from(localityProcessed.keys())
+      ]);
+
+      const periods = Array.from(allPeriods).sort();
+      const result = periods.map(period => ({
+        period,
+        city_rate: cityProcessed.get(period) || null,
+        locality_rate: selectedSubLocality ? (localityProcessed.get(period) || null) : null
+      }));
+      
+      // Interpolate missing values
+      const cityRates = result.map(d => d.city_rate);
+      const interpolatedCityRates = [...interpolateData([...cityRates])];
+      const localityRates = result.map(d => d.locality_rate);
+      const interpolatedLocalityRates = selectedSubLocality ? [...interpolateData([...localityRates])] : null;
+      
+      return result.map((d, i) => ({
+        ...d,
+        city_rate: interpolatedCityRates[i],
+        locality_rate: interpolatedLocalityRates ? interpolatedLocalityRates[i] : null
       }));
     }
 
     return [];
-  }, [selectedCity, selectedType, timePeriod, timeSeriesData, last12Months]);
+  }, [selectedCity, selectedType, timePeriod, timeSeriesData, last12Months, selectedSubLocality]);
 
-  const highest = chartData.length ? Math.max(...chartData.map(d => d.rate_sqft)) : 0;
-  const lowest = chartData.length ? Math.min(...chartData.map(d => d.rate_sqft)) : 0;
-  const average = chartData.length
-    ? Math.round(chartData.reduce((s, d) => s + d.rate_sqft, 0) / chartData.length)
+  const cityRates = chartData.map(d => d.city_rate).filter(r => r !== null);
+  const localityRates = chartData.map(d => d.locality_rate).filter(r => r !== null);
+  const allRates = [...cityRates, ...localityRates];
+
+  const highest = allRates.length ? Math.max(...allRates) : 0;
+  const lowest = allRates.length ? Math.min(...allRates) : 0;
+  const cityAverage = cityRates.length
+    ? Math.round(cityRates.reduce((s, d) => s + d, 0) / cityRates.length)
     : 0;
+  const localityAverage = localityRates.length
+    ? Math.round(localityRates.reduce((s, d) => s + d, 0) / localityRates.length)
+    : 0;
+
+  const hasAnyCityData = cityRates.length > 0;
+  const hasLocalityData = localityRates.length > 0;
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "price-trends":
         return (
-          <section className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-16 px-4 mt-10">
-            <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-white rounded-3xl shadow-2xl border overflow-hidden">
+              {selectedCity && hasAnyCityData ? (
+                <>
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-6 border-b">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                          Price Trends
+                          {selectedSubLocality && (
+                            <span className="text-lg font-medium text-blue-600 ml-2">
+                              - {selectedSubLocality}
+                            </span>
+                          )}
+                        </h2>
+                        <p className="text-gray-600 mt-1">
+                          Track property prices across cities, categories, and time periods
+                        </p>
 
-              {/* Chart */}
-              <div className="bg-white rounded-3xl shadow-2xl border overflow-hidden">
-                {selectedCity && chartData.length > 0 ? (
-                  <>
-                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-8 py-6 border-b flex justify-between items-center">
-                      <h2 className="text-2xl font-bold text-gray-900">{selectedCity} Price Trends</h2>
+                        <div className="flex items-center gap-6 mt-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-3 bg-blue-800 bg-opacity-20 border border-blue-800"></div>
+                            <span className="text-sm text-gray-600">{selectedCity} {timePeriod}</span>
+                          </div>
+                          {selectedSubLocality && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-3 bg-green-600 bg-opacity-20 border border-green-600"></div>
+                              <span className="text-sm text-gray-600">{selectedSubLocality} {timePeriod}</span>
+                            </div>
+                          )}
+                        </div>
 
-                      {/* Time period + property type */}
+                        {!selectedSubLocality && (
+                          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 bg-blue-400 rounded-full flex-shrink-0"></div>
+                              <p className="text-sm text-blue-800">
+                                Select a sub-locality to view its detailed price trends alongside {selectedCity}.
+                                <span className="block mt-1">Only sub-localities with sufficient data are shown.</span>
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="flex gap-4 items-center">
-                        {/* Sub-Locality Selector */}
-                        <SubLocalitySearch city={selectedCity} />
+                        <SubLocalitySearch
+                          city={selectedCity}
+                          onSelect={(loc) => setSelectedSubLocality(loc)}
+                          validLocalities={validLocalities}
+                        />
 
                         <FormControl
                           size="small"
@@ -284,11 +512,11 @@ export default function PropertyTrends() {
                               borderRadius: 2,
                             },
                             "& .MuiOutlinedInput-notchedOutline": {
-                              borderColor: "#e5e7eb", // gray-200
+                              borderColor: "#e5e7eb",
                               borderWidth: 2,
                             },
                             "&:hover .MuiOutlinedInput-notchedOutline": {
-                              borderColor: "#1d4ed8", // blue-700 on hover
+                              borderColor: "#1d4ed8",
                             },
                             "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                               borderColor: "#1d4ed8",
@@ -316,14 +544,14 @@ export default function PropertyTrends() {
                               borderRadius: 2,
                             },
                             "& .MuiOutlinedInput-notchedOutline": {
-                              borderColor: "#e5e7eb", // gray-200
+                              borderColor: "#e5e7eb",
                               borderWidth: 2,
                             },
                             "&:hover .MuiOutlinedInput-notchedOutline": {
-                              borderColor: "#1d4ed8", // blue-700
+                              borderColor: "#1d4ed8",
                             },
                             "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                              borderColor: "#1d4ed8", // blue-700
+                              borderColor: "#1d4ed8",
                             },
                           }}
                         >
@@ -339,158 +567,182 @@ export default function PropertyTrends() {
                             ))}
                           </Select>
                         </FormControl>
-
                       </div>
-                    </div>
-
-                    <div className="p-8">
-                      <ResponsiveContainer width="100%" height={450}>
-                        {timePeriod === "Yearly" ? (
-                          <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" opacity={0.8} />
-
-                            <XAxis dataKey="period">
-                              <Label value="Year" offset={0} position="insideBottom" fontSize={14} fill="#1e3a8a" />
-                            </XAxis>
-
-                            <YAxis stroke="#1e3a8a" fontSize={12} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}>
-                              <Label
-                                value="Price per sqft"
-                                angle={-90}
-                                position="insideLeft"
-                                offset={0}
-                                style={{ textAnchor: "middle", fill: "#1e3a8a", fontSize: 14 }}
-                              />
-                            </YAxis>
-
-                            <Tooltip formatter={(value) => [`₹${value.toLocaleString()}`, "Price per sqft"]} />
-
-                            <Area
-                              type="monotone"
-                              dataKey="rate_sqft"
-                              stroke="#1e3a8a"
-                              fill="rgba(30,58,138,0.3)"
-                              strokeWidth={3}
-                            />
-                          </AreaChart>
-                        ) : (
-                          <LineChart
-                            data={chartData}
-                            margin={{ top: 20, right: 30, left: 20, bottom: timePeriod === "Quarterly" ? 80 : 60 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" opacity={0.8} />
-
-                            <XAxis
-                              dataKey="period"
-                              interval={0} // show all labels
-                              tick={({ x, y, payload }) => {
-                                const words = payload.value.split(" "); // "Jan 2025"
-                                if (timePeriod === "Monthly") {
-                                  return (
-                                    <text
-                                      x={x}
-                                      y={y + 15} // move labels slightly below axis
-                                      textAnchor="end" // align right for rotation
-                                      fontSize={12}
-                                      transform={`rotate(-30, ${x}, ${y + 15})`} // rotate to avoid overlap
-                                      fill="#64748b"
-                                    >
-                                      {words.map((word, i) => (
-                                        <tspan key={i} x={x} dy={i === 0 ? 0 : 15}>
-                                          {word}
-                                        </tspan>
-                                      ))}
-                                    </text>
-                                  );
-                                } else {
-                                  // Quarterly / Yearly
-                                  return (
-                                    <text x={x} y={y + 10} textAnchor="middle" fontSize={12} fill="#64748b">
-                                      {words.map((word, i) => (
-                                        <tspan key={i} x={x} dy={i === 0 ? 0 : 15}>
-                                          {word}
-                                        </tspan>
-                                      ))}
-                                    </text>
-                                  );
-                                }
-                              }}
-                            >
-                              <Label
-                                value="Period"
-                                offset={timePeriod === "Monthly" ? -35 : -30} // adjust label below rotated ticks
-                                position="insideBottom"
-                                fontSize={14}
-                                fill="#64748b"
-                              />
-                            </XAxis>
-
-
-
-                            <YAxis stroke="#64748b" fontSize={12} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}>
-                              <Label
-                                value="Price per sqft"
-                                angle={-90}
-                                position="insideLeft"
-                                offset={0}
-                                style={{ textAnchor: "middle", fill: "#64748b", fontSize: 14 }}
-                              />
-                            </YAxis>
-
-                            <Tooltip formatter={(value) => [`₹${value.toLocaleString()}`, "Price per sqft"]} labelFormatter={(label) => `Period: ${label}`} />
-
-                            <Line
-                              type="monotone"
-                              dataKey="rate_sqft"
-                              stroke="#1e3a8a"
-                              strokeWidth={3}
-                              dot={{ fill: "#1e3a8a", strokeWidth: 2, r: 5 }}
-                              activeDot={{ r: 7, stroke: "#1e3a8a", strokeWidth: 2, fill: "white" }}
-                            />
-                          </LineChart>
-                        )}
-                      </ResponsiveContainer>
-
-                    </div>
-                  </>
-                ) : (
-                  <div className="h-96 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-gray-400 mb-2">
-                        <TrendingUp className="w-16 h-16 mx-auto opacity-50" />
-                      </div>
-                      <p className="text-gray-500 text-lg">Select a city to view price trends</p>
-                      <p className="text-gray-400 text-sm">Choose from the dropdown above</p>
                     </div>
                   </div>
-                )}
-              </div>
 
-              {/* Summary stats */}
-              {selectedCity && chartData.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                  <Card className="border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-blue-100">
-                    <CardContent className="pt-6">
-                      <div className="text-3xl font-bold text-blue-600">₹{highest.toLocaleString()}</div>
-                      <p className="text-sm text-blue-700 font-medium">Highest Price/sqft</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-2 border-green-100 bg-gradient-to-br from-green-50 to-green-100">
-                    <CardContent className="pt-6">
-                      <div className="text-3xl font-bold text-green-600">₹{average.toLocaleString()}</div>
-                      <p className="text-sm text-green-700 font-medium">Average Price/sqft</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-2 border-orange-100 bg-gradient-to-br from-orange-50 to-orange-100">
-                    <CardContent className="pt-6">
-                      <div className="text-3xl font-bold text-orange-600">₹{lowest.toLocaleString()}</div>
-                      <p className="text-sm text-orange-700 font-medium">Lowest Price/sqft</p>
-                    </CardContent>
-                  </Card>
+                  <div className="p-8">
+                    <ResponsiveContainer width="100%" height={450}>
+                      <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: timePeriod === "Quarterly" ? 80 : 60 }}>
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="#e2e8f0"
+                          opacity={0.6}
+                          horizontal={true}
+                          vertical={true}
+                          strokeWidth={1}
+                        />
+
+                        <XAxis
+                          dataKey="period"
+                          interval={0}
+                          tick={({ x, y, payload }) => {
+                            const words = payload.value.split(" ");
+                            if (timePeriod === "Monthly") {
+                              return (
+                                <text
+                                  x={x}
+                                  y={y + 15}
+                                  textAnchor="end"
+                                  fontSize={12}
+                                  transform={`rotate(-30, ${x}, ${y + 15})`}
+                                  fill="#64748b"
+                                >
+                                  {words.map((word, i) => (
+                                    <tspan key={i} x={x} dy={i === 0 ? 0 : 15}>
+                                      {word}
+                                    </tspan>
+                                  ))}
+                                </text>
+                              );
+                            } else {
+                              return (
+                                <text x={x} y={y + 10} textAnchor="middle" fontSize={12} fill="#64748b">
+                                  {words.map((word, i) => (
+                                    <tspan key={i} x={x} dy={i === 0 ? 0 : 15}>
+                                      {word}
+                                    </tspan>
+                                  ))}
+                                </text>
+                              );
+                            }
+                          }}
+                        >
+                          <Label
+                            value="Period"
+                            offset={timePeriod === "Monthly" ? -35 : -30}
+                            position="insideBottom"
+                            fontSize={14}
+                            fill="#64748b"
+                          />
+                        </XAxis>
+
+                        <YAxis
+                          stroke="#64748b"
+                          fontSize={12}
+                          tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}
+                          domain={[(dataMin) => Math.max(0, dataMin - 2000), (dataMax) => dataMax + 2000]}
+                          scale="linear"
+                          tickCount={10}
+                        >
+                          <Label
+                            value="Price per sqft"
+                            angle={-90}
+                            position="insideLeft"
+                            offset={0}
+                            style={{ textAnchor: "middle", fill: "#64748b", fontSize: 14 }}
+                          />
+                        </YAxis>
+
+                        <Tooltip
+                          formatter={(value, name) => {
+                            if (name === 'city_rate') {
+                              return [`₹${value?.toLocaleString()}`, `${selectedCity} ${timePeriod}`];
+                            } else if (name === 'locality_rate') {
+                              return [`₹${value?.toLocaleString()}`, `${selectedSubLocality} ${timePeriod}`];
+                            }
+                            return [`₹${value?.toLocaleString()}`, name];
+                          }}
+                          labelFormatter={(label) => `Period: ${label}`}
+                          contentStyle={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }}
+                        />
+
+                        {/* City-wide area */}
+                        <Area
+                          type="monotone"
+                          dataKey="city_rate"
+                          stroke="#1e3a8a"
+                          fill="rgba(30,58,138,0.2)"
+                          strokeWidth={2}
+                          connectNulls={true}
+                          name="city_rate"
+                          dot={{ r: 4 }}
+                        />
+
+                        {/* Sub-locality area */}
+                        {selectedSubLocality && hasLocalityData && (
+                          <Area
+                            type="monotone"
+                            dataKey="locality_rate"
+                            stroke="#059669"
+                            fill="rgba(5,150,105,0.2)"
+                            strokeWidth={2}
+                            connectNulls={true}
+                            name="locality_rate"
+                            dot={{ r: 4 }}
+                          />
+                        )}
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              ) : (
+                <div className="h-96 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-gray-400 mb-2">
+                      <TrendingUp className="w-16 h-16 mx-auto opacity-50" />
+                    </div>
+                    <p className="text-gray-500 text-lg">
+                      {selectedCity
+                        ? `No data available for ${selectedCity}`
+                        : "Select a city to view price trends"
+                      }
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                      {selectedCity
+                        ? "Try selecting a different property type or check back later"
+                        : "Choose from the dropdown above"
+                      }
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
-          </section>
+
+            {selectedCity && hasAnyCityData && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                <Card className="border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-blue-100">
+                  <CardContent className="pt-6">
+                    <div className="text-3xl font-bold text-blue-600">₹{highest.toLocaleString()}</div>
+                    <p className="text-sm text-blue-700 font-medium">Highest Price/sqft</p>
+                  </CardContent>
+                </Card>
+                <Card className="border-2 border-green-100 bg-gradient-to-br from-green-50 to-green-100">
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold text-green-600">₹{cityAverage.toLocaleString()}</div>
+                    <p className="text-sm text-green-700 font-medium">{selectedCity} Average</p>
+                    {selectedSubLocality && localityAverage > 0 && (
+                      <>
+                        <div className="text-2xl font-bold text-emerald-600 mt-2">₹{localityAverage.toLocaleString()}</div>
+                        <p className="text-sm text-emerald-700 font-medium">{selectedSubLocality} Average</p>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+                <Card className="border-2 border-orange-100 bg-gradient-to-br from-orange-50 to-orange-100">
+                  <CardContent className="pt-6">
+                    <div className="text-3xl font-bold text-orange-600">₹{lowest.toLocaleString()}</div>
+                    <p className="text-sm text-orange-700 font-medium">Lowest Price/sqft</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
         );
       default:
         return (
@@ -515,26 +767,18 @@ export default function PropertyTrends() {
   };
 
   return (
-    <section className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-16 px-4">
+    <section className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-16 px-4 mt-10">
       <div className="max-w-7xl mx-auto">
-        {/* Dynamic Header - Changes based on active tab */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-900 via-blue-700 to-blue-500 rounded-2xl mb-6 mt-10 shadow-lg">
-            {React.createElement(currentTabIcon, { className: "w-8 h-8 text-white" })}
+        {/* City Info Card - shown above the tabs */}
+        {activeTab === "price-trends" && selectedCity && (
+          <div className="mb-8">
+            <CityInfoCard city={selectedCity} averagePrice={cityAverage} />
           </div>
-          <h1 className="text-5xl font-bold text-gray-800 mb-4">{currentTabLabel}</h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            {activeTab === "price-trends"
-              ? "Track property prices across cities, categories, and time periods"
-              : "Comprehensive property insights and market analysis"
-            }
-          </p>
-        </div>
+        )}
 
-        {/* Tab Navigation Carousel */}
+        {/* Tabs Navigation */}
         <div className="relative mb-8">
           <div className="flex items-center bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            {/* Left scroll button */}
             <button
               onClick={() => scrollTabs('left')}
               className="flex-shrink-0 p-3 hover:bg-gray-50 transition-colors duration-200 border-r border-gray-100"
@@ -543,7 +787,6 @@ export default function PropertyTrends() {
               <ChevronLeft className={`w-5 h-5 ${tabScrollPosition === 0 ? 'text-gray-300' : 'text-gray-600'}`} />
             </button>
 
-            {/* Scrollable tabs container */}
             <div
               ref={tabContainerRef}
               className="flex overflow-x-auto scrollbar-hide flex-1"
@@ -570,7 +813,6 @@ export default function PropertyTrends() {
               </div>
             </div>
 
-            {/* Right scroll button */}
             <button
               onClick={() => scrollTabs('right')}
               className="flex-shrink-0 p-3 hover:bg-gray-50 transition-colors duration-200 border-l border-gray-100"
@@ -579,7 +821,6 @@ export default function PropertyTrends() {
             </button>
           </div>
 
-          {/* Tab indicator dots */}
           <div className="flex justify-center mt-4 gap-2">
             {Array.from({ length: Math.ceil(tabs.length / 4) }).map((_, index) => (
               <div

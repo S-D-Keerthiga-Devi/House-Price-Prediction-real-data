@@ -124,70 +124,6 @@ const curatedServices = [
   },
 ];
 
-// Modal Component
-const CitySelectionModal = ({ isOpen, onClose }) => {
-  if (!isOpen) return null;
-
-  // Focus on location input when modal opens
-  React.useEffect(() => {
-    if (isOpen) {
-      const timer = setTimeout(() => {
-        const locationInput = document.getElementById("location-input");
-        if (locationInput) {
-          locationInput.focus();
-          locationInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      }, 300); // Small delay to ensure modal animation completes
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
-
-  return (
-    <>
-      {/* Overlay excluding header area */}
-      <div className="fixed inset-0 z-40">
-        {/* Dark overlay only below header (assume header height = 64px / h-16) */}
-        <div className="absolute top-16 left-0 right-0 bottom-0 bg-black bg-opacity-60"></div>
-      </div>
-  
-      {/* Modal positioned in center */}
-      <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-in fade-in duration-200 pointer-events-auto">
-          <div className="flex items-center justify-between p-6 border-b">
-            <h3 className="text-lg font-semibold text-gray-900">Select Your City</h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-  
-          <div className="p-6">
-            <div className="flex items-center mb-4">
-              <MapPin className="w-5 h-5 text-blue-600 mr-2" />
-              <p className="text-gray-700">
-                Please select your city to view price trends and market insights.
-              </p>
-            </div>
-  
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <div className="flex items-center">
-                <ArrowUp className="w-5 h-5 text-blue-600 mr-2 animate-bounce" />
-                <p className="text-blue-800 text-sm font-medium">
-                  Start typing your city in the search bar above
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-  
-};
-
 // Section Component
 const ServiceSection = ({ title, description, services, bgColor, onServiceClick }) => (
   <div className={`${bgColor} px-6 py-14`}>
@@ -220,11 +156,6 @@ const ServiceSection = ({ title, description, services, bgColor, onServiceClick 
             </Card>
           );
 
-          // Special handling for Price Trends - don't use Link, use onClick instead
-          if (service.name === "Price Trends") {
-            return cardContent;
-          }
-
           return cardContent;
         })}
       </div>
@@ -234,44 +165,18 @@ const ServiceSection = ({ title, description, services, bgColor, onServiceClick 
 
 const Services = () => {
   const [activeTab, setActiveTab] = useState("Buyers");
-  const [showCityModal, setShowCityModal] = useState(false);
 
   const handleServiceClick = (service) => {
     if (service.name === "Price Trends") {
-      setShowCityModal(true);
+      // Dispatch custom event to trigger message box in header
+      const event = new CustomEvent('showPriceTrendsMessage');
+      window.dispatchEvent(event);
     }
-  };
-
-  const routesMap = {
-    "Property Valuation": "/property-valuation",
-    "Rent Agreement": "/rent-agreement",
-    "Auctioned Property": "/auctioned-property",
-    "Escrow Services": "/escrow-services",
-    "Comparator": "/comparator",
-    "Advertize With Us": "/advertise-with-us",
-    "Venture Investment": "/venture-invest",
-    "Data Insights": "/data-insights",
-    "Market Trends": "/market-trends",
-    "Listings": "/listings",
-    "Dealer Connect": "/dealer-connect",
-    "Contact Developers": "/contact-developers",
-    "Channel Partners": "/channel-partners",
-    "Registration & Docs": "/registration-docs",
-    "Know Your Property Value": "/know-property",
-    "Property Management": "/property-manage",
-    "Home Interior": "/home-interior",
-    "Post Property": "/post-property",
-    "Property Legal Services": "/property-legal",
+    // Handle other service clicks here if needed
   };
 
   return (
     <div>
-      {/* City Selection Modal */}
-      <CitySelectionModal
-        isOpen={showCityModal}
-        onClose={() => setShowCityModal(false)}
-      />
-
       {/* Smart Services */}
       <div className="px-6 py-14 bg-white">
         <div className="max-w-7xl mx-auto">

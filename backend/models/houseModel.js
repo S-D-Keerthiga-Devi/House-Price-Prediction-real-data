@@ -8,7 +8,7 @@ const houseSchema = new mongoose.Schema({
   quarter: String,
   property_category: String,
   rate_sqft: Number
-});
+}, { collection: "house_data" });  // 👈 explicitly bind to house_data
 
 // ✅ Avoid model overwrite error in dev
 const houseModel = mongoose.models.House || mongoose.model("House", houseSchema);

@@ -1,42 +1,53 @@
-import React, { useEffect, useState, useRef } from "react";
-import { TextField, MenuItem, ClickAwayListener, Box } from "@mui/material";
-import { houseDetails } from "../api/house.js";
+// subLocalitySearch.jsx
+import React, { useState, useRef } from "react";
+import { 
+  TextField, 
+  MenuItem, 
+  ClickAwayListener, 
+  Box, 
+  InputAdornment, 
+  IconButton 
+} from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 
-export default function SubLocalitySearch({ city, onSelect }) {
-  const [localities, setLocalities] = useState([]);
+export default function SubLocalitySearch({ city, onSelect, validLocalities }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [selectedLocality, setSelectedLocality] = useState("");
   const containerRef = useRef(null);
 
-  useEffect(() => {
-    if (!city) return;
-    const fetchLocalities = async () => {
-      setLoading(true);
-      try {
-        const res = await houseDetails(city);
-        if (res.success && Array.isArray(res.localities)) {
-          setLocalities(res.localities.sort());
-        } else {
-          setLocalities([]);
-        }
-      } catch (err) {
-        console.error("Failed to fetch localities:", err);
-        setLocalities([]);
-      } finally {
-        setLoading(false);
-        // Don't auto-open here, let user click to open
-      }
-    };
-    fetchLocalities();
-  }, [city]);
-
-  // filtered list based on query - show all if query is empty
-  const filtered = query.trim()
-    ? localities.filter((loc) =>
+  // Filter valid localities based on query
+  const filtered = query.trim() === ""
+    ? validLocalities
+    : validLocalities.filter(loc =>
         loc.toLowerCase().includes(query.toLowerCase())
-      )
-    : localities; // Show all localities when query is empty
+      );
+
+  const handleSelect = (locality) => {
+    setQuery(locality);
+    setSelectedLocality(locality);
+    setOpen(false);
+    if (onSelect) onSelect(locality);
+  };
+
+  const handleClear = () => {
+    setQuery("");
+    setSelectedLocality("");
+    setOpen(false);
+    if (onSelect) onSelect("");
+  };
+
+  const handleSearch = () => {
+    if (query.trim() && filtered.length > 0) {
+      // Auto-select first match if exact match not found
+      const exactMatch = filtered.find(loc => 
+        loc.toLowerCase() === query.toLowerCase()
+      );
+      const toSelect = exactMatch || filtered[0];
+      handleSelect(toSelect);
+    }
+  };
 
   return (
     <ClickAwayListener onClickAway={() => setOpen(false)}>
@@ -45,46 +56,49 @@ export default function SubLocalitySearch({ city, onSelect }) {
           size="small"
           fullWidth
           label={`Locality in ${city || "..."}`}
-          placeholder={loading ? "Loading..." : `${localities.length} available`}
+          placeholder={`${validLocalities.length} available`}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            setOpen(true); // keep dropdown open while typing
+            setOpen(true);
           }}
-          onClick={() => {
-            setOpen(true); // Always open dropdown on click
+          onClick={() => setOpen(true)}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleSearch();
+            }
           }}
-          onFocus={() => {
-            setOpen(true); // Also open on focus
-          }}
-          disabled={loading || !city}
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              backgroundColor: "white",
-              "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#000080" },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#1d4ed8" },
-            },
-            "& .MuiInputLabel-root.Mui-focused": { color: "#000080" },
+          disabled={!city}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <IconButton
+                  size="small"
+                  onClick={handleSearch}
+                  disabled={!city || !query.trim()}
+                  sx={{ p: 0.5 }}
+                >
+                  <SearchIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ),
+            endAdornment: query && (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={handleClear}
+                  sx={{ p: 0.5 }}
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ),
           }}
         />
         
-        {loading && (
-          <Box sx={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" }}>
-            <div
-              style={{
-                width: 16,
-                height: 16,
-                border: "2px solid #f3f3f3",
-                borderTop: "2px solid #3498db",
-                borderRadius: "50%",
-                animation: "spin 1s linear infinite",
-              }}
-            />
-          </Box>
-        )}
-        
-        {/* Show dropdown if open and localities exist and not loading */}
-        {open && localities.length > 0 && !loading && (
+        {open && filtered.length > 0 && (
           <Box
             sx={{
               position: "absolute",
@@ -102,13 +116,11 @@ export default function SubLocalitySearch({ city, onSelect }) {
             {filtered.map((loc) => (
               <MenuItem
                 key={loc}
-                onClick={() => {
-                  setQuery(loc);
-                  setOpen(false);
-                  if (onSelect) onSelect(loc);
-                }}
+                onClick={() => handleSelect(loc)}
+                selected={selectedLocality === loc}
                 sx={{
                   "&:hover": { backgroundColor: "#e6e6fa" },
+                  "&.Mui-selected": { backgroundColor: "#f0f0ff" },
                   whiteSpace: "normal",
                   wordWrap: "break-word",
                   fontSize: "14px",
@@ -118,11 +130,24 @@ export default function SubLocalitySearch({ city, onSelect }) {
                 {loc}
               </MenuItem>
             ))}
-            {filtered.length === 0 && query.trim() && (
-              <MenuItem disabled sx={{ fontSize: "14px", py: 1 }}>
-                No localities found matching "{query}"
-              </MenuItem>
-            )}
+          </Box>
+        )}
+        
+        {open && filtered.length === 0 && query.trim() !== "" && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 48,
+              width: "100%",
+              backgroundColor: "white",
+              border: "1px solid #ddd",
+              borderRadius: 1,
+              zIndex: 1000,
+              p: 2,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            }}
+          >
+            <MenuItem disabled>No matching localities found</MenuItem>
           </Box>
         )}
       </Box>

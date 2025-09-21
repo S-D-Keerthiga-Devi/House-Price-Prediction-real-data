@@ -14,6 +14,7 @@ import Location from "./Location.jsx";
 import { Box, Paper } from "@mui/material";
 
 const Header = () => {
+  const menuRef = useRef(null);
   const { status, userData } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -30,10 +31,14 @@ const Header = () => {
   const [constructionStatus, setConstructionStatus] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [showPriceTrendsMessage, setShowPriceTrendsMessage] = useState(false);
+
 
 
   const filtersRef = useRef(null);
   const advFiltersRef = useRef(null);
+  const profileRef = useRef(null);
 
   const propertyTypes = ["Buy", "Rent", "Auction"];
   const residentialOptions = ["Apartment", "Villa", "Plot", "Studio", "Independent House", "Builder Floor", "Penthouse"];
@@ -52,6 +57,44 @@ const Header = () => {
   const handleChange = (event, newValue) => {
     setBudget(newValue);
   };
+
+  // Handle city selection (no redirect, just store the city)
+  const handleCitySelect = (city) => {
+    setSelectedCity(city);
+    setSearchQuery(city); // Optional: also update searchQuery if needed
+  };
+
+  // Listen for price trends activation from Services component
+  useEffect(() => {
+    const handlePriceTrendsClick = () => {
+      setShowPriceTrendsMessage(true);
+      
+      // Focus on the location input
+      const locationInput = document.getElementById("location-input");
+      if (locationInput) {
+        locationInput.focus();
+        locationInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+
+    // Listen for the custom event
+    window.addEventListener('showPriceTrendsMessage', handlePriceTrendsClick);
+    
+    return () => {
+      window.removeEventListener('showPriceTrendsMessage', handlePriceTrendsClick);
+    };
+  }, []);
+
+  // Hide message after 10 seconds
+  useEffect(() => {
+    if (showPriceTrendsMessage) {
+      const timer = setTimeout(() => {
+        setShowPriceTrendsMessage(false);
+      }, 10000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showPriceTrendsMessage]);
 
 
   // Fetch fresh user data on mount
@@ -153,9 +196,27 @@ const Header = () => {
           </a>
 
           
-          <div className="flex items-center gap-2 w-full">
-              <Location onCitySelect={(city) => setSearchQuery(city)} />
-            </div>
+{/* Location Component - priceMode=false for header */}
+<div className="flex items-center gap-2 w-full relative">
+            <Location onCitySelect={handleCitySelect} priceMode={false} />
+            
+            {/* Message box - only shown when Price Trends is clicked */}
+            {showPriceTrendsMessage && (
+              <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg z-50 whitespace-nowrap max-w-xs">
+                <div className="flex items-center gap-2">
+                  <span>📍 Enter your city to see price trends!</span>
+                  <button 
+                    onClick={() => setShowPriceTrendsMessage(false)}
+                    className="ml-2 text-white hover:text-gray-200"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                {/* Arrow pointing to location input */}
+                <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 border-4 border-transparent border-r-blue-600"></div>
+              </div>
+            )}
+          </div>
         </div>
 
 

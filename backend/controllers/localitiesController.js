@@ -1,14 +1,31 @@
 import houseModel from "../models/houseModel.js";
 
+// ✅ Get distinct cities
+export const getCities = async (req, res) => {
+  try {
+    const cities = await houseModel.distinct("city");
+    return res.json({
+      success: true,
+      count: cities.length,
+      cities: cities.sort(),
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ✅ Get distinct localities by city
 export const getLocalitiesByCity = async (req, res) => {
-  const { city } = req.params;
+  let { city } = req.params;
 
   if (!city) {
-    return res.json({ success: false, message: "City is required" });
+    return res.status(400).json({ success: false, message: "City is required" });
   }
 
   try {
-    const localities = await houseModel.distinct("location", { city });
+    const localities = await houseModel.distinct("location", {
+      city: { $regex: new RegExp(`^${city}$`, "i") }, // case-insensitive match
+    });
 
     return res.json({
       success: true,
@@ -17,21 +34,23 @@ export const getLocalitiesByCity = async (req, res) => {
       localities: localities.sort(),
     });
   } catch (error) {
-    return res.json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// ✅ Get rate trends for a locality
 export const getRatesByLocality = async (req, res) => {
   const { city, location } = req.query;
 
   if (!city || !location) {
-    return res.json({ success: false, message: "City and location are required" });
+    return res.status(400).json({ success: false, message: "City and location are required" });
   }
 
   try {
     const records = await houseModel
       .find({ city, location })
-      .select("-__v -_id"); // hide Mongo's extra fields
+      .select("-__v -_id")
+      .sort({ year: 1, month: 1 }); // optional: sorted by time
 
     return res.json({
       success: true,
@@ -41,20 +60,6 @@ export const getRatesByLocality = async (req, res) => {
       data: records,
     });
   } catch (error) {
-    return res.json({ success: false, message: error.message });
-  }
-};
-
-export const getCities = async (req, res) => {
-  try {
-    const cities = await houseModel.distinct("city");
-
-    return res.json({
-      success: true,
-      count: cities.length,
-      cities: cities.sort(),
-    });
-  } catch (error) {
-    return res.json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

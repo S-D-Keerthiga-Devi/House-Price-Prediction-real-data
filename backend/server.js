@@ -5,11 +5,11 @@ import cookieParser from "cookie-parser";
 import connectDB from "./config/mongodb.js";
 import authRouter from "./routes/authRoutes.js"
 import userRouter from "./routes/userRoutes.js";
-import localitiesRouter from "./routes/localities.js";
+import localitiesRouter from "./routes/localitiesRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 4000
-const allowedOrigins = ['http://localhost:5173', 'https://keerthiga-house-price-prediction.vercel.app']
+const allowedOrigins = ['http://localhost:5173', 'https://keerthiga-house-price-prediction.vercel.app', 'http://localhost:5174']
 connectDB()
 
 app.use(express.json());
