@@ -243,7 +243,7 @@ export default function CityInfoCard({ city, averagePrice }) {
               </Box>
             </Grid>
             
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box sx={{ 
                 display: "flex", 
                 alignItems: "flex-start",

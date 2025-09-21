@@ -21,6 +21,7 @@ import {
   MapPin,
   ArrowUp
 } from "lucide-react"; 
+import { useNavigate } from "react-router-dom";
 
 // Smart Services Tabs
 const smartServicesTabs = {
@@ -165,6 +166,7 @@ const ServiceSection = ({ title, description, services, bgColor, onServiceClick 
 
 const Services = () => {
   const [activeTab, setActiveTab] = useState("Buyers");
+  const navigate = useNavigate()
 
   const handleServiceClick = (service) => {
     if (service.name === "Price Trends") {
@@ -173,6 +175,9 @@ const Services = () => {
       window.dispatchEvent(event);
     }
     // Handle other service clicks here if needed
+    if (service.link) {
+      navigate(service.link);  // 👈 navigate to service page
+    }
   };
 
   return (
