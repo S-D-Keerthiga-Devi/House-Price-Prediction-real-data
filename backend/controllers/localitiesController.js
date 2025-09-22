@@ -63,3 +63,51 @@ export const getRatesByLocality = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const getRatesByCity = async (req, res) => {
+  let { city } = req.params;
+
+  if (!city) {
+    return res.status(400).json({ success: false, message: "City is required" });
+  }
+
+  try {
+    const records = await houseModel
+      .find({ city: { $regex: new RegExp(`^${city}$`, "i") } }) // case-insensitive match
+      .select("-__v -_id")
+      .sort({ year: 1, month: 1 });
+
+    return res.json({
+      success: true,
+      city,
+      count: records.length,
+      data: records,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getCoordinatesByCity = async (req, res) => {
+  let { city } = req.params;
+
+  if (!city) {
+    return res.status(400).json({ success: false, message: "City is required" });
+  }
+
+  try {
+    const records = await houseModel
+      .find({ city: { $regex: new RegExp(`^${city}$`, "i") } }) // case-insensitive match
+      .select("city location year month quarter property_category rate_sqft lat lng") // Explicitly include lat/lng
+      .sort({ year: 1, month: 1 });
+
+    return res.json({
+      success: true,
+      city,
+      count: records.length,
+      data: records,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

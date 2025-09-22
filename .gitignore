@@ -2,3 +2,4 @@ venv/
 notebook/data/data_formatted.csv
 backend/.env
 frontend/.env
+notebook/Price Trend Comparison.ipynb

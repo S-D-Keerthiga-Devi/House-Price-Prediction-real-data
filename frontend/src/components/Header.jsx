@@ -11,6 +11,7 @@ import { useLocation } from "react-router-dom";
 import Slider from "@mui/material/Slider";
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import Location from "./Location.jsx";
+import { X } from "lucide-react";
 import { Box, Paper } from "@mui/material";
 
 const Header = () => {
@@ -33,7 +34,8 @@ const Header = () => {
   const [countryCode, setCountryCode] = useState("+91");
   const [selectedCity, setSelectedCity] = useState("");
   const [showPriceTrendsMessage, setShowPriceTrendsMessage] = useState(false);
-
+  const [showEmergingLocalitiesMessage, setShowEmergingLocalitiesMessage] = useState(false);
+  const [showHeatmapsMessage, setShowHeatmapsMessage] = useState(false);
 
 
   const filtersRef = useRef(null);
@@ -61,15 +63,20 @@ const Header = () => {
   // Handle city selection (no redirect, just store the city)
   const handleCitySelect = (city) => {
     setSelectedCity(city);
-    setSearchQuery(city); // Optional: also update searchQuery if needed
+    setSearchQuery(city); // optional
+    setShowPriceTrendsMessage(false); // hide price trends popup
+    setShowEmergingLocalitiesMessage(false); // hide emerging localities popup
+    setShowHeatmapsMessage(false);
   };
 
-  // Listen for price trends activation from Services component
+  // Listen for the Price Trends event
   useEffect(() => {
     const handlePriceTrendsClick = () => {
       setShowPriceTrendsMessage(true);
-      
-      // Focus on the location input
+      setShowEmergingLocalitiesMessage(false); // Hide other message
+      setShowHeatmapsMessage(false);
+
+      // Optional: scroll/focus on some element
       const locationInput = document.getElementById("location-input");
       if (locationInput) {
         locationInput.focus();
@@ -77,24 +84,86 @@ const Header = () => {
       }
     };
 
-    // Listen for the custom event
     window.addEventListener('showPriceTrendsMessage', handlePriceTrendsClick);
-    
+
     return () => {
       window.removeEventListener('showPriceTrendsMessage', handlePriceTrendsClick);
     };
   }, []);
 
-  // Hide message after 10 seconds
+  // Listen for the Emerging Localities event
+  useEffect(() => {
+    const handleEmergingLocalitiesClick = () => {
+      setShowEmergingLocalitiesMessage(true);
+      setShowPriceTrendsMessage(false); // Hide other message
+      setShowHeatmapsMessage(false);
+
+      // Optional: scroll/focus on some element
+      const locationInput = document.getElementById("location-input");
+      if (locationInput) {
+        locationInput.focus();
+        locationInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+
+    window.addEventListener('showEmergingLocalitiesMessage', handleEmergingLocalitiesClick);
+
+    return () => {
+      window.removeEventListener('showEmergingLocalitiesMessage', handleEmergingLocalitiesClick);
+    };
+  }, []);
+
+  // Listen for the Heatmaps event
+  useEffect(() => {
+    const handleHeatmapsClick = () => {
+      setShowEmergingLocalitiesMessage(false);
+      setShowPriceTrendsMessage(false); // Hide other message
+      setShowHeatmapsMessage(true);
+      
+      // Optional: scroll/focus on some element
+      const locationInput = document.getElementById("location-input");
+      if (locationInput) {
+        locationInput.focus();
+        locationInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+
+    window.addEventListener('showHeatmapsMessage', handleHeatmapsClick);
+
+    return () => {
+      window.removeEventListener('showHeatmapsMessage', handleHeatmapsClick);
+    };
+  }, []);
+
+  // Auto-hide after 10 seconds for Price Trends
   useEffect(() => {
     if (showPriceTrendsMessage) {
       const timer = setTimeout(() => {
         setShowPriceTrendsMessage(false);
       }, 10000);
-      
       return () => clearTimeout(timer);
     }
   }, [showPriceTrendsMessage]);
+
+  // Auto-hide after 10 seconds for Emerging Localities
+  useEffect(() => {
+    if (showEmergingLocalitiesMessage) {
+      const timer = setTimeout(() => {
+        setShowEmergingLocalitiesMessage(false);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [showEmergingLocalitiesMessage]);
+
+  // Auto-hide after 10 seconds for Heatmaps
+  useEffect(() => {
+    if (showHeatmapsMessage) {
+      const timer = setTimeout(() => {
+        setShowHeatmapsMessage(false);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [showHeatmapsMessage]);
 
 
   // Fetch fresh user data on mount
@@ -195,17 +264,17 @@ const Header = () => {
             </div>
           </a>
 
-          
-{/* Location Component - priceMode=false for header */}
-<div className="flex items-center gap-2 w-full relative">
+
+          {/* Location Component - priceMode=false for header */}
+          <div className="flex items-center gap-2 w-full relative">
             <Location onCitySelect={handleCitySelect} priceMode={false} />
-            
-            {/* Message box - only shown when Price Trends is clicked */}
+
+            {/* Message box for Price Trends */}
             {showPriceTrendsMessage && (
               <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg z-50 whitespace-nowrap max-w-xs">
                 <div className="flex items-center gap-2">
-                  <span>📍 Enter your city to see price trends!</span>
-                  <button 
+                  <span>Enter your city to see price trends!</span>
+                  <button
                     onClick={() => setShowPriceTrendsMessage(false)}
                     className="ml-2 text-white hover:text-gray-200"
                   >
@@ -214,6 +283,41 @@ const Header = () => {
                 </div>
                 {/* Arrow pointing to location input */}
                 <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 border-4 border-transparent border-r-blue-600"></div>
+              </div>
+            )}
+
+            {/* Message box for Emerging Localities */}
+            {showEmergingLocalitiesMessage && (
+              <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-green-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg z-50 whitespace-nowrap max-w-xs">
+                <div className="flex items-center gap-2">
+                  <span>Choose a city to explore emerging localities!</span>
+                  <button
+                    onClick={() => setShowEmergingLocalitiesMessage(false)}
+                    className="ml-2 text-white hover:text-gray-200"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                {/* Arrow pointing to location input */}
+                <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 border-4 border-transparent border-r-green-600"></div>
+              </div>
+            )}
+
+
+            {/* Message box for Emerging Localities */}
+            {showHeatmapsMessage && (
+              <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-red-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg z-50 whitespace-nowrap max-w-xs">
+                <div className="flex items-center gap-2">
+                  <span>Choose a city to explore Heatmaps!</span>
+                  <button
+                    onClick={() => setShowEmergingLocalitiesMessage(false)}
+                    className="ml-2 text-white hover:text-gray-200"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                {/* Arrow pointing to location input */}
+                <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 border-4 border-transparent border-r-red-600"></div>
               </div>
             )}
           </div>

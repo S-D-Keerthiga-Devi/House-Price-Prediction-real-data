@@ -26,32 +26,32 @@ import { useNavigate } from "react-router-dom";
 // Smart Services Tabs
 const smartServicesTabs = {
   Buyers: [
-    { name: "Property Valuation", icon: <Home className="w-10 h-10 text-blue-600" /> },
-    { name: "Rent Agreement", icon: <FileText className="w-10 h-10 text-green-600" /> },
-    { name: "Auctioned Property", icon: <Gavel className="w-10 h-10 text-orange-600" /> },
-    { name: "Escrow Services", icon: <Scale className="w-10 h-10 text-purple-600" /> },
-    { name: "Comparator", icon: <Columns3 className="w-10 h-10 text-pink-600" /> },
+    { name: "Property Valuation", icon: <Home className="w-10 h-10 text-blue-600" />, link: "/property-valuation" },
+    { name: "Rent Agreement", icon: <FileText className="w-10 h-10 text-green-600" />, link: "/rent-agreement" },
+    { name: "Auctioned Property", icon: <Gavel className="w-10 h-10 text-orange-600" />, link: "/auctioned-property" },
+    { name: "Escrow Services", icon: <Scale className="w-10 h-10 text-purple-600" />, link: "/escow-services" },
+    { name: "Comparator", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/compare" },
   ],
   Developers: [
-    { name: "Advertize With Us", icon: <Building2 className="w-10 h-10 text-orange-600" /> },
-    { name: "Venture Investment", icon: <TrendingUp className="w-10 h-10 text-blue-600" /> },
-    { name: "Data Insights", icon: <BarChart2 className="w-10 h-10 text-green-600" /> },
-    { name: "Market Trends", icon: <TrendingUp className="w-10 h-10 text-purple-600" /> },
-    { name: "Property Valuation", icon: <Home className="w-10 h-10 text-pink-600" /> },
+    { name: "Advertize With Us", icon: <Building2 className="w-10 h-10 text-orange-600" />, link: "/advertise-with-us" },
+    { name: "Venture Investment", icon: <TrendingUp className="w-10 h-10 text-blue-600" />, link: "/venture-invest" },
+    { name: "Data Insights", icon: <BarChart2 className="w-10 h-10 text-green-600" />, link: "/data-insights" },
+    { name: "Market Trends", icon: <TrendingUp className="w-10 h-10 text-purple-600" />, link: "/market-trends" },
+    { name: "Property Valuation", icon: <Home className="w-10 h-10 text-pink-600" />, link: "/property-valuation" },
   ],
   Dealers: [
-    { name: "Listings", icon: <ClipboardList className="w-10 h-10 text-blue-600" /> },
-    { name: "Dealer Connect", icon: <Users className="w-10 h-10 text-green-600" /> },
-    { name: "Contact Developers", icon: <Phone className="w-10 h-10 text-orange-600" /> },
-    { name: "Channel Partners", icon: <Briefcase className="w-10 h-10 text-purple-600" /> },
-    { name: "Registration & Docs", icon: <ScrollText className="w-10 h-10 text-pink-600" /> },
+    { name: "Listings", icon: <ClipboardList className="w-10 h-10 text-blue-600" />, link: "/listings" },
+    { name: "Dealer Connect", icon: <Users className="w-10 h-10 text-green-600" />, link: "/dealer-connect" },
+    { name: "Contact Developers", icon: <Phone className="w-10 h-10 text-orange-600" />, link: "/contact-developers" },
+    { name: "Channel Partners", icon: <Briefcase className="w-10 h-10 text-purple-600" />, link: "/channel-partners" },
+    { name: "Registration & Docs", icon: <ScrollText className="w-10 h-10 text-pink-600" />, link: "/registration-docs" },
   ],
   Owners: [
-    { name: "Know Your Property Value", icon: <Scale className="w-10 h-10 text-blue-600" /> },
-    { name: "Property Management", icon: <Briefcase className="w-10 h-10 text-green-600" /> },
-    { name: "Home Interior", icon: <Lightbulb className="w-10 h-10 text-orange-600" /> },
-    { name: "Post Property", icon: <Building2 className="w-10 h-10 text-purple-600" /> },
-    { name: "Property Legal Services", icon: <Gavel className="w-10 h-10 text-red-600" /> },
+    { name: "Know Your Property Value", icon: <Scale className="w-10 h-10 text-blue-600" />, link: "/know-property" },
+    { name: "Property Management", icon: <Briefcase className="w-10 h-10 text-green-600" />, link: "/property-manage" },
+    { name: "Home Interior", icon: <Lightbulb className="w-10 h-10 text-orange-600" />, link: "/home-interior" },
+    { name: "Post Property", icon: <Building2 className="w-10 h-10 text-purple-600" />, link: "/post-property" },
+    { name: "Property Legal Services", icon: <Gavel className="w-10 h-10 text-red-600" />, link: "/property-legal" },
   ],
 };
 
@@ -60,12 +60,14 @@ const insightServices = [
   {
     name: "Price Trends",
     image: "https://images.pexels.com/photos/7947664/pexels-photo-7947664.jpeg",
-    link: "/price-trends"
+    link: "/price-trends",
+    isPriceTrends: true // Special flag for Price Trends
   },
   {
     name: "Heatmaps",
     image: "https://images.pexels.com/photos/590022/pexels-photo-590022.jpeg",
-    link: "/heatmaps"
+    link: "/heatmaps",
+    isHeatmaps: true
   },
   {
     name: "Price to Income Index",
@@ -75,7 +77,8 @@ const insightServices = [
   {
     name: "Emerging Localities",
     image: "https://images.unsplash.com/photo-1523217582562-09d0def993a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&q=60",
-    link: "/emerging-localities"
+    link: "/emerging-localities",
+    isEmergingLocalities: true // Special flag for Emerging Localities
   },
 ];
 
@@ -169,14 +172,30 @@ const Services = () => {
   const navigate = useNavigate()
 
   const handleServiceClick = (service) => {
-    if (service.name === "Price Trends") {
-      // Dispatch custom event to trigger message box in header
+    if (service.isPriceTrends) {
+      // Dispatch custom event to trigger message box in header for Price Trends
       const event = new CustomEvent('showPriceTrendsMessage');
       window.dispatchEvent(event);
+      return;
     }
-    // Handle other service clicks here if needed
+    
+    if (service.isEmergingLocalities) {
+      // Dispatch custom event to trigger message box in header for Emerging Localities
+      const event = new CustomEvent('showEmergingLocalitiesMessage');
+      window.dispatchEvent(event);
+      return;
+    }
+
+    if(service.isHeatmaps){
+      // Dispatch custom event to trigger message box in header for Heatmaps
+      const event = new CustomEvent('showHeatmapsMessage');
+      window.dispatchEvent(event);
+      return;
+    }
+    
+    // Handle navigation for all services that have a link
     if (service.link) {
-      navigate(service.link);  // 👈 navigate to service page
+      navigate(service.link);
     }
   };
 
@@ -217,6 +236,7 @@ const Services = () => {
                 <Card
                   key={idx}
                   className="overflow-hidden shadow-md hover:shadow-lg cursor-pointer transition-all duration-300 transform hover:-translate-y-2 border border-gray-200 group"
+                  onClick={() => handleServiceClick(service)}
                 >
                   <div className="flex items-center justify-center h-28 bg-gray-50">
                     {service.icon}
@@ -248,12 +268,14 @@ const Services = () => {
         description="Discover the latest trends shaping modern real estate."
         services={trendingServices}
         bgColor="bg-white"
+        onServiceClick={handleServiceClick}
       />
       <ServiceSection
         title="Our Top Recommendations"
         description="Handpicked properties tailored to your lifestyle and investment goals."
         services={curatedServices}
         bgColor="bg-gray-50"
+        onServiceClick={handleServiceClick}
       />
     </div>
   );

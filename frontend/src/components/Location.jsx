@@ -9,6 +9,9 @@ export default function Location({ onCitySelect, priceMode = false }) {
   const [detectedCity, setDetectedCity] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
+  const [isPriceTrendsMode, setIsPriceTrendsMode] = useState(false);
+  const [isEmergingLocalitiesMode, setIsEmergingLocalitiesMode] = useState(false);
+  const [isHeatmapsMode, setIsHeatmapsMode] = useState(false);
   const wrapperRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -64,19 +67,56 @@ export default function Location({ onCitySelect, priceMode = false }) {
     }
   }, []);
 
-  // ✅ Listen for price mode activation
+  // ✅ Listen for price trends mode activation
   useEffect(() => {
-    const handlePriceModeActivation = () => {
-      // Set price mode when the event is triggered
-      if (window.priceTrendsMode) {
-        // This is set by the Services component when Price Trends is clicked
-        window.priceTrendsMode = true;
+    const handlePriceTrendsActivation = () => {
+      setIsPriceTrendsMode(true);
+      setIsEmergingLocalitiesMode(false); // Reset other mode
+      setIsHeatmapsMode(false);
+      // Focus on the input when price trends is activated
+      const input = wrapperRef.current?.querySelector('input');
+      if (input) {
+        input.focus();
       }
     };
 
-    // Listen for custom event
-    window.addEventListener('activatePriceMode', handlePriceModeActivation);
-    return () => window.removeEventListener('activatePriceMode', handlePriceModeActivation);
+    window.addEventListener('showPriceTrendsMessage', handlePriceTrendsActivation);
+    return () => window.removeEventListener('showPriceTrendsMessage', handlePriceTrendsActivation);
+  }, []);
+
+  // ✅ Listen for emerging localities mode activation
+  useEffect(() => {
+    const handleEmergingLocalitiesActivation = () => {
+      setIsEmergingLocalitiesMode(true);
+      setIsPriceTrendsMode(false); // Reset other mode
+      setIsHeatmapsMode(false);
+      // Focus on the input when emerging localities is activated
+      const input = wrapperRef.current?.querySelector('input');
+      if (input) {
+        input.focus();
+      }
+    };
+
+    window.addEventListener('showEmergingLocalitiesMessage', handleEmergingLocalitiesActivation);
+    return () => window.removeEventListener('showEmergingLocalitiesMessage', handleEmergingLocalitiesActivation);
+  }, []);
+
+
+  // ✅ Listen for heatmaps mode activation
+  useEffect(() => {
+    const handleHeatmapsActivation = () => {
+      setIsHeatmapsMode(true);
+      setIsPriceTrendsMode(false); // Reset other mode
+      setIsEmergingLocalitiesMode(false);
+      // Focus on the input when emerging localities is activated
+      const input = wrapperRef.current?.querySelector('input');
+      if (input) {
+        input.focus();
+      }
+    };
+
+    window.addEventListener('showHeatmapsMessage', handleHeatmapsActivation);
+    return () => window.removeEventListener('showHeatmapsMessage', handleHeatmapsActivation);
   }, []);
 
   const handleSelect = (city) => {
@@ -84,11 +124,16 @@ export default function Location({ onCitySelect, priceMode = false }) {
     setOpen(false);
     if (onCitySelect) onCitySelect(city);
     
-    // Only redirect if priceMode is true OR if window.priceTrendsMode is true
-    if (priceMode || window.priceTrendsMode) {
+    // Redirect based on active mode
+    if (priceMode || isPriceTrendsMode) {
       navigate(`/price-trends?city=${encodeURIComponent(city)}`);
-      // Reset the global flag
-      window.priceTrendsMode = false;
+      setIsPriceTrendsMode(false); // Reset the mode
+    } else if (isEmergingLocalitiesMode) {
+      navigate(`/emerging-localities?city=${encodeURIComponent(city)}`);
+      setIsEmergingLocalitiesMode(false); // Reset the mode
+    } else if (isHeatmapsMode) {
+      navigate(`/heatmaps?city=${encodeURIComponent(city)}`);
+      setIsEmergingLocalitiesMode(false); // Reset the mode
     }
   };
 
@@ -96,11 +141,16 @@ export default function Location({ onCitySelect, priceMode = false }) {
     if (query.trim() !== "") {
       if (onCitySelect) onCitySelect(query);
       
-      // Only redirect if priceMode is true OR if window.priceTrendsMode is true
-      if (priceMode || window.priceTrendsMode) {
+      // Redirect based on active mode
+      if (priceMode || isPriceTrendsMode) {
         navigate(`/price-trends?city=${encodeURIComponent(query)}`);
-        // Reset the global flag
-        window.priceTrendsMode = false;
+        setIsPriceTrendsMode(false); // Reset the mode
+      } else if (isEmergingLocalitiesMode) {
+        navigate(`/emerging-localities?city=${encodeURIComponent(query)}`);
+        setIsEmergingLocalitiesMode(false); // Reset the mode
+      } else if (isHeatmapsMode) {
+        navigate(`/heatmaps?city=${encodeURIComponent(query)}`);
+        setIsHeatmapsMode(false); // Reset the mode
       }
     }
   };
@@ -164,8 +214,8 @@ export default function Location({ onCitySelect, priceMode = false }) {
         className="h-7 w-20 px-2 border-0 bg-transparent text-xs text-gray-800 placeholder-gray-400 focus:outline-none"
       />
 
-      {/* Search button - show when user types and either priceMode is true or priceTrendsMode is active */}
-      {(priceMode || window.priceTrendsMode) && query.trim() !== "" && query !== detectedCity && (
+      {/* Search button - show when user types and any special mode is active */}
+      {(priceMode || isPriceTrendsMode || isEmergingLocalitiesMode || isHeatmapsMode) && query.trim() !== "" && (
         <button
           onClick={handleSearch}
           className="p-1 text-gray-500 hover:text-blue-600"
