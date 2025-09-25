@@ -9,8 +9,11 @@ import { setCity } from "../store/authSlice";
 export default function Location({ onCitySelect, priceMode = false }) {
   const { selectedCity } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
-  const [query, setQuery] = useState(selectedCity || "");
-  const [detectedCity, setDetectedCity] = useState("");
+  // Initialize query from localStorage first, then Redux, then empty
+  const storedCity = localStorage.getItem("selectedCity");
+  const initialQuery = storedCity || selectedCity || localStorage.getItem("detectedCity") || "";
+  const [query, setQuery] = useState(initialQuery);
+  const [detectedCity, setDetectedCity] = useState(localStorage.getItem("detectedCity") || "");
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
   const [isPriceTrendsMode, setIsPriceTrendsMode] = useState(false);
@@ -21,29 +24,42 @@ export default function Location({ onCitySelect, priceMode = false }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ Fetch Indian cities and localities once
+  // ✅ Fetch Indian cities using OpenStreetMap API
   useEffect(() => {
     const fetchCities = async () => {
       try {
-        // First fetch cities from API
-        const res = await fetch(
-          "https://countriesnow.space/api/v0.1/countries/cities",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ country: "India" }),
-          }
+        // First try to load from localStorage for immediate display
+        const cachedCities = localStorage.getItem("allCities");
+        if (cachedCities) {
+          setSuggestions(JSON.parse(cachedCities));
+        }
+        
+        // Fetch major Indian cities using OpenStreetMap Nominatim API
+        const osmResponse = await fetch(
+          "https://nominatim.openstreetmap.org/search?country=India&format=json&addressdetails=1&limit=500&featuretype=city"
         );
-        const data = await res.json();
+        const osmData = await osmResponse.json();
+        
+        // Extract city names, remove duplicates and filter out special characters
+        const cityNames = new Set();
+        osmData.forEach(item => {
+          if (item.address && (item.address.city || item.address.town || item.address.village)) {
+            const cityName = item.address.city || item.address.town || item.address.village;
+            // Only add cities with standard alphanumeric characters and spaces
+            if (/^[a-zA-Z0-9\s-]+$/.test(cityName)) {
+              cityNames.add(cityName);
+            }
+          }
+        });
+        
+        // Convert to array and sort alphabetically
+        const cities = Array.from(cityNames).sort((a, b) => a.localeCompare(b));
         
         // Then fetch localities from our backend
         const localitiesRes = await getLocalitiesByCity(selectedCity || "Gurgaon");
         
         // Combine both datasets
-        let allSuggestions = [];
-        if (data.data) {
-          allSuggestions = [...data.data];
-        }
+        let allSuggestions = [...cities];
         
         if (localitiesRes?.success && Array.isArray(localitiesRes.localities)) {
           const localities = localitiesRes.localities
@@ -53,19 +69,72 @@ export default function Location({ onCitySelect, priceMode = false }) {
         }
         
         // Sort and set suggestions
-        setSuggestions(allSuggestions.sort());
+        const sortedSuggestions = allSuggestions.sort((a, b) => a.localeCompare(b));
+        setSuggestions(sortedSuggestions);
+        
+        // Store cities in localStorage for quick access
+        localStorage.setItem("allCities", JSON.stringify(sortedSuggestions));
       } catch (err) {
         console.error("Error fetching locations:", err);
+        
+        // If fetch fails, try to use cached data
+        const cachedCities = localStorage.getItem("allCities");
+        if (cachedCities) {
+          setSuggestions(JSON.parse(cachedCities));
+        } else {
+          // If OpenStreetMap API fails, fallback to another API
+          try {
+            const fallbackRes = await fetch(
+              "https://countriesnow.space/api/v0.1/countries/cities",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ country: "India" }),
+              }
+            );
+            const fallbackData = await fallbackRes.json();
+            
+            if (fallbackData.data && Array.isArray(fallbackData.data)) {
+              const sortedFallback = fallbackData.data.sort((a, b) => a.localeCompare(b));
+              setSuggestions(sortedFallback);
+              localStorage.setItem("allCities", JSON.stringify(sortedFallback));
+            }
+          } catch (fallbackErr) {
+            console.error("Fallback API also failed:", fallbackErr);
+          }
+        }
       }
     };
+    
     fetchCities();
-  }, [selectedCity]);
+  }, []);
 
-  // ✅ Auto-detect current city
+  // ✅ Auto-detect current city - only on initial load
   useEffect(() => {
+    // Create a flag to track if this is the initial load
+    const isInitialLoad = !localStorage.getItem("userInteractedWithLocation");
     const alreadySelected = selectedCity || localStorage.getItem("selectedCity");
-    if (alreadySelected) return; // respect user's existing selection
-
+    
+    // If user has already selected a city, use that instead
+    if (alreadySelected) {
+      const cityToUse = localStorage.getItem("selectedCity") || selectedCity;
+      setQuery(cityToUse);
+      setDetectedCity(cityToUse);
+      dispatch(setCity(cityToUse));
+      if (onCitySelect) onCitySelect(cityToUse);
+      return;
+    }
+    
+    // Try to use cached detected city first for immediate display
+    const cachedDetectedCity = localStorage.getItem("detectedCity");
+    if (cachedDetectedCity) {
+      setQuery(cachedDetectedCity);
+      setDetectedCity(cachedDetectedCity);
+      dispatch(setCity(cachedDetectedCity));
+      if (onCitySelect) onCitySelect(cachedDetectedCity);
+    }
+    
+    // Always attempt to detect location, but only use it if no user selection exists
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude, longitude } = pos.coords;
@@ -81,10 +150,16 @@ export default function Location({ onCitySelect, priceMode = false }) {
             data.address.state_district ||
             "";
           if (city) {
-            setQuery(city);
-            setDetectedCity(city);
-            dispatch(setCity(city)); // Update Redux store
-            if (onCitySelect) onCitySelect(city);
+            // Only update if user hasn't made a selection
+            if (!localStorage.getItem("userInteractedWithLocation")) {
+              setQuery(city);
+              setDetectedCity(city);
+              dispatch(setCity(city)); // Update Redux store
+              if (onCitySelect) onCitySelect(city);
+            }
+            
+            // Always store the detected city
+            localStorage.setItem("detectedCity", city);
           }
         } catch (err) {
           console.error("Error detecting location:", err);
@@ -168,6 +243,10 @@ export default function Location({ onCitySelect, priceMode = false }) {
   }, []);
 
   const handleSelect = (city) => {
+    // Mark that user has interacted with location selection
+    localStorage.setItem("userInteractedWithLocation", "true");
+    localStorage.setItem("selectedCity", city);
+    
     dispatch(setCity(city)); // Update Redux store
     setQuery(city);
     setOpen(false);
@@ -191,6 +270,10 @@ export default function Location({ onCitySelect, priceMode = false }) {
 
   const handleSearch = () => {
     if (query.trim() !== "") {
+      // Mark that user has interacted with location selection
+      localStorage.setItem("userInteractedWithLocation", "true");
+      localStorage.setItem("selectedCity", query);
+      
       dispatch(setCity(query)); // Update Redux store
       if (onCitySelect) onCitySelect(query);
       
@@ -213,7 +296,29 @@ export default function Location({ onCitySelect, priceMode = false }) {
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      handleSearch();
+      // If there's a filtered suggestion that matches the query exactly, use that
+      const exactMatch = suggestions.find(city => 
+        city.toLowerCase() === query.toLowerCase()
+      );
+      
+      if (exactMatch) {
+        handleSelect(exactMatch);
+      } else if (suggestions.length > 0 && query.trim() !== "") {
+        // If no exact match but we have suggestions, use the first filtered suggestion
+        const filteredSuggestions = suggestions.filter(city => 
+          city.toLowerCase().includes(query.toLowerCase())
+        );
+        
+        if (filteredSuggestions.length > 0) {
+          handleSelect(filteredSuggestions[0]);
+        } else {
+          // If no suggestions match, just use the query as is
+          handleSearch();
+        }
+      } else {
+        // Fallback to regular search
+        handleSearch();
+      }
     }
   };
 
@@ -240,6 +345,18 @@ export default function Location({ onCitySelect, priceMode = false }) {
       document.removeEventListener("mousedown", handleClickOutside, true);
       document.removeEventListener("keydown", handleEscKey);
     };
+  }, []);
+  
+  // Force load suggestions when component mounts
+  useEffect(() => {
+    // Try to load from localStorage first
+    const cachedCities = localStorage.getItem("allCities");
+    if (cachedCities) {
+      setSuggestions(JSON.parse(cachedCities));
+    } else {
+      // Set default cities if no cached data
+      setSuggestions(["Delhi", "Mumbai", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune", "Ahmedabad", "Jaipur", "Gurgaon", "Noida"]);
+    }
   }, []);
 
   return (
@@ -270,13 +387,44 @@ export default function Location({ onCitySelect, priceMode = false }) {
         id="location-input"
         type="text"
         value={query}
-        onClick={() => setOpen(true)}
-        onChange={(e) => setQuery(e.target.value)}
+        onClick={() => {
+          setOpen(true);
+          // Force dropdown to show all cities when clicked
+          const cachedCities = localStorage.getItem("allCities");
+          if (cachedCities) {
+            setSuggestions(JSON.parse(cachedCities));
+          } else {
+            // Fallback to default cities
+            setSuggestions(["Delhi", "Mumbai", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Pune", "Ahmedabad", "Jaipur", "Gurgaon", "Noida"]);
+          }
+          localStorage.setItem("userInteractedWithLocation", "true");
+        }}
+        onFocus={() => {
+          setOpen(true);
+          // Force dropdown to show all cities when focused
+          const cachedCities = localStorage.getItem("allCities");
+          if (cachedCities) {
+            setSuggestions(JSON.parse(cachedCities));
+          }
+          localStorage.setItem("userInteractedWithLocation", "true");
+        }}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+          // Mark that user has interacted with location
+          localStorage.setItem("userInteractedWithLocation", "true");
+        }}
         onKeyDown={handleKeyDown}
-        onBlur={() => {
-          if (query.trim() === "" && detectedCity) {
-            setQuery(detectedCity);
-            if (onCitySelect) onCitySelect(detectedCity);
+        onBlur={(e) => {
+          // Don't close dropdown immediately to allow for selection
+          if (!wrapperRef.current.contains(e.relatedTarget)) {
+            setTimeout(() => {
+              setOpen(false);
+              if (query.trim() === "" && detectedCity) {
+                setQuery(detectedCity);
+                if (onCitySelect) onCitySelect(detectedCity);
+              }
+            }, 200);
           }
         }}
         placeholder="Search city..."
@@ -301,22 +449,46 @@ export default function Location({ onCitySelect, priceMode = false }) {
         <ArrowDropDownIcon fontSize="small" />
       </button>
 
-      {open && suggestions.length > 0 && (
-        <ul className="absolute top-9 left-0 right-0 mt-1 bg-white border rounded-xl shadow-lg max-h-60 overflow-y-auto z-50">
-          {suggestions
-            .filter((city) =>
-              city.toLowerCase().includes(query.toLowerCase())
-            )
-            .slice(0, 20)
-            .map((city, i) => (
-              <li
-                key={i}
-                onClick={() => handleSelect(city)}
-                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-              >
-                {city}
-              </li>
-            ))}
+      {open && (
+        <ul className="absolute top-9 left-0 right-0 mt-1 bg-white border rounded-xl shadow-lg max-h-96 overflow-y-auto z-50">
+          <li className="px-4 py-2 text-xs font-semibold text-gray-500 bg-gray-50">Cities</li>
+          {suggestions.length > 0 ? (
+            suggestions
+              .filter((city) =>
+                query.trim() === "" ? true : city.toLowerCase().includes(query.toLowerCase())
+              )
+              .slice(0, 200)
+              .map((city, i) => {
+                // Check if this is the first city starting with a new letter
+                const currentFirstLetter = city.charAt(0).toUpperCase();
+                const prevCity = i > 0 ? suggestions[i - 1] : null;
+                const prevFirstLetter = prevCity ? prevCity.charAt(0).toUpperCase() : null;
+                const isNewLetterSection = currentFirstLetter !== prevFirstLetter;
+                
+                return (
+                  <React.Fragment key={i}>
+                    {isNewLetterSection && (
+                      <li className="sticky top-0 px-4 py-1 text-xs font-semibold text-blue-600 bg-blue-50">
+                        {currentFirstLetter}
+                      </li>
+                    )}
+                    <li
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSelect(city);
+                      }}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm flex items-center"
+                    >
+                      <LocationOnIcon fontSize="small" className="mr-2 text-gray-400" />
+                      {city}
+                    </li>
+                  </React.Fragment>
+                );
+              })
+          ) : (
+            <li className="px-4 py-2 text-sm text-gray-500">Loading cities...</li>
+          )}
         </ul>
       )}
     </div>
