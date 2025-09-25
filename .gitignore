@@ -7,3 +7,4 @@ notebook/Comparator.ipynb
 notebook/data/property_comparator_ready.csv
 notebook/comparator_ready_properties.csv
 .gitignore
+notebook/cleaned_properties.csv
