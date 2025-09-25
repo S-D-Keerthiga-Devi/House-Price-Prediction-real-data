@@ -13,15 +13,18 @@ import {
   ResponsiveContainer,
   Label
 } from "recharts";
-import Location from "./Location";
-import SubLocalitySearch from "./SubLocalitySearch";
-import CityInfoCard from "./CityInfoCard";
-import { TrendingUp, ChevronLeft, ChevronRight, MapPin, FileText, Building, Target, ShoppingCart, Building2, Calculator, BookOpen, Home } from "lucide-react";
+import Location from "../../components/Location";
+import SubLocalitySearch from "../../components/SubLocalitySearch";
+import CityInfoCard from "../../components/CityInfoCard";
+import Heatmaps from "./Heatmaps"; // Import the Heatmaps component
+import PriceIncomeIndex from "./PriceIncomeIndex";
+import { TrendingUp, ChevronLeft, ChevronRight, MapPin, FileText, Building, Target, ShoppingCart, Building2, Calculator, BookOpen, Home, Flame, Users, BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import dayjs from "dayjs";
 import { FormControl, Select, MenuItem, Typography, Box } from "@mui/material";
 import { useLocation } from "react-router-dom";
-import { houseDetails } from "../api/house.js";
+import { houseDetails } from "../../api/house.js";
+import EmergingLocalities from "./EmergingLocalities";
 
 export default function PropertyTrends() {
   const [timeSeriesData, setTimeSeriesData] = useState([]);
@@ -49,6 +52,9 @@ export default function PropertyTrends() {
 
   const tabs = [
     { id: "price-trends", label: "Price Trends", icon: TrendingUp },
+    { id: "heatmaps", label: "Heatmaps", icon: Flame },
+    { id: "price-income-index", label: "Price to Income Index", icon: BarChart3 },
+    { id: "emerging-localities", label: "Emerging Localities", icon: Users },
     { id: "neighbourhoods", label: "Neighbourhoods Insights", icon: MapPin },
     { id: "registry", label: "Registry Records", icon: FileText },
     { id: "popular-projects", label: "Popular Projects", icon: Building },
@@ -196,31 +202,31 @@ export default function PropertyTrends() {
   // Interpolate missing values to fill gaps
   const interpolateData = (data) => {
     if (!data || data.length === 0) return data;
-    
+
     // Find first and last non-null values
     let firstNonNull = -1;
     let lastNonNull = -1;
-    
+
     for (let i = 0; i < data.length; i++) {
       if (data[i] !== null) {
         if (firstNonNull === -1) firstNonNull = i;
         lastNonNull = i;
       }
     }
-    
+
     // If no data or only one point, return as is
     if (firstNonNull === -1 || firstNonNull === lastNonNull) return data;
-    
+
     // Forward fill from first non-null
     for (let i = 0; i < firstNonNull; i++) {
       data[i] = data[firstNonNull];
     }
-    
+
     // Backward fill from last non-null
     for (let i = lastNonNull + 1; i < data.length; i++) {
       data[i] = data[lastNonNull];
     }
-    
+
     // Interpolate between non-null values
     let prevNonNull = firstNonNull;
     for (let i = firstNonNull + 1; i < lastNonNull; i++) {
@@ -230,18 +236,18 @@ export default function PropertyTrends() {
         while (nextNonNull <= lastNonNull && data[nextNonNull] === null) {
           nextNonNull++;
         }
-        
+
         if (nextNonNull <= lastNonNull) {
           // Linear interpolation
           const prevValue = data[prevNonNull];
           const nextValue = data[nextNonNull];
           const steps = nextNonNull - prevNonNull;
-          
+
           for (let j = prevNonNull + 1; j < nextNonNull; j++) {
             const ratio = (j - prevNonNull) / steps;
             data[j] = Math.round(prevValue + ratio * (nextValue - prevValue));
           }
-          
+
           i = nextNonNull - 1; // Skip the filled values
           prevNonNull = nextNonNull;
         }
@@ -249,14 +255,14 @@ export default function PropertyTrends() {
         prevNonNull = i;
       }
     }
-    
+
     return data;
   };
 
   // Get valid localities with at least 2 data points
   const validLocalities = useMemo(() => {
     if (!selectedCity) return [];
-    
+
     const cityData = timeSeriesData.filter(d => {
       const matchCity = d.city.toLowerCase() === selectedCity.toLowerCase();
       const matchCategory = selectedType === "All" || d.property_category === selectedType;
@@ -264,10 +270,10 @@ export default function PropertyTrends() {
     });
 
     const localityCounts = {};
-    
+
     cityData.forEach(d => {
       if (!d.sub_locality) return;
-      
+
       let key;
       if (timePeriod === "Monthly") {
         key = dayjs(`${d.month}-${d.year}`, "MMM-YYYY").format("MMM-YY");
@@ -279,7 +285,7 @@ export default function PropertyTrends() {
       } else {
         key = d.year.toString();
       }
-      
+
       if (!localityCounts[d.sub_locality]) {
         localityCounts[d.sub_locality] = new Set();
       }
@@ -360,13 +366,13 @@ export default function PropertyTrends() {
           sortKey: monthStr
         };
       });
-      
+
       // Interpolate missing values
       const cityRates = result.map(d => d.city_rate);
       const interpolatedCityRates = [...interpolateData([...cityRates])];
       const localityRates = result.map(d => d.locality_rate);
       const interpolatedLocalityRates = selectedSubLocality ? [...interpolateData([...localityRates])] : null;
-      
+
       return result.map((d, i) => ({
         ...d,
         city_rate: interpolatedCityRates[i],
@@ -386,13 +392,13 @@ export default function PropertyTrends() {
         city_rate: cityProcessed.get(period) || null,
         locality_rate: selectedSubLocality ? (localityProcessed.get(period) || null) : null
       }));
-      
+
       // Interpolate missing values
       const cityRates = result.map(d => d.city_rate);
       const interpolatedCityRates = [...interpolateData([...cityRates])];
       const localityRates = result.map(d => d.locality_rate);
       const interpolatedLocalityRates = selectedSubLocality ? [...interpolateData([...localityRates])] : null;
-      
+
       return result.map((d, i) => ({
         ...d,
         city_rate: interpolatedCityRates[i],
@@ -412,13 +418,13 @@ export default function PropertyTrends() {
         city_rate: cityProcessed.get(period) || null,
         locality_rate: selectedSubLocality ? (localityProcessed.get(period) || null) : null
       }));
-      
+
       // Interpolate missing values
       const cityRates = result.map(d => d.city_rate);
       const interpolatedCityRates = [...interpolateData([...cityRates])];
       const localityRates = result.map(d => d.locality_rate);
       const interpolatedLocalityRates = selectedSubLocality ? [...interpolateData([...localityRates])] : null;
-      
+
       return result.map((d, i) => ({
         ...d,
         city_rate: interpolatedCityRates[i],
@@ -744,6 +750,28 @@ export default function PropertyTrends() {
             )}
           </div>
         );
+
+      case "heatmaps":
+        return (
+          <div className="max-w-7xl mx-auto">
+            <Heatmaps />
+          </div>
+        );
+
+      case "price-income-index":
+        return (
+          <div className="max-w-7xl mx-auto">
+            <PriceIncomeIndex />
+          </div>
+        );
+
+      case "emerging-localities":
+        return (
+          <div className="max-w-7xl mx-auto">
+            <EmergingLocalities />
+          </div>
+        );
+
       default:
         return (
           <div className="bg-white rounded-3xl shadow-2xl border overflow-hidden h-96 flex items-center justify-center">
@@ -769,8 +797,8 @@ export default function PropertyTrends() {
   return (
     <section className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-16 px-4 mt-10">
       <div className="max-w-7xl mx-auto">
-        {/* City Info Card - shown above the tabs */}
-        {activeTab === "price-trends" && selectedCity && (
+        {/* City Info Card - now shown for all tabs when a city is selected */}
+        {selectedCity && (
           <div className="mb-8">
             <CityInfoCard city={selectedCity} averagePrice={cityAverage} />
           </div>

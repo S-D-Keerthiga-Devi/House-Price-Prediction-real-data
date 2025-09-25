@@ -30,7 +30,7 @@ const smartServicesTabs = {
     { name: "Rent Agreement", icon: <FileText className="w-10 h-10 text-green-600" />, link: "/rent-agreement" },
     { name: "Auctioned Property", icon: <Gavel className="w-10 h-10 text-orange-600" />, link: "/auctioned-property" },
     { name: "Escrow Services", icon: <Scale className="w-10 h-10 text-purple-600" />, link: "/escow-services" },
-    { name: "Comparator", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/compare" },
+    { name: "Comparator", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/comparator" },
   ],
   Developers: [
     { name: "Advertize With Us", icon: <Building2 className="w-10 h-10 text-orange-600" />, link: "/advertise-with-us" },
@@ -72,7 +72,8 @@ const insightServices = [
   {
     name: "Price to Income Index",
     image: "https://images.pexels.com/photos/6802042/pexels-photo-6802042.jpeg",
-    link: "/price-income-index"
+    link: "/price-income-index",
+    isPriceToIncome: true
   },
   {
     name: "Emerging Localities",
@@ -189,6 +190,13 @@ const Services = () => {
     if(service.isHeatmaps){
       // Dispatch custom event to trigger message box in header for Heatmaps
       const event = new CustomEvent('showHeatmapsMessage');
+      window.dispatchEvent(event);
+      return;
+    }
+
+    if(service.isPriceToIncome){
+      // Dispatch custom event to trigger message box in header for Heatmaps
+      const event = new CustomEvent('showPriceToIncomeMessage');
       window.dispatchEvent(event);
       return;
     }

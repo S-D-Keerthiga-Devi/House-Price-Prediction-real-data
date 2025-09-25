@@ -3,23 +3,29 @@ import { useNavigate, useLocation } from "react-router-dom";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import { useSelector, useDispatch } from "react-redux";
+import { setCity } from "../store/authSlice";
 
 export default function Location({ onCitySelect, priceMode = false }) {
-  const [query, setQuery] = useState("");
+  const { selectedCity } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const [query, setQuery] = useState(selectedCity || "");
   const [detectedCity, setDetectedCity] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
   const [isPriceTrendsMode, setIsPriceTrendsMode] = useState(false);
   const [isEmergingLocalitiesMode, setIsEmergingLocalitiesMode] = useState(false);
   const [isHeatmapsMode, setIsHeatmapsMode] = useState(false);
+  const [isPriceToIncomeMode, setIsPriceToIncomeMode] = useState(false);
   const wrapperRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ Fetch Indian cities once
+  // ✅ Fetch Indian cities and localities once
   useEffect(() => {
     const fetchCities = async () => {
       try {
+        // First fetch cities from API
         const res = await fetch(
           "https://countriesnow.space/api/v0.1/countries/cities",
           {
@@ -29,18 +35,37 @@ export default function Location({ onCitySelect, priceMode = false }) {
           }
         );
         const data = await res.json();
+        
+        // Then fetch localities from our backend
+        const localitiesRes = await getLocalitiesByCity(selectedCity || "Gurgaon");
+        
+        // Combine both datasets
+        let allSuggestions = [];
         if (data.data) {
-          setSuggestions(data.data.sort());
+          allSuggestions = [...data.data];
         }
+        
+        if (localitiesRes?.success && Array.isArray(localitiesRes.localities)) {
+          const localities = localitiesRes.localities
+            .filter(Boolean)
+            .map(loc => `${loc} — ${localitiesRes.city}`);
+          allSuggestions = [...allSuggestions, ...localities];
+        }
+        
+        // Sort and set suggestions
+        setSuggestions(allSuggestions.sort());
       } catch (err) {
-        console.error("Error fetching cities:", err);
+        console.error("Error fetching locations:", err);
       }
     };
     fetchCities();
-  }, []);
+  }, [selectedCity]);
 
   // ✅ Auto-detect current city
   useEffect(() => {
+    const alreadySelected = selectedCity || localStorage.getItem("selectedCity");
+    if (alreadySelected) return; // respect user's existing selection
+
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude, longitude } = pos.coords;
@@ -58,6 +83,7 @@ export default function Location({ onCitySelect, priceMode = false }) {
           if (city) {
             setQuery(city);
             setDetectedCity(city);
+            dispatch(setCity(city)); // Update Redux store
             if (onCitySelect) onCitySelect(city);
           }
         } catch (err) {
@@ -73,6 +99,7 @@ export default function Location({ onCitySelect, priceMode = false }) {
       setIsPriceTrendsMode(true);
       setIsEmergingLocalitiesMode(false); // Reset other mode
       setIsHeatmapsMode(false);
+      setIsPriceToIncomeMode(false)
       // Focus on the input when price trends is activated
       const input = wrapperRef.current?.querySelector('input');
       if (input) {
@@ -90,6 +117,7 @@ export default function Location({ onCitySelect, priceMode = false }) {
       setIsEmergingLocalitiesMode(true);
       setIsPriceTrendsMode(false); // Reset other mode
       setIsHeatmapsMode(false);
+      setIsPriceToIncomeMode(false)
       // Focus on the input when emerging localities is activated
       const input = wrapperRef.current?.querySelector('input');
       if (input) {
@@ -108,6 +136,7 @@ export default function Location({ onCitySelect, priceMode = false }) {
       setIsHeatmapsMode(true);
       setIsPriceTrendsMode(false); // Reset other mode
       setIsEmergingLocalitiesMode(false);
+      setIsPriceToIncomeMode(false)
       // Focus on the input when emerging localities is activated
       const input = wrapperRef.current?.querySelector('input');
       if (input) {
@@ -119,7 +148,27 @@ export default function Location({ onCitySelect, priceMode = false }) {
     return () => window.removeEventListener('showHeatmapsMessage', handleHeatmapsActivation);
   }, []);
 
+  // ✅ Listen for Price To Income mode activation
+  useEffect(() => {
+    const handlePriceToIncomeActivation = () => {
+      setIsHeatmapsMode(false);
+      setIsPriceTrendsMode(false); // Reset other mode
+      setIsEmergingLocalitiesMode(false);
+      setIsPriceToIncomeMode(true)
+      
+      // Focus on the input when emerging localities is activated
+      const input = wrapperRef.current?.querySelector('input');
+      if (input) {
+        input.focus();
+      }
+    };
+
+    window.addEventListener('showPriceToIncomeMessage', handlePriceToIncomeActivation);
+    return () => window.removeEventListener('showPriceToIncomeMessage', handlePriceToIncomeActivation);
+  }, []);
+
   const handleSelect = (city) => {
+    dispatch(setCity(city)); // Update Redux store
     setQuery(city);
     setOpen(false);
     if (onCitySelect) onCitySelect(city);
@@ -133,12 +182,16 @@ export default function Location({ onCitySelect, priceMode = false }) {
       setIsEmergingLocalitiesMode(false); // Reset the mode
     } else if (isHeatmapsMode) {
       navigate(`/heatmaps?city=${encodeURIComponent(city)}`);
-      setIsEmergingLocalitiesMode(false); // Reset the mode
+      setIsHeatmapsMode(false); // Reset the mode
+    } else if (isPriceToIncomeMode) {
+      navigate(`/price-income-index?city=${encodeURIComponent(city)}`);
+      setIsPriceToIncomeMode(false); // Reset the mode
     }
   };
 
   const handleSearch = () => {
     if (query.trim() !== "") {
+      dispatch(setCity(query)); // Update Redux store
       if (onCitySelect) onCitySelect(query);
       
       // Redirect based on active mode
@@ -151,6 +204,9 @@ export default function Location({ onCitySelect, priceMode = false }) {
       } else if (isHeatmapsMode) {
         navigate(`/heatmaps?city=${encodeURIComponent(query)}`);
         setIsHeatmapsMode(false); // Reset the mode
+      } else if (isPriceToIncomeMode) {
+        navigate(`/price-income-index?city=${encodeURIComponent(query)}`);
+        setIsPriceToIncomeMode(false); // Reset the mode
       }
     }
   };
@@ -168,9 +224,22 @@ export default function Location({ onCitySelect, priceMode = false }) {
         setOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    
+    // Add event listener with capture phase to ensure it runs before other handlers
+    document.addEventListener("mousedown", handleClickOutside, true);
+    
+    // Also close on escape key
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleEscKey);
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside, true);
+      document.removeEventListener("keydown", handleEscKey);
+    };
   }, []);
 
   return (
@@ -215,7 +284,7 @@ export default function Location({ onCitySelect, priceMode = false }) {
       />
 
       {/* Search button - show when user types and any special mode is active */}
-      {(priceMode || isPriceTrendsMode || isEmergingLocalitiesMode || isHeatmapsMode) && query.trim() !== "" && (
+      {(priceMode || isPriceTrendsMode || isEmergingLocalitiesMode || isHeatmapsMode || isPriceToIncomeMode) && query.trim() !== "" && (
         <button
           onClick={handleSearch}
           className="p-1 text-gray-500 hover:text-blue-600"

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, TrendingUp, TrendingDown, MapPin, Calendar, Building, Filter, ChevronDown, BarChart3 } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, MapPin, Calendar, Building, Filter, ChevronDown, BarChart3, Info } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
-import { houseRates } from '../api/house.js';
+import { houseRates } from '../../api/house.js';
 import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import { useLocation } from 'react-router-dom';
+import { useCity } from "../../context/CityContext";
 
 // Price Trend Chart Component
 const PriceTrendChart = ({ data, location }) => {
@@ -89,7 +90,7 @@ const PriceTrendChart = ({ data, location }) => {
 function EmergingLocalities() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedCity, setSelectedCity] = useState('');
+  const [ selectedCity, setSelectedCity ] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('rate_desc');
   const [filterCategory, setFilterCategory] = useState('all');
@@ -394,96 +395,130 @@ function EmergingLocalities() {
 
         {/* Data Grid */}
         {!loading && !error && data.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="space-y-4">
             {processedData.map((locality, index) => (
-              <div key={index} className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border ${expandedCards.has(index) ? 'ring-2 ring-blue-500/20' : ''}`}>
-                <div className="p-6">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-1 line-clamp-2">
-                        {locality.location}
-                      </h3>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <MapPin className="w-4 h-4 mr-1" />
-                        {selectedCity}
+              <div key={index} className="bg-white border border-gray-200 hover:shadow-md transition-all duration-200 group rounded-lg overflow-hidden">
+                <div className="flex flex-col">
+                  {/* Main content */}
+                  <div className="flex items-start p-4 gap-4">
+                    {/* Left section - Location icon and details */}
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                          <MapPin className="w-6 h-6 text-blue-600" />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-base font-semibold text-gray-900 mb-1">
+                          {locality.location}
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-2">{selectedCity}</p>
+                        <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
+                          locality.categories.includes('Apartment') ? 'bg-blue-100 text-blue-800' :
+                          locality.categories.includes('Plot') ? 'bg-green-100 text-green-800' :
+                          'bg-purple-100 text-purple-800'
+                        }`}>
+                          {locality.categories[0] || 'N/A'}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center">
-                      {locality.trend > 0 ? (
-                        <TrendingUp className="w-5 h-5 text-green-500" />
-                      ) : locality.trend < 0 ? (
-                        <TrendingDown className="w-5 h-5 text-red-500" />
-                      ) : (
-                        <div className="w-5 h-5 rounded-full bg-gray-300"></div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Price Info */}
-                  <div className="mb-4">
-                    <div className="text-2xl font-bold text-gray-800 mb-1">
-                      {formatPrice(locality.currentRate)}/sq ft
-                    </div>
-                    {locality.trend !== 0 && (
-                      <div className={`text-sm ${locality.trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {locality.trend > 0 ? '+' : ''}{formatPrice(locality.trend)} ({locality.trendPercentage}%)
+                    
+                    {/* Right section - Stats */}
+                    <div className="flex items-center gap-8">
+                      {/* Rate */}
+                      <div className="text-right">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm text-gray-600">Latest Rate</span>
+                          <Info className="w-3 h-3 text-gray-400" />
+                        </div>
+                        <div className="text-lg font-bold text-gray-900">
+                          {formatPrice(locality.currentRate)}/sq.ft
+                        </div>
                       </div>
-                    )}
-                    <div className="text-sm text-gray-500">
-                      Avg: {formatPrice(locality.avgRate)}/sq ft
+                      
+                      {/* Growth */}
+                      <div className="text-right">
+                        <div className="flex items-center gap-2 mb-1">
+                          {locality.trend > 0 ? (
+                            <TrendingUp className="w-4 h-4 text-green-600" />
+                          ) : locality.trend < 0 ? (
+                            <TrendingDown className="w-4 h-4 text-red-600" />
+                          ) : (
+                            <div className="w-4 h-4"></div>
+                          )}
+                          <span className={`text-sm font-semibold ${
+                            locality.trend > 0 ? 'text-green-600' : 
+                            locality.trend < 0 ? 'text-red-600' : 'text-gray-600'
+                          }`}>
+                            {locality.trendPercentage}% in 5Y
+                          </span>
+                        </div>
+                        <div className="h-8 w-24">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={data.filter(item => item.location === locality.location).slice(0, 5)}>
+                              <defs>
+                                <linearGradient id="miniGradient" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
+                                </linearGradient>
+                              </defs>
+                              <Area
+                                type="monotone"
+                                dataKey="rate_sqft"
+                                stroke="#10b981"
+                                strokeWidth={1.5}
+                                fill="url(#miniGradient)"
+                                dot={false}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                      
+                      {/* Rental Yield */}
+                      <div className="text-right">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm text-gray-600">Rental Yield</span>
+                          <Info className="w-3 h-3 text-gray-400" />
+                        </div>
+                        <div className="text-lg font-bold text-gray-900">
+                          {locality.rentalYield || '1%'}
+                        </div>
+                      </div>
+                      
+                      {/* Expand/Collapse button */}
+                      <div>
+                        <button 
+                          onClick={() => toggleCardExpansion(index)}
+                          className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600"
+                        >
+                          <ChevronDown className={`w-5 h-5 transition-transform ${expandedCards.has(index) ? 'rotate-180' : ''}`} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Price Trends Button */}
-                  <div className="mb-4">
-                    <button
-                      onClick={() => toggleCardExpansion(index)}
-                      className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 ${expandedCards.has(index)
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                    >
-                      <BarChart3 className="w-4 h-4" />
-                      <span className="font-medium">
-                        {expandedCards.has(index) ? 'Hide Price Trends' : 'Show Price Trends'}
-                      </span>
-                      <ChevronDown className={`w-4 h-4 transition-transform ${expandedCards.has(index) ? 'rotate-180' : ''}`} />
-                    </button>
-                  </div>
-
-                  {/* Expandable Chart Section */}
+                  
+                  {/* Expandable content */}
                   {expandedCards.has(index) && (
-                    <div className="mb-4 animate-in slide-in-from-top-2 duration-300">
+                    <div className="px-4 pb-4 animate-in slide-in-from-top-2 duration-300">
                       <PriceTrendChart data={data} location={locality.location} />
+                      <div className="grid grid-cols-3 gap-4 mt-4">
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <div className="text-sm text-gray-600 mb-1">Last Updated</div>
+                          <div className="font-medium">{locality.lastUpdated}</div>
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <div className="text-sm text-gray-600 mb-1">Listings</div>
+                          <div className="font-medium">{locality.totalListings}</div>
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <div className="text-sm text-gray-600 mb-1">Categories</div>
+                          <div className="font-medium text-xs">{locality.categories.join(', ')}</div>
+                        </div>
+                      </div>
                     </div>
                   )}
-
-                  {/* Details */}
-                  <div className="space-y-3 mt-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600 flex items-center">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        Last Updated
-                      </span>
-                      <span className="font-medium">{locality.lastUpdated}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600 flex items-center">
-                        <Building className="w-4 h-4 mr-1" />
-                        Listings
-                      </span>
-                      <span className="font-medium">{locality.totalListings}</span>
-                    </div>
-
-                    <div className="text-sm">
-                      <span className="text-gray-600">Categories: </span>
-                      <span className="font-medium">
-                        {locality.categories.join(', ')}
-                      </span>
-                    </div>
-                  </div>
                 </div>
               </div>
             ))}

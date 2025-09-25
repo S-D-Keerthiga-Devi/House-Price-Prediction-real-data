@@ -1,4 +1,5 @@
 import houseModel from "../models/houseModel.js";
+import comparatorPropertyModel from "../models/comparatorModel.js";
 
 // ✅ Get distinct cities
 export const getCities = async (req, res) => {
@@ -97,15 +98,69 @@ export const getCoordinatesByCity = async (req, res) => {
 
   try {
     const records = await houseModel
-      .find({ city: { $regex: new RegExp(`^${city}$`, "i") } }) // case-insensitive match
-      .select("city location year month quarter property_category rate_sqft lat lng") // Explicitly include lat/lng
+      .find({ city: { $regex: new RegExp(`^${city}$`, "i") } })
+      .select("city location year month quarter property_category rate_sqft lat lng")
       .sort({ year: 1, month: 1 });
+
+    if (!records.length) {
+      return res.json({ success: true, city, count: 0, data: [] });
+    }
+
+    // compute bounds
+    const lats = records.map(r => Number(r.lat || r.location?.coordinates?.[1]));
+    const lngs = records.map(r => Number(r.lng || r.location?.coordinates?.[0]));
+    const bounds = {
+      minLat: Math.min(...lats),
+      maxLat: Math.max(...lats),
+      minLng: Math.min(...lngs),
+      maxLng: Math.max(...lngs),
+    };
 
     return res.json({
       success: true,
       city,
       count: records.length,
+      bounds,
       data: records,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+// Add this function to your existing controller
+export const getPropertiesForComparison = async (req, res) => {
+  try {
+    const { propertyIds, properties } = req.body;
+    
+    if (!propertyIds && !properties) {
+      return res.status(400).json({ success: false, message: "Property IDs or properties data is required" });
+    }
+
+    let foundProperties = [];
+    
+    if (propertyIds && Array.isArray(propertyIds) && propertyIds.length > 0) {
+      // Query by property IDs
+      foundProperties = await comparatorPropertyModel.find({ 
+        '_id': { $in: propertyIds } 
+      });
+    } else if (properties && Array.isArray(properties) && properties.length > 0) {
+      // Query by location and city
+      const query = {
+        $or: properties.map(prop => ({
+          location: prop.location,
+          city: prop.city
+        }))
+      };
+      foundProperties = await comparatorPropertyModel.find(query);
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid data format" });
+    }
+
+    return res.json({
+      success: true,
+      properties: foundProperties
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

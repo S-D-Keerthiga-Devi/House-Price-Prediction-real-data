@@ -3,3 +3,7 @@ notebook/data/data_formatted.csv
 backend/.env
 frontend/.env
 notebook/Price Trend Comparison.ipynb
+notebook/Comparator.ipynb
+notebook/data/property_comparator_ready.csv
+notebook/comparator_ready_properties.csv
+.gitignore

@@ -40,3 +40,48 @@ export const coordinates = async (city) => {
     return { success: false, message: error.message };
   }
 };
+
+// New function for fetching properties for comparison
+export const getPropertiesForComparison = async (data) => {
+  if (!data) {
+    return { success: false, message: "Property data is required" };
+  }
+
+  try {
+    // If data is an array, it's location/city data
+    // If data is an object with propertyIds, it's property IDs
+    const body = Array.isArray(data) ? { properties: data } : data;
+    
+    const res = await axiosInstance.post(`/api/house/comparator`, body);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching properties for comparison:", error);
+    return { success: false, message: error.message };
+  }
+};
+
+// Function to get localities by city
+export const getLocalitiesByCity = async (city) => {
+  if (!city) {
+    return { success: false, message: "City is required" };
+  }
+
+  try {
+    const res = await axiosInstance.get(`/api/house/localities/${city}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching localities by city:", error);
+    return { success: false, message: error.message };
+  }
+};
+
+// Function to get all available cities
+export const getCities = async () => {
+  try {
+    const res = await axiosInstance.get(`/api/house/cities`);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching cities:", error);
+    return { success: false, message: error.message };
+  }
+};

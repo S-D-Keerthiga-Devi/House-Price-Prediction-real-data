@@ -3,10 +3,12 @@ import { createSlice } from "@reduxjs/toolkit";
 // Initialize from localStorage
 const storedUser = JSON.parse(localStorage.getItem("userData"));
 const storedStatus = localStorage.getItem("status") === "true";
+const storedCity = localStorage.getItem("selectedCity") || "Gurgaon";
 
 const initialState = {
     status: storedStatus || false,
-    userData: storedUser || { phone: null, countryCode: "+91" } // default country code
+    userData: storedUser || { phone: null, countryCode: "+91" }, // default country code
+    selectedCity: storedCity
 };
 
 const authSlice = createSlice({
@@ -27,14 +29,20 @@ const authSlice = createSlice({
             localStorage.removeItem("status");
             localStorage.removeItem("userData");
             localStorage.removeItem("token"); // optional if you store token
+            // Don't remove selectedCity on logout
         },
         updateUser: (state, action) => {
             state.userData = { ...state.userData, ...action.payload };
             // Update localStorage
             localStorage.setItem("userData", JSON.stringify(state.userData));
+        },
+        setCity: (state, action) => {
+            state.selectedCity = action.payload;
+            // Persist to localStorage
+            localStorage.setItem("selectedCity", action.payload);
         }
     }
 });
 
-export const { login, logout, updateUser } = authSlice.actions;
+export const { login, logout, updateUser, setCity } = authSlice.actions;
 export default authSlice.reducer;

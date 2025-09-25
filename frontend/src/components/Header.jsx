@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Heart, Search, ChevronDown, Filter, Bell } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FaUserCircle } from "react-icons/fa";
 import { logout, updateUser } from "../store/authSlice.js";
@@ -9,6 +9,7 @@ import { userDetails } from "../api/user.js";
 import { logoutUser } from "../api/auth.js";
 import { useLocation } from "react-router-dom";
 import Slider from "@mui/material/Slider";
+import { getLocalitiesByCity } from "../api/house";
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import Location from "./Location.jsx";
 import { X } from "lucide-react";
@@ -16,7 +17,7 @@ import { Box, Paper } from "@mui/material";
 
 const Header = () => {
   const menuRef = useRef(null);
-  const { status, userData } = useSelector((state) => state.auth);
+  const { status, userData, selectedCity: reduxSelectedCity } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,9 +34,19 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
   const [selectedCity, setSelectedCity] = useState("");
+  // Keep local selectedCity in sync with Redux so center suggestions load
+  useEffect(() => {
+    if (reduxSelectedCity && reduxSelectedCity !== selectedCity) {
+      setSelectedCity(reduxSelectedCity);
+    }
+  }, [reduxSelectedCity]);
+  const [centerQuery, setCenterQuery] = useState("");
+  const [centerOpen, setCenterOpen] = useState(false);
+  const [centerLocalities, setCenterLocalities] = useState([]);
   const [showPriceTrendsMessage, setShowPriceTrendsMessage] = useState(false);
   const [showEmergingLocalitiesMessage, setShowEmergingLocalitiesMessage] = useState(false);
   const [showHeatmapsMessage, setShowHeatmapsMessage] = useState(false);
+  const [showPriceToIncomeMessage, setShowPriceToIncomeMessage] = useState(false);
 
 
   const filtersRef = useRef(null);
@@ -67,14 +78,27 @@ const Header = () => {
     setShowPriceTrendsMessage(false); // hide price trends popup
     setShowEmergingLocalitiesMessage(false); // hide emerging localities popup
     setShowHeatmapsMessage(false);
+    setShowPriceToIncomeMessage(false);
   };
+
+  // Helper to clear all prompts
+  const clearAllPrompts = () => {
+    setShowPriceTrendsMessage(false);
+    setShowEmergingLocalitiesMessage(false);
+    setShowHeatmapsMessage(false);
+    setShowPriceToIncomeMessage(false);
+  };
+
+  // Clear prompts on route change
+  useEffect(() => {
+    clearAllPrompts();
+  }, [location.pathname]);
 
   // Listen for the Price Trends event
   useEffect(() => {
     const handlePriceTrendsClick = () => {
+      clearAllPrompts();
       setShowPriceTrendsMessage(true);
-      setShowEmergingLocalitiesMessage(false); // Hide other message
-      setShowHeatmapsMessage(false);
 
       // Optional: scroll/focus on some element
       const locationInput = document.getElementById("location-input");
@@ -94,9 +118,8 @@ const Header = () => {
   // Listen for the Emerging Localities event
   useEffect(() => {
     const handleEmergingLocalitiesClick = () => {
+      clearAllPrompts();
       setShowEmergingLocalitiesMessage(true);
-      setShowPriceTrendsMessage(false); // Hide other message
-      setShowHeatmapsMessage(false);
 
       // Optional: scroll/focus on some element
       const locationInput = document.getElementById("location-input");
@@ -116,8 +139,7 @@ const Header = () => {
   // Listen for the Heatmaps event
   useEffect(() => {
     const handleHeatmapsClick = () => {
-      setShowEmergingLocalitiesMessage(false);
-      setShowPriceTrendsMessage(false); // Hide other message
+      clearAllPrompts();
       setShowHeatmapsMessage(true);
       
       // Optional: scroll/focus on some element
@@ -132,6 +154,28 @@ const Header = () => {
 
     return () => {
       window.removeEventListener('showHeatmapsMessage', handleHeatmapsClick);
+    };
+  }, []);
+
+
+  // Listen for the PriceToIncome event
+  useEffect(() => {
+    const handlePriceToIncomeClick = () => {
+      clearAllPrompts();
+      setShowPriceToIncomeMessage(true);
+      
+      // Optional: scroll/focus on some element
+      const locationInput = document.getElementById("location-input");
+      if (locationInput) {
+        locationInput.focus();
+        locationInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+
+    window.addEventListener('showPriceToIncomeMessage', handlePriceToIncomeClick);
+
+    return () => {
+      window.removeEventListener('showPriceToIncomeMessage', handlePriceToIncomeClick);
     };
   }, []);
 
@@ -164,6 +208,16 @@ const Header = () => {
       return () => clearTimeout(timer);
     }
   }, [showHeatmapsMessage]);
+
+  // Auto-hide after 10 seconds for Heatmaps
+  useEffect(() => {
+    if (showPriceToIncomeMessage) {
+      const timer = setTimeout(() => {
+        setShowPriceToIncomeMessage(false);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [showPriceToIncomeMessage]);
 
 
   // Fetch fresh user data on mount
@@ -246,13 +300,59 @@ const Header = () => {
     }
   };
 
+  // Load localities for center search when city changes
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!selectedCity) return;
+      try {
+        const res = await getLocalitiesByCity(selectedCity);
+        if (!cancelled && res?.success && Array.isArray(res.localities)) {
+          const list = res.localities
+            .filter(Boolean)
+            .map((loc) => `${loc} — ${res.city}`)
+            .sort((a, b) => a.localeCompare(b));
+          setCenterLocalities(list);
+        }
+      } catch (e) {
+        console.error("Failed to load localities:", e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedCity]);
+  
+  // Handle dropdown closing
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Close center dropdown when clicking outside
+      if (centerOpen && !event.target.closest('.center-search-container')) {
+        setCenterOpen(false);
+      }
+    };
+    
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape') {
+        setCenterOpen(false);
+      }
+    };
+    
+    // Add event listeners with capture phase to ensure they run before other handlers
+    document.addEventListener('mousedown', handleClickOutside, true);
+    document.addEventListener('keydown', handleEscKey);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [centerOpen]);
+
   return (
     <header className="w-full fixed top-0 left-0 z-50 bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-6">
         {/* LEFT: Logo + Location */}
         <div className="flex items-center gap-3">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <div className="w-9 h-9 bg-gradient-to-br from-blue-700 to-blue-900 rounded-md flex items-center justify-center text-white font-bold text-lg shadow">
               H
             </div>
@@ -262,7 +362,7 @@ const Header = () => {
                 Smart Property Search
               </div>
             </div>
-          </a>
+          </Link>
 
 
           {/* Location Component - priceMode=false for header */}
@@ -310,7 +410,7 @@ const Header = () => {
                 <div className="flex items-center gap-2">
                   <span>Choose a city to explore Heatmaps!</span>
                   <button
-                    onClick={() => setShowEmergingLocalitiesMessage(false)}
+                    onClick={() => setShowHeatmapsMessage(false)}
                     className="ml-2 text-white hover:text-gray-200"
                   >
                     <X size={16} />
@@ -318,6 +418,23 @@ const Header = () => {
                 </div>
                 {/* Arrow pointing to location input */}
                 <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 border-4 border-transparent border-r-red-600"></div>
+              </div>
+            )}
+
+            {/* Message box for Price To Income */}
+            {showPriceToIncomeMessage && (
+              <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-purple-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg z-50 whitespace-nowrap max-w-xs">
+                <div className="flex items-center gap-2">
+                  <span>Choose a city to explore Price To Income Index!</span>
+                  <button
+                    onClick={() => setShowPriceToIncomeMessage(false)}
+                    className="ml-2 text-white hover:text-gray-200"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                {/* Arrow pointing to location input */}
+                <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 border-4 border-transparent border-r-purple-600"></div>
               </div>
             )}
           </div>
@@ -375,12 +492,41 @@ const Header = () => {
             </div>
 
             {/* Input Box */}
-            <input
-              type="text"
-              placeholder="Search properties..."
-              className="flex-1 px-3 py-2 text-sm outline-none"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <div className="relative flex-1 center-search-container" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="text"
+                placeholder={selectedCity ? `Search localities in ${selectedCity}` : "Search properties..."}
+                className="w-full px-3 py-2 text-sm outline-none"
+                value={centerQuery}
+                onChange={(e) => { setCenterQuery(e.target.value); setCenterOpen(true); }}
+                onFocus={() => setCenterOpen(true)}
+              />
+              {centerQuery && (
+                <button
+                  aria-label="Clear location"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => { setCenterQuery(""); setCenterOpen(false); }}
+                >
+                  ×
+                </button>
+              )}
+              {centerOpen && (
+                <ul className="absolute left-0 right-0 top-full mt-2 bg-white border rounded-xl shadow-2xl max-h-96 overflow-y-auto z-[70]">
+                  {(centerQuery.trim() === "" ? centerLocalities : centerLocalities.filter((l) => l.toLowerCase().includes(centerQuery.toLowerCase())))
+                    .slice(0, 200)
+                    .map((l) => (
+                      <li key={l} className="px-4 py-3 text-sm flex items-center justify-between cursor-pointer hover:bg-blue-50"
+                        onClick={() => { setCenterQuery(l); setCenterOpen(false); }}>
+                        <span className="text-gray-800">{l.split(" — ")[0]}</span>
+                        <span className="text-xs text-gray-500">{l.split(" — ")[1]}</span>
+                      </li>
+                    ))}
+                  {(centerQuery.trim() !== "" && (centerLocalities.filter((l) => l.toLowerCase().includes(centerQuery.toLowerCase())).length === 0)) && (
+                    <li className="px-4 py-3 text-sm text-gray-500">No matches</li>
+                  )}
+                </ul>
+              )}
+            </div>
 
             {/* Search Button */}
             <button
@@ -633,12 +779,12 @@ const Header = () => {
             </span>
           </button>
 
-          <a
-            href="/post-property"
+          <Link
+            to="/post-property"
             className="bg-blue-700 text-white px-4 py-2 text-xs font-semibold shadow hover:bg-blue-800"
           >
             + Post Property
-          </a>
+          </Link>
 
           {/* Conditionally render Login or Profile */}
           {status ? (
@@ -709,12 +855,12 @@ const Header = () => {
               )}
             </div>
           ) : (
-            <a
-              href="/login"
+            <Link
+              to="/login"
               className="border border-blue-700 text-blue-700 px-4 py-2 text-xs font-semibold rounded-md hover:bg-blue-50"
             >
               Login
-            </a>
+            </Link>
           )}
         </div>
       </div>
