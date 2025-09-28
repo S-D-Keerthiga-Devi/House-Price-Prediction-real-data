@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { getCities, getLocalitiesByCity } from "../api/house";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   BarChart3,
@@ -20,7 +21,22 @@ export default function Banner({ onScrollToForm }) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
   const { selectedCity } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
 
+
+  const handleServiceClick = (service) => {
+    if (service.isComparator) {
+      // Dispatch custom event to trigger message box in header for Comparators
+      const event = new CustomEvent('showComparatorMessage');
+      window.dispatchEvent(event);
+      return;
+    }
+
+    // Handle navigation for all services that have a link
+    if (service.link) {
+      navigate(service.link);
+    }
+  };
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -91,12 +107,12 @@ export default function Banner({ onScrollToForm }) {
                 new investment opportunities
               </h1>
 
-               {/* Search Bar */}
-               <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-visible hover:shadow-lg transition-all max-w-2xl">
-                 <div className="flex items-center relative" ref={wrapperRef}>
+              {/* Search Bar */}
+              <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-visible hover:shadow-lg transition-all max-w-2xl">
+                <div className="flex items-center relative" ref={wrapperRef}>
                   {/* Buy/Rent Select */}
                   <div className="relative border-r border-gray-100 flex-shrink-0 pl-2">
-                      <FormControl
+                    <FormControl
                       size="small"
                       variant="outlined"
                       sx={{
@@ -158,9 +174,12 @@ export default function Banner({ onScrollToForm }) {
                   />
 
                   {/* Search Button */}
-                  <button className="bg-blue-700 hover:bg-blue-800 text-white p-4 flex items-center justify-center transition-colors">
-                    <Search className="w-5 h-5" />
+                  <button
+                    className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-4 flex items-center justify-center transition-colors rounded-r-xl"
+                  >
+                    <Search className="w-5 h-5.6" />
                   </button>
+
 
                   {/* Clear Icon */}
                   {searchQuery && (
@@ -182,10 +201,10 @@ export default function Banner({ onScrollToForm }) {
                       {(searchQuery.trim() === ""
                         ? localityOptions
                         : localityOptions.filter((l) =>
-                            l.toLowerCase().includes(searchQuery.toLowerCase())
-                          )
+                          l.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
                       )
-                        .slice(0, 200) 
+                        .slice(0, 200)
                         .map((l) => (
                           <li
                             key={l}
@@ -208,7 +227,7 @@ export default function Banner({ onScrollToForm }) {
                         localityOptions.filter((l) =>
                           l.toLowerCase().includes(searchQuery.toLowerCase())
                         ).length === 0 && (
-                           <li className="px-4 py-3 text-sm text-gray-500">
+                          <li className="px-4 py-3 text-sm text-gray-500">
                             No matches
                           </li>
                         )}
@@ -230,11 +249,13 @@ export default function Banner({ onScrollToForm }) {
                     Property Valuation Report
                   </span>
                 </button>
-                <button className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
+                <button
+                  onClick={() => handleServiceClick({ isComparator: true })}
+                  className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                     <BarChart3 className="w-5 h-5 text-blue-800" />
                   </div>
-                  <span className="font-medium text-gray-800">Comparator</span>
+                  <span className="font-medium text-gray-800">Property Comparator</span>
                 </button>
                 <button className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
