@@ -79,7 +79,7 @@ export default function Banner({ onScrollToForm }) {
 
       {/* Main Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 w-full">
-        <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl overflow-visible px-8 py-12 md:px-12 md:py-16 transition-all hover:shadow-2xl">
+        <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden px-8 py-12 md:px-12 md:py-16 transition-all hover:shadow-2xl">
           <div className="grid lg:grid-cols-3 gap-10 items-start">
             {/* Quote + Search */}
             <div className="space-y-8">
@@ -91,12 +91,12 @@ export default function Banner({ onScrollToForm }) {
                 new investment opportunities
               </h1>
 
-              {/* Search Bar */}
-              <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-visible hover:shadow-lg transition-all max-w-2xl">
-                <div className="flex items-center relative" ref={wrapperRef}>
+               {/* Search Bar */}
+               <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-visible hover:shadow-lg transition-all max-w-2xl">
+                 <div className="flex items-center relative" ref={wrapperRef}>
                   {/* Buy/Rent Select */}
                   <div className="relative border-r border-gray-100 flex-shrink-0 pl-2">
-                    <FormControl
+                      <FormControl
                       size="small"
                       variant="outlined"
                       sx={{
@@ -104,6 +104,7 @@ export default function Banner({ onScrollToForm }) {
                         backgroundColor: "white",
                         "& .MuiOutlinedInput-root": {
                           fontSize: "0.875rem",
+                          paddingY: "8px",
                           "& fieldset": { border: "none" },
                           "&:hover fieldset": { border: "none" },
                         },
@@ -125,15 +126,20 @@ export default function Banner({ onScrollToForm }) {
                           PaperProps: {
                             sx: {
                               borderRadius: "10px",
-                              boxShadow:
-                                "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
                             },
                           },
                         }}
                       >
-                        <MenuItem value="buy">Buy</MenuItem>
-                        <MenuItem value="rent">Rent</MenuItem>
-                        <MenuItem value="auction">Auction</MenuItem>
+                        <MenuItem value="buy" sx={{ fontSize: "0.875rem", color: "#001c40", fontWeight: "500" }}>
+                          Buy
+                        </MenuItem>
+                        <MenuItem value="rent" sx={{ fontSize: "0.875rem", color: "#001c40", fontWeight: "500" }}>
+                          Rent
+                        </MenuItem>
+                        <MenuItem value="auction" sx={{ fontSize: "0.875rem", color: "#001c40", fontWeight: "500" }}>
+                          Auction
+                        </MenuItem>
                       </Select>
                     </FormControl>
                   </div>
@@ -141,25 +147,26 @@ export default function Banner({ onScrollToForm }) {
                   {/* Search Input */}
                   <input
                     type="text"
-                    placeholder={
-                      selectedCity
-                        ? `Search localities in ${selectedCity}`
-                        : "Search location or property"
-                    }
+                    placeholder={selectedCity ? `Search localities in ${selectedCity}` : "Search location or property"}
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
                       setOpen(true);
                     }}
                     onFocus={() => setOpen(true)}
-                    className="flex-1 px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none text-base bg-white min-w-0"
+                    className="flex-1 px-6 py-4 text-gray-800 placeholder-gray-400 focus:outline-none text-base bg-white min-w-0"
                   />
+
+                  {/* Search Button */}
+                  <button className="bg-blue-700 hover:bg-blue-800 text-white p-4 flex items-center justify-center transition-colors">
+                    <Search className="w-5 h-5" />
+                  </button>
 
                   {/* Clear Icon */}
                   {searchQuery && (
                     <button
                       aria-label="Clear location"
-                      className="absolute right-12 inset-y-0 flex items-center pr-2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-16 text-gray-400 hover:text-gray-600"
                       onClick={() => {
                         setSearchQuery("");
                         setOpen(false);
@@ -169,45 +176,28 @@ export default function Banner({ onScrollToForm }) {
                     </button>
                   )}
 
-
-                  {/* Search Button */}
-                  <button className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-3 rounded-r-xl transition-colors flex items-center justify-center flex-shrink-0">
-                    <Search className="w-5 h-5" />
-                  </button>
-
                   {/* Dropdown Options */}
                   {open && (
-                    <ul className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-100 rounded-lg shadow-lg 
-                    max-h-[13rem] overflow-y-auto z-50">
-
-                      {searchQuery.trim() === "" && (
-                        <li className="px-6 py-3 text-sm text-gray-500 border-b border-gray-50">
-                          Popular localities in {selectedCity || "your city"}
-                        </li>
-                      )}
-
+                    <ul className="absolute left-2 right-2 top-full mt-2 bg-white border rounded-2xl shadow-2xl max-h-[35rem] overflow-y-auto z-50">
                       {(searchQuery.trim() === ""
                         ? localityOptions
                         : localityOptions.filter((l) =>
-                          l.toLowerCase().includes(searchQuery.toLowerCase())
-                        )
+                            l.toLowerCase().includes(searchQuery.toLowerCase())
+                          )
                       )
-                        .slice(0, 200)
+                        .slice(0, 200) 
                         .map((l) => (
                           <li
                             key={l}
-                            className="px-6 py-3 text-sm flex items-center justify-between cursor-pointer transition-colors hover:bg-blue-50 border-b border-gray-50 last:border-b-0"
+                            className="px-4 py-3 text-sm flex items-center justify-between cursor-pointer transition-colors hover:bg-blue-50"
                             onClick={() => {
                               setSearchQuery(l);
                               setOpen(false);
                             }}
                           >
-                            <div className="flex items-center">
-                              <Search className="w-3 h-3 text-gray-400 mr-2" />
-                              <span className="text-gray-800 font-medium">
-                                {l.split(" — ")[0]}
-                              </span>
-                            </div>
+                            <span className="text-gray-800">
+                              {l.split(" — ")[0]}
+                            </span>
                             <span className="text-xs text-gray-500">
                               {l.split(" — ")[1]}
                             </span>
@@ -218,15 +208,14 @@ export default function Banner({ onScrollToForm }) {
                         localityOptions.filter((l) =>
                           l.toLowerCase().includes(searchQuery.toLowerCase())
                         ).length === 0 && (
-                          <li className="px-6 py-4 text-sm text-gray-500 flex items-center justify-center">
-                            No matches found
+                           <li className="px-4 py-3 text-sm text-gray-500">
+                            No matches
                           </li>
                         )}
                     </ul>
                   )}
                 </div>
               </div>
-
             </div>
 
             {/* Middle Column - Services */}

@@ -85,3 +85,16 @@ export const getCities = async () => {
     return { success: false, message: error.message };
   }
 };
+
+// Function to get all properties for comparison
+export const getAllPropertiesForComparison = async (params = {}) => {
+  try {
+    const queryString = new URLSearchParams(params).toString();
+    const url = `/api/house/comparator/all${queryString ? `?${queryString}` : ''}`;
+    const res = await axiosInstance.get(url);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching all properties for comparison:", error);
+    return { success: false, message: error.message };
+  }
+};

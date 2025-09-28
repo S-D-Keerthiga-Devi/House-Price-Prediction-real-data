@@ -30,7 +30,7 @@ const smartServicesTabs = {
     { name: "Rent Agreement", icon: <FileText className="w-10 h-10 text-green-600" />, link: "/rent-agreement" },
     { name: "Auctioned Property", icon: <Gavel className="w-10 h-10 text-orange-600" />, link: "/auctioned-property" },
     { name: "Escrow Services", icon: <Scale className="w-10 h-10 text-purple-600" />, link: "/escow-services" },
-    { name: "Comparator", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/comparator" },
+    { name: "Comparator", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/comparator", isComparator: true },
   ],
   Developers: [
     { name: "Advertize With Us", icon: <Building2 className="w-10 h-10 text-orange-600" />, link: "/advertise-with-us" },
@@ -197,6 +197,13 @@ const Services = () => {
     if(service.isPriceToIncome){
       // Dispatch custom event to trigger message box in header for Heatmaps
       const event = new CustomEvent('showPriceToIncomeMessage');
+      window.dispatchEvent(event);
+      return;
+    }
+
+    if(service.isComparator){
+      // Dispatch custom event to trigger message box in header for Heatmaps
+      const event = new CustomEvent('showComparatorMessage');
       window.dispatchEvent(event);
       return;
     }

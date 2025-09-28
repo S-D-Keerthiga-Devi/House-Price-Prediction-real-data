@@ -166,3 +166,26 @@ export const getPropertiesForComparison = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Function to get all properties for comparison
+export const getAllPropertiesForComparison = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50; // Default to 50 properties per page
+    const skip = (page - 1) * limit;
+    
+    const properties = await comparatorPropertyModel.find({}).skip(skip).limit(limit);
+    const totalCount = await comparatorPropertyModel.countDocuments({});
+    
+    return res.json({
+      success: true,
+      count: properties.length,
+      totalCount: totalCount,
+      page: page,
+      totalPages: Math.ceil(totalCount / limit),
+      properties: properties
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

@@ -47,6 +47,7 @@ const Header = () => {
   const [showEmergingLocalitiesMessage, setShowEmergingLocalitiesMessage] = useState(false);
   const [showHeatmapsMessage, setShowHeatmapsMessage] = useState(false);
   const [showPriceToIncomeMessage, setShowPriceToIncomeMessage] = useState(false);
+  const [showComparatorMessage, setShowComparatorMessage] = useState(false);
 
 
   const filtersRef = useRef(null);
@@ -79,6 +80,7 @@ const Header = () => {
     setShowEmergingLocalitiesMessage(false); // hide emerging localities popup
     setShowHeatmapsMessage(false);
     setShowPriceToIncomeMessage(false);
+    setShowComparatorMessage(false);
   };
 
   // Helper to clear all prompts
@@ -87,6 +89,7 @@ const Header = () => {
     setShowEmergingLocalitiesMessage(false);
     setShowHeatmapsMessage(false);
     setShowPriceToIncomeMessage(false);
+    setShowComparatorMessage(false);
   };
 
   // Clear prompts on route change
@@ -141,7 +144,7 @@ const Header = () => {
     const handleHeatmapsClick = () => {
       clearAllPrompts();
       setShowHeatmapsMessage(true);
-
+      
       // Optional: scroll/focus on some element
       const locationInput = document.getElementById("location-input");
       if (locationInput) {
@@ -163,7 +166,7 @@ const Header = () => {
     const handlePriceToIncomeClick = () => {
       clearAllPrompts();
       setShowPriceToIncomeMessage(true);
-
+      
       // Optional: scroll/focus on some element
       const locationInput = document.getElementById("location-input");
       if (locationInput) {
@@ -176,6 +179,27 @@ const Header = () => {
 
     return () => {
       window.removeEventListener('showPriceToIncomeMessage', handlePriceToIncomeClick);
+    };
+  }, []);
+
+  // Listen for the Comparator event
+  useEffect(() => {
+    const handleComparatorClick = () => {
+      clearAllPrompts();
+      setShowComparatorMessage(true);
+      
+      // Optional: scroll/focus on some element
+      const locationInput = document.getElementById("location-input");
+      if (locationInput) {
+        locationInput.focus();
+        locationInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+
+    window.addEventListener('showComparatorMessage', handleComparatorClick);
+
+    return () => {
+      window.removeEventListener('showComparatorMessage', handleComparatorClick);
     };
   }, []);
 
@@ -209,7 +233,7 @@ const Header = () => {
     }
   }, [showHeatmapsMessage]);
 
-  // Auto-hide after 10 seconds for Heatmaps
+  // Auto-hide after 10 seconds for Price to Index
   useEffect(() => {
     if (showPriceToIncomeMessage) {
       const timer = setTimeout(() => {
@@ -218,6 +242,16 @@ const Header = () => {
       return () => clearTimeout(timer);
     }
   }, [showPriceToIncomeMessage]);
+
+  // Auto-hide after 10 seconds for Comparator
+  useEffect(() => {
+    if (showComparatorMessage) {
+      const timer = setTimeout(() => {
+        setShowComparatorMessage(false);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [showComparatorMessage]);
 
 
   // Fetch fresh user data on mount
@@ -320,7 +354,7 @@ const Header = () => {
     })();
     return () => { cancelled = true; };
   }, [selectedCity]);
-
+  
   // Handle dropdown closing
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -329,17 +363,17 @@ const Header = () => {
         setCenterOpen(false);
       }
     };
-
+    
     const handleEscKey = (event) => {
       if (event.key === 'Escape') {
         setCenterOpen(false);
       }
     };
-
+    
     // Add event listeners with capture phase to ensure they run before other handlers
     document.addEventListener('mousedown', handleClickOutside, true);
     document.addEventListener('keydown', handleEscKey);
-
+    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside, true);
       document.removeEventListener('keydown', handleEscKey);
@@ -386,15 +420,18 @@ const Header = () => {
               </div>
             )}
 
+            {/* Message box for Emerging Localities */}
             {showEmergingLocalitiesMessage && (
-              <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-green-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg z-50 max-w-xl">
-                <div className="flex items-center gap-2 whitespace-nowrap">
+              <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 
+              bg-green-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg z-50 
+              whitespace-nowrap max-w-lg">
+                <div className="flex items-center gap-2">
                   <span>Choose a city to explore emerging localities!</span>
                   <button
                     onClick={() => setShowEmergingLocalitiesMessage(false)}
                     className="ml-2 text-white hover:text-gray-200"
                   >
-                    <X size={16} color="white" />
+                    <X size={16} />
                   </button>
                 </div>
                 {/* Arrow pointing to location input */}
@@ -403,9 +440,7 @@ const Header = () => {
             )}
 
 
-
-
-            {/* Message box for Emerging Localities */}
+            {/* Message box for Heatmaps */}
             {showHeatmapsMessage && (
               <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-red-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg z-50 whitespace-nowrap max-w-xs">
                 <div className="flex items-center gap-2">
@@ -424,7 +459,10 @@ const Header = () => {
 
             {/* Message box for Price To Income */}
             {showPriceToIncomeMessage && (
-              <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-purple-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg z-50 whitespace-nowrap max-w-md">
+              <div className="absolute left-full ml-2 mr-2 top-1/2 transform -translate-y-1/2 
+              bg-purple-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg z-50 
+              whitespace-nowrap max-w-md">
+            
                 <div className="flex items-center gap-2">
                   <span>Choose a city to explore Price To Income Index!</span>
                   <button
@@ -439,6 +477,22 @@ const Header = () => {
               </div>
             )}
 
+            {/* Message box for Comparator */}
+            {showComparatorMessage && (
+              <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-teal-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg z-50 whitespace-nowrap max-w-xs">
+                <div className="flex items-center gap-2">
+                  <span>Choose a city to explore Comparator!</span>
+                  <button
+                    onClick={() => setShowComparatorMessage(false)}
+                    className="ml-2 text-white hover:text-gray-200"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                {/* Arrow pointing to location input */}
+                <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 border-4 border-transparent border-r-teal-600"></div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -494,7 +548,7 @@ const Header = () => {
             </div>
 
             {/* Input Box */}
-            <div className="relative flex-1 center-search-container" onClick={(e) => e.stopPropagation()}>
+            <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
               <input
                 type="text"
                 placeholder={selectedCity ? `Search localities in ${selectedCity}` : "Search properties..."}

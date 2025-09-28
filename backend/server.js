@@ -9,7 +9,7 @@ import localitiesRouter from "./routes/localitiesRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 4000
-const allowedOrigins = ['http://localhost:5173', 'https://keerthiga-house-price-prediction.vercel.app', 'http://localhost:5174']
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', 'https://keerthiga-house-price-prediction.vercel.app']
 connectDB()
 
 app.use(express.json());

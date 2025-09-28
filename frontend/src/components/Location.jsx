@@ -20,6 +20,7 @@ export default function Location({ onCitySelect, priceMode = false }) {
   const [isEmergingLocalitiesMode, setIsEmergingLocalitiesMode] = useState(false);
   const [isHeatmapsMode, setIsHeatmapsMode] = useState(false);
   const [isPriceToIncomeMode, setIsPriceToIncomeMode] = useState(false);
+  const [isComparatorMode, setIsComparatorMode] = useState(false);
   const wrapperRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -175,6 +176,7 @@ export default function Location({ onCitySelect, priceMode = false }) {
       setIsEmergingLocalitiesMode(false); // Reset other mode
       setIsHeatmapsMode(false);
       setIsPriceToIncomeMode(false)
+      setIsComparatorMode(false);
       // Focus on the input when price trends is activated
       const input = wrapperRef.current?.querySelector('input');
       if (input) {
@@ -193,6 +195,7 @@ export default function Location({ onCitySelect, priceMode = false }) {
       setIsPriceTrendsMode(false); // Reset other mode
       setIsHeatmapsMode(false);
       setIsPriceToIncomeMode(false)
+      setIsComparatorMode(false);
       // Focus on the input when emerging localities is activated
       const input = wrapperRef.current?.querySelector('input');
       if (input) {
@@ -212,6 +215,7 @@ export default function Location({ onCitySelect, priceMode = false }) {
       setIsPriceTrendsMode(false); // Reset other mode
       setIsEmergingLocalitiesMode(false);
       setIsPriceToIncomeMode(false)
+      setIsComparatorMode(false);
       // Focus on the input when emerging localities is activated
       const input = wrapperRef.current?.querySelector('input');
       if (input) {
@@ -229,6 +233,7 @@ export default function Location({ onCitySelect, priceMode = false }) {
       setIsHeatmapsMode(false);
       setIsPriceTrendsMode(false); // Reset other mode
       setIsEmergingLocalitiesMode(false);
+      setIsComparatorMode(false);
       setIsPriceToIncomeMode(true)
       
       // Focus on the input when emerging localities is activated
@@ -242,63 +247,113 @@ export default function Location({ onCitySelect, priceMode = false }) {
     return () => window.removeEventListener('showPriceToIncomeMessage', handlePriceToIncomeActivation);
   }, []);
 
+  // ✅ Listen for Comparator mode activation
+  useEffect(() => {
+    const handleComparatorActivation = () => {
+      setIsHeatmapsMode(false);
+      setIsPriceTrendsMode(false); // Reset other mode
+      setIsEmergingLocalitiesMode(false);
+      setIsPriceToIncomeMode(false);
+      setIsComparatorMode(true);
+      
+      // Focus on the input when emerging localities is activated
+      const input = wrapperRef.current?.querySelector('input');
+      if (input) {
+        input.focus();
+      }
+    };
+
+    window.addEventListener('showComparatorMessage', handleComparatorActivation);
+    return () => window.removeEventListener('showComparatorMessage', handleComparatorActivation);
+  }, []);
+
   const handleSelect = (city) => {
+    // Special case for Gurgaon/Gurugram
+    let cityToUse = city;
+    const normalizedCity = city.toLowerCase();
+    if (normalizedCity === "gurgaon" || normalizedCity === "gurugram") {
+      // Always use "Gurgaon" for consistency with the rest of the application
+      cityToUse = "Gurgaon";
+    }
+    
     // Mark that user has interacted with location selection
     localStorage.setItem("userInteractedWithLocation", "true");
-    localStorage.setItem("selectedCity", city);
+    localStorage.setItem("selectedCity", cityToUse);
     
-    dispatch(setCity(city)); // Update Redux store
-    setQuery(city);
+    dispatch(setCity(cityToUse)); // Update Redux store
+    setQuery(cityToUse);
     setOpen(false);
-    if (onCitySelect) onCitySelect(city);
+    if (onCitySelect) onCitySelect(cityToUse);
     
     // Redirect based on active mode
     if (priceMode || isPriceTrendsMode) {
-      navigate(`/price-trends?city=${encodeURIComponent(city)}`);
+      navigate(`/price-trends?city=${encodeURIComponent(cityToUse)}`);
       setIsPriceTrendsMode(false); // Reset the mode
     } else if (isEmergingLocalitiesMode) {
-      navigate(`/emerging-localities?city=${encodeURIComponent(city)}`);
+      navigate(`/emerging-localities?city=${encodeURIComponent(cityToUse)}`);
       setIsEmergingLocalitiesMode(false); // Reset the mode
     } else if (isHeatmapsMode) {
-      navigate(`/heatmaps?city=${encodeURIComponent(city)}`);
+      navigate(`/heatmaps?city=${encodeURIComponent(cityToUse)}`);
       setIsHeatmapsMode(false); // Reset the mode
     } else if (isPriceToIncomeMode) {
-      navigate(`/price-income-index?city=${encodeURIComponent(city)}`);
+      navigate(`/price-income-index?city=${encodeURIComponent(cityToUse)}`);
       setIsPriceToIncomeMode(false); // Reset the mode
+    } else if (isComparatorMode) {
+      navigate(`/comparator?city=${encodeURIComponent(cityToUse)}`);
+      setIsComparatorMode(false); // Reset the mode
     }
   };
 
   const handleSearch = () => {
     if (query.trim() !== "") {
+      // Special case for Gurgaon/Gurugram
+      let cityToUse = query;
+      const normalizedQuery = query.toLowerCase();
+      if (normalizedQuery === "gurgaon" || normalizedQuery === "gurugram") {
+        // Always use "Gurgaon" for consistency with the rest of the application
+        cityToUse = "Gurgaon";
+      }
+      
       // Mark that user has interacted with location selection
       localStorage.setItem("userInteractedWithLocation", "true");
-      localStorage.setItem("selectedCity", query);
+      localStorage.setItem("selectedCity", cityToUse);
       
-      dispatch(setCity(query)); // Update Redux store
-      if (onCitySelect) onCitySelect(query);
+      dispatch(setCity(cityToUse)); // Update Redux store
+      if (onCitySelect) onCitySelect(cityToUse);
       
       // Redirect based on active mode
       if (priceMode || isPriceTrendsMode) {
-        navigate(`/price-trends?city=${encodeURIComponent(query)}`);
+        navigate(`/price-trends?city=${encodeURIComponent(cityToUse)}`);
         setIsPriceTrendsMode(false); // Reset the mode
       } else if (isEmergingLocalitiesMode) {
-        navigate(`/emerging-localities?city=${encodeURIComponent(query)}`);
+        navigate(`/emerging-localities?city=${encodeURIComponent(cityToUse)}`);
         setIsEmergingLocalitiesMode(false); // Reset the mode
       } else if (isHeatmapsMode) {
-        navigate(`/heatmaps?city=${encodeURIComponent(query)}`);
+        navigate(`/heatmaps?city=${encodeURIComponent(cityToUse)}`);
         setIsHeatmapsMode(false); // Reset the mode
       } else if (isPriceToIncomeMode) {
-        navigate(`/price-income-index?city=${encodeURIComponent(query)}`);
+        navigate(`/price-income-index?city=${encodeURIComponent(cityToUse)}`);
         setIsPriceToIncomeMode(false); // Reset the mode
+      } else if (isComparatorMode) {
+        navigate(`/comparator?city=${encodeURIComponent(cityToUse)}`);
+        setIsComparatorMode(false); // Reset the mode
       }
     }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
+      // Special case for Gurgaon/Gurugram
+      const normalizedQuery = query.toLowerCase();
+      if (normalizedQuery === "gurgaon" || normalizedQuery === "gurugram") {
+        // Always use "Gurgaon" for consistency with the rest of the application
+        handleSelect("Gurgaon");
+        return;
+      }
+      
       // If there's a filtered suggestion that matches the query exactly, use that
       const exactMatch = suggestions.find(city => 
-        city.toLowerCase() === query.toLowerCase()
+        city.toLowerCase() === normalizedQuery
       );
       
       if (exactMatch) {
@@ -306,7 +361,7 @@ export default function Location({ onCitySelect, priceMode = false }) {
       } else if (suggestions.length > 0 && query.trim() !== "") {
         // If no exact match but we have suggestions, use the first filtered suggestion
         const filteredSuggestions = suggestions.filter(city => 
-          city.toLowerCase().includes(query.toLowerCase())
+          city.toLowerCase().includes(normalizedQuery)
         );
         
         if (filteredSuggestions.length > 0) {
@@ -432,7 +487,7 @@ export default function Location({ onCitySelect, priceMode = false }) {
       />
 
       {/* Search button - show when user types and any special mode is active */}
-      {(priceMode || isPriceTrendsMode || isEmergingLocalitiesMode || isHeatmapsMode || isPriceToIncomeMode) && query.trim() !== "" && (
+      {(priceMode || isPriceTrendsMode || isEmergingLocalitiesMode || isHeatmapsMode || isPriceToIncomeMode || isComparatorMode) && query.trim() !== "" && (
         <button
           onClick={handleSearch}
           className="p-1 text-gray-500 hover:text-blue-600"

@@ -1,533 +1,873 @@
-// Comparator.jsx
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { X, Crown, Car, Leaf, TrendingUp, MapPin, Home, DollarSign, Star, Building, Users, TreePine, Calendar, Clock, Plus, ArrowLeft, BarChart3 } from "lucide-react";
-import { getPropertiesForComparison } from "../api/house.js";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { MapPin, TrendingUp, TrendingDown, Building, Star, BarChart3, Zap, X, Award, Plus, ArrowLeft, Shield, Car, Dumbbell, Coffee, Leaf } from "lucide-react";
+import { getAllPropertiesForComparison } from '../api/house';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts';
+import { useLocation } from "react-router-dom";
 
-export default function Comparator({ items = [], onRemoveItem, onClose, onAddMore }) {
+const Comparator = ({ initialProperties = [] }) => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedProperties, setSelectedProperties] = useState([]);
+  const [showComparisonTable, setShowComparisonTable] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  // State for amenities
+  const [showAmenities, setShowAmenities] = useState(false);
+  const [selectedPropertyForAmenities, setSelectedPropertyForAmenities] = useState(null);
+  const [expandedAmenitiesCards, setExpandedAmenitiesCards] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const cityFromURL = params.get("city");
+
+  const [selectedCity, setSelectedCity] = useState("");
 
   useEffect(() => {
-    const fetchProperties = async () => {
-      if (items.length === 0) {
-        setProperties([]);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        
-        console.log("Fetching properties for items:", items);
-        const response = await getPropertiesForComparison(items);
-        
-        console.log("API Response:", response);
-        
-        if (Array.isArray(response)) {
-          setProperties(response);
-        } else if (response && response.properties && Array.isArray(response.properties)) {
-          setProperties(response.properties);
-        } else if (response && response.data && Array.isArray(response.data)) {
-          setProperties(response.data);
-        } else {
-          setError("Invalid response format from API");
-        }
-      } catch (error) {
-        console.error("Error fetching properties:", error);
-        setError("Error fetching properties for comparison");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProperties();
-  }, [items]);
-
-  const formatPrice = (price) => {
-    if (!price) return 'N/A';
-    if (price >= 10000000) return `₹${(price / 10000000).toFixed(1)}Cr`;
-    if (price >= 100000) return `₹${(price / 100000).toFixed(1)}L`;
-    return `₹${price.toLocaleString()}`;
-  };
-
-  const getBuilderGradeColor = (grade) => {
-    if (grade >= 0.8) return 'bg-gradient-to-r from-purple-500 to-purple-600 text-white';
-    if (grade >= 0.6) return 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white';
-    if (grade >= 0.4) return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white';
-    return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white';
-  };
-
-  const getBuilderGradeLabel = (grade) => {
-    if (grade >= 0.8) return 'Platinum';
-    if (grade >= 0.6) return 'Gold';
-    if (grade >= 0.4) return 'Silver';
-    return 'Standard';
-  };
-
-  const getFacingLabel = (score) => {
-    if (score >= 1.0) return 'South';
-    if (score >= 0.9) return 'West';
-    if (score >= 0.8) return 'East';
-    if (score >= 0.7) return 'North';
-    return 'Other';
-  };
-
-  const getProgressColor = (value, max, type = 'normal') => {
-    const percentage = (value / max) * 100;
-    if (type === 'inverse') {
-      if (percentage <= 20) return 'bg-green-500';
-      if (percentage <= 50) return 'bg-yellow-500';
-      return 'bg-red-500';
+    if (cityFromURL) {
+      setSelectedCity(cityFromURL);
     }
-    if (percentage >= 80) return 'bg-green-500';
-    if (percentage >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
+  }, [cityFromURL]);
 
-  const ProgressBar = ({ value, max, type = 'normal', className = '' }) => {
-    const percentage = Math.min(100, Math.max(0, (value / max) * 100));
-    const colorClass = getProgressColor(value, max, type);
-    
-    return (
-      <div className={`w-full bg-gray-200 rounded-full h-2 ${className}`}>
-        <div
-          className={`h-2 rounded-full transition-all duration-300 ${colorClass}`}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-    );
-  };
+  // Memoized metrics definition - now includes overall score
+  const metrics = useMemo(() => [
+    { key: 'overallScore', label: 'Overall Score', higher: true, icon: Star },
+    { key: 'builderReputation', label: 'Builder Reputation', higher: true, icon: Building },
+    { key: 'locationScore', label: 'Location Score', higher: true, icon: MapPin },
+    { key: 'investmentPotential', label: 'Investment Potential', higher: true, icon: BarChart3 },
+    { key: 'fiveYearGrowth', label: '5-Year Growth', higher: true, icon: TrendingUp },
+    { key: 'lifestyleIndex', label: 'Lifestyle Index', higher: true, icon: Zap },
+    { key: 'valuation', label: 'Valuation Score', higher: true, icon: Star }
+  ], []);
 
-  // Enhanced features array with better organization
-  const featureCategories = [
-    {
-      title: "Financial Metrics",
-      icon: <DollarSign className="w-4 h-4" />,
-      features: [
-        { 
-          key: 'price_value', 
-          label: 'Total Price', 
-          icon: <DollarSign className="w-4 h-4" />,
-          type: 'currency',
-          max: 100000000,
-          priority: 'high'
-        },
-        { 
-          key: 'rate_sqft', 
-          label: 'Price per Sq.Ft', 
-          icon: <BarChart3 className="w-4 h-4" />,
-          type: 'currency',
-          max: 100000,
-          priority: 'high'
-        },
-        { 
-          key: 'rental_yield', 
-          label: 'Rental Yield', 
-          icon: <TrendingUp className="w-4 h-4" />,
-          type: 'percentage',
-          priority: 'high'
-        },
-        { 
-          key: 'affordability_index', 
-          label: 'Affordability Score', 
-          icon: <Star className="w-4 h-4" />,
-          type: 'score',
-          max: 1,
-          priority: 'medium'
-        }
-      ]
-    },
-    {
-      title: "Investment & Growth",
-      icon: <TrendingUp className="w-4 h-4" />,
-      features: [
-        { 
-          key: 'investment_potential', 
-          label: 'Investment Score', 
-          icon: <Star className="w-4 h-4" />,
-          type: 'score',
-          max: 1,
-          priority: 'high'
-        },
-        { 
-          key: 'future_growth_prediction', 
-          label: 'Growth Potential', 
-          icon: <TrendingUp className="w-4 h-4" />,
-          type: 'score',
-          max: 10,
-          priority: 'high'
-        },
-        { 
-          key: 'neighbourhood_avg_income', 
-          label: 'Area Income Level', 
-          icon: <Users className="w-4 h-4" />,
-          type: 'currency',
-          max: 50000000,
-          priority: 'medium'
-        }
-      ]
-    },
-    {
-      title: "Property Details",
-      icon: <Home className="w-4 h-4" />,
-      features: [
-        { key: 'area', label: 'Area (Sq.Ft)', icon: <Building className="w-4 h-4" />, type: 'number', priority: 'high' },
-        { key: 'bedrooms', label: 'Bedrooms', icon: <Home className="w-4 h-4" />, type: 'number', priority: 'high' },
-        { key: 'bathroom', label: 'Bathrooms', icon: <Home className="w-4 h-4" />, type: 'number', priority: 'medium' },
-        { key: 'balconies', label: 'Balconies', icon: <TreePine className="w-4 h-4" />, type: 'number', priority: 'low' },
-        { key: 'parking_count', label: 'Parking Spaces', icon: <Car className="w-4 h-4" />, type: 'number', priority: 'medium' }
-      ]
-    },
-    {
-      title: "Quality & Features", 
-      icon: <Star className="w-4 h-4" />,
-      features: [
-        { 
-          key: 'builder_grade', 
-          label: 'Builder Grade', 
-          icon: <Crown className="w-4 h-4" />,
-          type: 'grade',
-          max: 1,
-          priority: 'high'
-        },
-        { 
-          key: 'lifestyle_quality_index', 
-          label: 'Lifestyle Quality', 
-          icon: <Leaf className="w-4 h-4" />,
-          type: 'score',
-          max: 10,
-          priority: 'medium'
-        },
-        { key: 'amenities_count', label: 'Amenities Count', icon: <Star className="w-4 h-4" />, type: 'number', priority: 'medium' },
-        { key: 'facing_score', label: 'Facing Direction', icon: <MapPin className="w-4 h-4" />, type: 'facing', priority: 'low' }
-      ]
-    },
-    {
-      title: "Status & Timeline",
-      icon: <Calendar className="w-4 h-4" />,
-      features: [
-        { key: 'property_age_years', label: 'Property Age (Years)', icon: <Calendar className="w-4 h-4" />, type: 'age', priority: 'medium' },
-        { key: 'days_on_market', label: 'Days on Market', icon: <Clock className="w-4 h-4" />, type: 'days', priority: 'low' },
-        { key: 'construction_status', label: 'Construction Status', icon: <Building className="w-4 h-4" />, type: 'text', priority: 'medium' },
-        { key: 'furnishing_status', label: 'Furnishing', icon: <Home className="w-4 h-4" />, type: 'text', priority: 'low' }
-      ]
-    }
-  ];
-
-  const renderFeatureValue = (property, feature) => {
-    let value = property[feature.key];
-    
-    if (value === undefined || value === null) {
-      return <span className="text-gray-400 text-sm font-medium">N/A</span>;
-    }
-
-    switch (feature.type) {
-      case 'currency':
-        const numericValue = typeof value === 'number' ? value : parseFloat(value) || 0;
-        return (
-          <div className="space-y-2">
-            <div className="font-semibold text-gray-800">{formatPrice(numericValue)}</div>
-            <ProgressBar value={numericValue} max={feature.max} />
-          </div>
-        );
-        
-      case 'percentage':
-        const percentValue = typeof value === 'number' ? value : parseFloat(value) || 0;
-        return (
-          <div className="space-y-2">
-            <div className="font-semibold text-gray-800">{(percentValue * 100).toFixed(2)}%</div>
-            <ProgressBar value={percentValue * 100} max={100} />
-          </div>
-        );
-        
-      case 'score':
-        const scoreValue = typeof value === 'number' ? value : parseFloat(value) || 0;
-        return (
-          <div className="space-y-2">
-            <div className="font-semibold text-gray-800">{scoreValue.toFixed(1)}</div>
-            <ProgressBar value={scoreValue} max={feature.max} />
-          </div>
-        );
-        
-      case 'grade':
-        return (
-          <div className="space-y-2">
-            <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getBuilderGradeColor(value)}`}>
-              <Crown className="w-3 h-3 mr-1" />
-              {getBuilderGradeLabel(value)}
-            </div>
-            <ProgressBar value={value} max={1} />
-          </div>
-        );
-        
-      case 'facing':
-        return (
-          <div className="space-y-2">
-            <div className="font-semibold text-gray-800">{getFacingLabel(value)}</div>
-            <ProgressBar value={value} max={1} />
-          </div>
-        );
-        
-      case 'age':
-        return (
-          <div className="space-y-2">
-            <div className="font-semibold text-gray-800">{value} years</div>
-            <ProgressBar value={value} max={20} type="inverse" />
-          </div>
-        );
-        
-      case 'days':
-        return (
-          <div className="space-y-2">
-            <div className="font-semibold text-gray-800">{value} days</div>
-            <ProgressBar value={value} max={365} type="inverse" />
-          </div>
-        );
-        
-      case 'text':
-        return (
-          <div className="font-semibold text-gray-800 bg-gray-50 px-3 py-1 rounded-lg text-sm">
-            {value}
-          </div>
-        );
-        
-      case 'number':
-        const numValue = typeof value === 'number' ? value : parseFloat(value) || 0;
-        return (
-          <div className="font-semibold text-gray-800 text-lg">
-            {numValue.toLocaleString()}
-          </div>
-        );
-        
-      default:
-        return <div className="font-medium text-gray-700">{value}</div>;
-    }
-  };
-
-  const getBestValueBadge = (properties, feature) => {
-    if (properties.length < 2) return null;
+  // Generate property amenities score data using real data from MongoDB
+  const generateAmenitiesData = useCallback((property) => {
+    // Use actual property data from MongoDB
+    return [
+      { name: 'Security', score: property.security_score || parseFloat((Math.min(10, Math.max(1, property.amenities_count * 0.5 || 5))).toFixed(1)) },
+      { name: 'Parking', score: property.parking_count ? Math.min(10, Math.max(1, property.parking_count * 2)) : parseFloat((Math.min(10, Math.max(1, property.amenities_count * 0.4 || 5))).toFixed(1)) },
+      { name: 'Recreation', score: property.recreation_score || parseFloat((Math.min(10, Math.max(1, property.amenities_count * 0.3 || 5))).toFixed(1)) },
+      { name: 'Convenience', score: property.convenience_score || parseFloat((Math.min(10, Math.max(1, property.lifestyle_quality_index || 5))).toFixed(1)) },
+      { name: 'Green Space', score: property.green_cover ? Math.min(10, Math.max(1, property.green_cover / 5)) : parseFloat((Math.min(10, Math.max(1, property.amenities_count * 0.2 || 4))).toFixed(1)) }
+    ];
+  }, []);
+  
+  // Memoized helper functions
+  const getBestValueIndex = useCallback((metric, propertiesData) => {
+    if (!propertiesData || propertiesData.length === 0) return 0;
     
     let bestIndex = 0;
-    let bestValue = properties[0][feature.key];
+    let bestValue = propertiesData[0][metric.key];
     
-    properties.forEach((property, index) => {
-      const currentValue = property[feature.key];
-      if (currentValue === undefined || currentValue === null) return;
-      
-      // For certain features, lower is better
-      const lowerIsBetter = ['price_value', 'rate_sqft', 'property_age_years', 'days_on_market'].includes(feature.key);
-      
-      if (lowerIsBetter ? currentValue < bestValue : currentValue > bestValue) {
+    for (let i = 1; i < propertiesData.length; i++) {
+      const currentValue = propertiesData[i][metric.key];
+      if (metric.higher ? currentValue > bestValue : currentValue < bestValue) {
         bestValue = currentValue;
-        bestIndex = index;
+        bestIndex = i;
+      }
+    }
+    
+    return bestIndex;
+  }, []);
+
+  const formatValue = useCallback((value, type) => {
+    if (value === null || value === undefined) return 'N/A';
+    
+    switch (type) {
+      case 'currency':
+        return `₹${value.toLocaleString()}`;
+      case 'percentage':
+        return `${value}%`;
+      case 'score':
+        return `${value}/10`;
+      case 'distance':
+        return `${value} km`;
+      case 'count':
+        return value;
+      default:
+        return value;
+    }
+  }, []);
+
+  const getScoreColor = useCallback((score) => {
+    if (score >= 8) return 'bg-green-100 text-green-800';
+    if (score >= 6) return 'bg-yellow-100 text-yellow-800';
+    if (score >= 4) return 'bg-orange-100 text-orange-800';
+    return 'bg-red-100 text-red-800';
+  }, []);
+
+  const getTrendIcon = useCallback((trend) => {
+    switch (trend) {
+      case 'Rising':
+        return <TrendingUp className="w-4 h-4 text-green-600" />;
+      case 'Declining':
+        return <TrendingDown className="w-4 h-4 text-red-600" />;
+      default:
+        return <div className="w-4 h-4 bg-gray-400 rounded-full" />;
+    }
+  }, []);
+
+  // Calculate overall score for a property
+  const calculateOverallScore = useCallback((property) => {
+    const scores = [
+      property.builderReputation || 0,
+      property.locationScore || 0,
+      property.investmentPotential || 0,
+      (property.fiveYearGrowth || 0) / 10
+    ];
+    
+    const averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+    return Math.round(averageScore * 10) / 10;
+  }, []);
+
+  // Process properties to ensure unique locations
+  const processUniqueProperties = useCallback((propertyList) => {
+    if (!propertyList || propertyList.length === 0) return [];
+    
+    // Create a map to store unique properties by location
+    const uniquePropertiesMap = new Map();
+    
+    // Process each property
+    propertyList.forEach(property => {
+      const locationKey = property.location;
+      
+      // If this location is not in our map or the current property has better overall score
+      if (!uniquePropertiesMap.has(locationKey) || 
+          calculateOverallScore(property) > calculateOverallScore(uniquePropertiesMap.get(locationKey))) {
+        uniquePropertiesMap.set(locationKey, property);
       }
     });
     
-    return bestIndex;
-  };
+    // Convert map values back to array
+    return Array.from(uniquePropertiesMap.values());
+  }, [calculateOverallScore]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading comparison data...</p>
-        </div>
-      </div>
-    );
-  }
+  // Get amenity icon based on category name
+  const getAmenityIcon = useCallback((categoryName) => {
+    switch (categoryName) {
+      case 'Security':
+        return <Shield className="w-4 h-4 text-blue-600" />;
+      case 'Parking':
+        return <Car className="w-4 h-4 text-green-600" />;
+      case 'Recreation':
+        return <Dumbbell className="w-4 h-4 text-purple-600" />;
+      case 'Convenience':
+        return <Coffee className="w-4 h-4 text-orange-600" />;
+      case 'Green Space':
+        return <Leaf className="w-4 h-4 text-green-600" />;
+      default:
+        return <Star className="w-4 h-4 text-gray-600" />;
+    }
+  }, []);
+  
+  // Handle download comparison table data
+  const handleDownloadComparisonTable = useCallback(() => {
+    if (selectedProperties.length === 0) return;
+    
+    // Create CSV content with headers
+    const headers = ['Property Name', 'Location', 'Price', 'Area', 'Price per sqft', 'Overall Score', 'Builder Reputation', 'Location Score', 'Investment Potential', '5-Year Growth'];
+    
+    const csvContent = [
+      headers,
+      ...selectedProperties.map(property => [
+        property.name,
+        property.location,
+        property.price_value ? `₹${property.price_value.toLocaleString()}` : 'N/A',
+        property.area || 'N/A',
+        property.rate_sqft ? `₹${property.rate_sqft.toLocaleString()}` : 'N/A',
+        calculateOverallScore(property),
+        property.builderReputation || 'N/A',
+        property.locationScore || 'N/A',
+        property.investmentPotential || 'N/A',
+        property.fiveYearGrowth ? `${property.fiveYearGrowth}%` : 'N/A'
+      ])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'property_comparison.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [selectedProperties, calculateOverallScore]);
 
-  if (error && properties.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl shadow-lg p-8 text-center max-w-md">
-          <div className="text-yellow-500 mb-4">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Comparison Data Limited</h3>
-          <p className="text-gray-600 mb-6">Some detailed information may not be available for comparison.</p>
-          <div className="flex justify-center space-x-3">
-            <button 
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium transition-colors"
-            >
-              Close
-            </button>
-            <button 
-              onClick={onAddMore}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-            >
-              Add More Localities
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Handle compare button click
+  const handleCompare = useCallback(() => {
+    setShowComparisonTable(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+  
+  // Add property to comparison
+  const handleAddToCompare = useCallback((property) => {
+    setSelectedProperties(prevSelected => {
+      if (prevSelected.some(p => p.id === property.id)) {
+        return prevSelected.filter(p => p.id !== property.id);
+      } else if (prevSelected.length < 4) {
+        return [...prevSelected, property];
+      }
+      return prevSelected;
+    });
+  }, []);
 
-  if (properties.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl shadow-lg p-8 text-center max-w-md">
-          <Building className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">No Properties Selected</h3>
-          <p className="text-gray-600 mb-6">Add properties to compare their features and make an informed decision.</p>
-          <button 
-            onClick={onAddMore}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors inline-flex items-center"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Properties
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Remove property from comparison
+  const handleRemoveFromCompare = useCallback((propertyId) => {
+    setSelectedProperties(prevSelected => prevSelected.filter(p => p.id !== propertyId));
+  }, []);
+
+  // Handle showing amenities
+  const handleShowAmenities = useCallback((property) => {
+    setSelectedPropertyForAmenities(property);
+    setShowAmenities(true);
+  }, []);
+  
+  // Toggle amenities card
+  const toggleAmenitiesCard = useCallback((propertyId) => {
+    setExpandedAmenitiesCards(prev => ({
+      ...prev,
+      [propertyId]: !prev[propertyId]
+    }));
+  }, []);
+  
+  // Fetch properties from API
+  useEffect(() => {
+    const fetchProperties = async () => {
+      if (isInitialLoad) {
+        setLoading(true);
+        setError(null);
+      }
+      
+      try {
+        // If initialProperties are provided, use them, otherwise fetch from API
+        if (initialProperties.length > 0) {
+          setProperties(initialProperties);
+          setIsInitialLoad(false);
+          setLoading(false);
+        } else {
+          // Add timeout to prevent infinite loading (increased to 30 seconds)
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout')), 30000)
+          );
+          
+          // Fetch properties from API with pagination
+          const response = await Promise.race([
+            getAllPropertiesForComparison({ page: currentPage, limit: 50 }),
+            timeoutPromise
+          ]);
+          
+          if (response && response.success && response.properties && response.properties.length > 0) {
+            // Transform the data to match our component structure
+            const transformedProperties = response.properties.map((property, index) => ({
+              id: property._id,
+              name: property.developer_name && property.developer_name !== 'Unknown' 
+                ? `${property.developer_name} - ${property.location}`
+                : `${property.location} Property`,
+              price: `₹${(property.price_value || 0).toLocaleString()}`,
+              location: property.location || 'Location Not Available',
+              city: property.city || 'City Not Available',
+              builderReputation: property.builder_grade || 0,
+              locationScore: property.lifestyle_quality_index || 0,
+              lifestyleIndex: property.lifestyle_quality_index || 0,
+              valuation: property.investment_potential || 0,
+              neighbourhoodClass: property.neighbourhood_avg_income > 100000 ? 'Premium' : 
+                                property.neighbourhood_avg_income > 50000 ? 'Upper Middle' : 'Middle',
+              schoolsNearby: property.schools_nearby || property.amenities_count || 0,
+              hospitalsNearby: property.hospitals_nearby || Math.ceil(property.amenities_count * 0.3) || 0,
+              collegesNearby: property.colleges_nearby || Math.ceil(property.amenities_count * 0.2) || 0,
+              metroDistance: property.metro_distance || property.public_transport_score || 0,
+              aqi: property.aqi || property.environmental_quality || 0,
+              greenCover: property.green_cover || property.environmental_quality || 0,
+              noiseLevel: property.noise_level || (100 - property.environmental_quality) || 0,
+              trafficScore: property.traffic_score || property.public_transport_score || 0,
+              fiveYearGrowth: property.future_growth_prediction || 0,
+              investmentPotential: property.investment_potential || 0,
+              internationalRanking: property.international_ranking || property.lifestyle_quality_index * 10 || 0,
+              marketTrend: property.future_growth_prediction > 80 ? 'Rising' : 
+                          property.future_growth_prediction > 60 ? 'Stable' : 'Declining',
+              // Additional fields from database
+              area: property.area,
+              bedrooms: property.bedrooms,
+              bathroom: property.bathroom,
+              balconies: property.balconies,
+              developer_name: property.developer_name,
+              furnishing_status: property.furnishing_status,
+              construction_status: property.construction_status,
+              price_value: property.price_value,
+              rate_sqft: property.rate_sqft,
+              property_age_years: property.property_age_years,
+              parking_count: property.parking_count,
+              days_on_market: property.days_on_market,
+              amenities_count: property.amenities_count,
+              facing_score: property.facing_score,
+              rental_yield: property.rental_yield,
+              neighbourhood_avg_income: property.neighbourhood_avg_income,
+              affordability_index: property.affordability_index
+            }));
+            
+            // Set properties and update states in one go to prevent blinking
+            setProperties(transformedProperties);
+            setTotalPages(response.totalPages || 1);
+            setTotalCount(response.totalCount || 0);
+            setIsInitialLoad(false);
+            setLoading(false);
+          } else {
+            setError("No properties available from API");
+            setIsInitialLoad(false);
+            setLoading(false);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching properties:", err);
+        setError("Failed to connect to API: " + err.message);
+        setIsInitialLoad(false);
+        setLoading(false);
+      }
+    };
+    
+    fetchProperties();
+  }, [initialProperties, isInitialLoad, currentPage]);
+
+  // Memoized processed properties data
+  const processedProperties = useMemo(() => {
+    if (!properties || properties.length === 0) return [];
+    
+    // Get unique properties first
+    const uniqueProperties = processUniqueProperties(properties);
+    const uniqueSelectedProperties = processUniqueProperties(selectedProperties);
+    
+    const propertiesData = showComparisonTable ? uniqueSelectedProperties : uniqueProperties;
+    
+    return propertiesData.map((property, propertyIndex) => {
+      // Round scores to one decimal place for simplicity
+      const overallScore = Math.round(calculateOverallScore(property) * 10) / 10;
+      const winCount = metrics.filter(
+        (metric) => getBestValueIndex(metric, propertiesData) === propertyIndex
+      ).length;
+      const winPercentage = Math.round((winCount / metrics.length) * 100);
+
+      return {
+        ...property,
+        overallScore,
+        winCount,
+        winPercentage,
+        // Round all metric values to one decimal place
+        builderReputation: Math.round(property.builderReputation * 10) / 10,
+        locationScore: Math.round(property.locationScore * 10) / 10,
+        investmentPotential: Math.round(property.investmentPotential * 10) / 10,
+        fiveYearGrowth: Math.round(property.fiveYearGrowth * 10) / 10,
+        lifestyleIndex: Math.round(property.lifestyleIndex * 10) / 10,
+        valuation: Math.round(property.valuation * 10) / 10
+      };
+    });
+  }, [properties, selectedProperties, showComparisonTable, calculateOverallScore, metrics, getBestValueIndex, processUniqueProperties]);
+
+  // Create table data with overall score for comparison table
+  const tableData = useMemo(() => {
+    if (!showComparisonTable || selectedProperties.length === 0) return [];
+    
+    return selectedProperties.map(property => ({
+      ...property,
+      overallScore: calculateOverallScore(property)
+    }));
+  }, [selectedProperties, showComparisonTable, calculateOverallScore]);
+
+  // Use tableData for comparison table, processedProperties for cards
+  const propertiesData = showComparisonTable ? tableData : processedProperties;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white mt-20">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">Property Comparison</h1>
-                <p className="text-gray-600 text-sm">Comparing {properties.length} properties</p>
-              </div>
-            </div>
-            <div className="flex space-x-3">
-              <button 
-                onClick={onAddMore}
-                className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-colors inline-flex items-center"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add More
-              </button>
-              <button 
-                onClick={onClose}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Property Headers */}
-      <div className="bg-white border-b">
+      <div className="bg-[#0A2463] shadow-sm border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="grid gap-6" style={{ gridTemplateColumns: `300px repeat(${properties.length}, 1fr)` }}>
-            <div></div>
-            {properties.map((property, index) => (
-              <div key={property._id || index} className="text-center">
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl p-6 mb-4 relative">
-                  <button
-                    onClick={() => onRemoveItem && onRemoveItem(property._id || property.location)}
-                    className="absolute top-2 right-2 p-1 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                  <h3 className="font-bold text-xl mb-2">{property.location || 'Property'}</h3>
-                  <p className="text-blue-100 mb-4">{property.city || 'Location'}</p>
-                  <div className="text-3xl font-bold mb-2">{formatPrice(property.price_value)}</div>
-                  <div className="text-blue-100 text-sm">Total Value</div>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-gray-50 rounded-lg p-2 text-center">
-                    <div className="text-sm font-semibold text-gray-800">{property.bedrooms || 'N/A'}</div>
-                    <div className="text-xs text-gray-500">Bedrooms</div>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-2 text-center">
-                    <div className="text-sm font-semibold text-gray-800">{property.area || 'N/A'}</div>
-                    <div className="text-xs text-gray-500">Sq.Ft</div>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-2 text-center">
-                    <div className="text-sm font-semibold text-gray-800">{property.parking_count || 'N/A'}</div>
-                    <div className="text-xs text-gray-500">Parking</div>
-                  </div>
-                </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-white">Property Comparator</h1>
+              <p className="text-gray-200 mt-1">Compare properties and make informed decisions</p>
+            </div>
+            {selectedProperties.length > 0 && (
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-white">
+                  {selectedProperties.length} properties selected
+                </span>
+                <button
+                  onClick={() => setSelectedProperties([])}
+                  className="text-sm text-white hover:text-red-200 font-medium flex items-center"
+                >
+                  <X className="w-4 h-4 mr-1" /> Clear
+                </button>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
 
-      {/* Comparison Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {featureCategories.map((category, categoryIndex) => (
-          <div key={categoryIndex} className="mb-8">
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="bg-gray-50 px-6 py-4 border-b">
-                <div className="flex items-center space-x-2">
-                  {category.icon}
-                  <h2 className="text-lg font-semibold text-gray-800">{category.title}</h2>
+      {/* Loading State */}
+      {loading && isInitialLoad && (
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+          <div className="text-center bg-white rounded-2xl shadow-xl p-12 max-w-md mx-4">
+            <div className="relative mb-8">
+              <div className="w-20 h-20 mx-auto">
+                <div className="absolute inset-0 border-4 border-blue-100 rounded-full animate-pulse"></div>
+                <div className="absolute inset-2 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-3">Loading Properties</h2>
+            <p className="text-gray-600 mb-6">Fetching the latest property data from our database...</p>
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
+              <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{width: "70%"}}></div>
+            </div>
+            <div className="flex justify-center space-x-2">
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="max-w-7xl mx-auto px-6 py-10">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Error Loading Properties</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!loading && !error && !isInitialLoad && properties.length > 0 && (
+        <div className="max-w-7xl mx-auto px-6 pt-8 pb-6">
+          {/* Comparison Table View (Full Screen) */}
+          {showComparisonTable ? (
+            <div className="min-h-screen bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden mb-8">
+              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-[#0A2463] text-white">
+                <div>
+                  <h2 className="text-2xl font-bold">Property Comparison</h2>
+                  <p className="text-gray-200">Detailed comparison of selected properties</p>
                 </div>
+                <button 
+                  onClick={() => setShowComparisonTable(false)}
+                  className="bg-white hover:bg-gray-100 text-[#0A2463] px-4 py-2 rounded-lg transition-colors flex items-center"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-1" /> Back to Properties
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 border-r">Property</th>
+                      {tableData.map((property) => (
+                        <th key={property.id} className="px-6 py-4 text-center text-sm font-medium text-gray-900 border-r min-w-[200px]">
+                          <div className="space-y-2">
+                            <div>
+                              <h3 className="font-semibold text-sm">{property.name}</h3>
+                              <p className="text-green-600 font-bold text-sm">₹{(property.rate_sqft || 0).toLocaleString()}/sqft</p>
+                              <p className="text-xs text-gray-600">{property.location}</p>
+                            </div>
+                            <button 
+                              onClick={() => handleRemoveFromCompare(property.id)}
+                              className="text-red-500 hover:text-red-700 text-xs"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {metrics.map((metric, index) => (
+                      <tr key={metric.key} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900 border-r">
+                          <div className="flex items-center gap-2">
+                            <metric.icon className="w-4 h-4 text-gray-600" />
+                            {metric.label}
+                          </div>
+                        </td>
+                        {tableData.map((property) => {
+                          const value = property[metric.key];
+                          const isBest = getBestValueIndex(metric, tableData) === tableData.indexOf(property);
+
+                          return (
+                            <td key={`${property.id}-${metric.key}`} className="px-6 py-4 text-center text-sm border-r">
+                              <div className={`${isBest ? 'bg-green-100 text-green-800 font-semibold px-2 py-1 rounded' : ''}`}>
+                                {formatValue(value, metric.key === 'overallScore' ? 'score' : 'score')}
+                                {isBest && <span className="ml-1"><Award className="w-4 h-4 inline text-green-800" /></span>}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
               
-              <div className="divide-y divide-gray-100">
-                {category.features.map((feature, featureIndex) => {
-                  const bestIndex = getBestValueBadge(properties, feature);
-                  
+              <div className="px-6 py-4 bg-gray-50 border-t flex justify-between items-center">
+                <div className="text-sm text-gray-600 flex items-center gap-1">
+                  <Award className="w-4 h-4 inline text-green-800" /> indicates the best value for each metric
+                </div>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setShowComparisonTable(false)}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Add More Properties
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Property Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                {processedProperties.map((property) => {
+                  const isSelected = selectedProperties.some(p => p.id === property.id);
+                  const propertyIndex = processedProperties.indexOf(property);
+
                   return (
-                    <div key={feature.key} className="p-6">
-                      <div className="grid gap-6" style={{ gridTemplateColumns: `300px repeat(${properties.length}, 1fr)` }}>
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            {feature.icon}
+                    <div key={property.id} className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6">
+                      {/* Property Header */}
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex gap-2">
+                          <div className="bg-[#0A2463] text-white px-3 py-1 rounded-full text-sm font-medium">
+                            #{propertyIndex + 1}
+                          </div>
+                          <div className="bg-[#0A2463] bg-opacity-10 text-[#0A2463] px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-current" />
+                            {property.overallScore}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                            <svg className="w-4 h-4 text-[#0A2463]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </button>
+                          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                            <svg className="w-4 h-4 text-[#0A2463]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                          </button>
+                          <button 
+                            onClick={() => handleAddToCompare(property)}
+                            className={`p-2 rounded-lg transition-colors ${
+                              isSelected 
+                                ? 'bg-[#0A2463] bg-opacity-20 text-[#0A2463]' 
+                                : 'hover:bg-gray-100 text-gray-600'
+                            }`}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Property Info */}
+                      <div className="mb-4">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">{property.name}</h3>
+                        <div className="flex items-center gap-2 mb-3">
+                          <MapPin className="w-4 h-4 text-[#0A2463] flex-shrink-0" />
+                          <span className="text-sm text-gray-600">{property.location}, {property.city}</span>
+                        </div>
+                        
+                        {/* Property Type and Potential */}
+                        <div className="flex gap-2 mb-4">
+                          <div className="bg-[#0A2463] text-white px-3 py-1 rounded-full text-sm font-medium">
+                            {property.bedrooms ? `${property.bedrooms}BHK` : 'Apartment'}
+                          </div>
+                          
+                        </div>
+                        
+                        {/* Price and Area */}
+                        <div className="flex justify-between items-center mb-4">
+                          <div>
+                            <div className="text-sm text-gray-500 mb-1">Price</div>
+                            <div className="text-lg font-bold text-gray-900">₹{(property.rate_sqft || 0).toLocaleString()}/sqft</div>
                           </div>
                           <div>
-                            <h3 className="font-medium text-gray-800">{feature.label}</h3>
-                            {feature.priority && (
-                              <div className={`text-xs px-2 py-1 rounded-full inline-block mt-1 ${
-                                feature.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                feature.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-gray-100 text-gray-700'
-                              }`}>
-                                {feature.priority} priority
+                            <div className="text-sm text-gray-500 mb-1">Sq Ft</div>
+                            <div className="text-lg font-bold text-gray-900">{property.area || 'N/A'}</div>
+                          </div>
+                        </div>
+                        
+                        {/* Growth and Status */}
+                        <div className="flex justify-between items-center mb-4">
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-green-600" />
+                            <span className="text-sm text-green-600 font-medium">
+                              {Math.round((property.fiveYearGrowth || 0) * 10) / 10}% growth (5yr)
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {property.bedrooms ? `${property.bedrooms}BHK` : 'Apartment'} Fresh
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="space-y-2">
+                          <button 
+                            onClick={() => handleAddToCompare(property)}
+                            className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                              isSelected
+                                ? 'bg-green-500 hover:bg-green-600 text-white'
+                                : 'bg-[#0A2463] hover:bg-[#0A2463]/90 text-white'
+                            }`}
+                            disabled={!isSelected && selectedProperties.length >= 4}
+                          >
+                            {isSelected ? <><X className="w-4 h-4 mr-1" /> Remove from Compare</> : 
+                             selectedProperties.length >= 4 ? 'Maximum 4 properties' : <><Plus className="w-4 h-4 mr-1" /> Add to Compare</>}
+                          </button>
+                          
+                          <div className="space-y-2">
+                            <button 
+                            onClick={() => handleShowAmenities(property)}
+                            className="w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            <BarChart3 className="w-4 h-4" />
+                            Show Amenities
+                          </button>
+                            
+                            {expandedAmenitiesCards[property.id || `property-${propertyIndex}`] && (
+                              <div className="bg-white rounded-lg border border-gray-200 p-4 mt-2">
+                                <h4 className="text-sm font-medium text-gray-700 mb-3">Amenities Score</h4>
+                                <div className="h-40 w-full">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart 
+                                      data={generateAmenitiesData(property)}
+                                      margin={{ top: 5, right: 20, left: 5, bottom: 5 }}
+                                      layout="vertical"
+                                      barGap={0}
+                                      barCategoryGap={8}
+                                    >
+                                      <XAxis 
+                                        type="number" 
+                                        domain={[0, 10]} 
+                                        tickCount={6} 
+                                        axisLine={{ stroke: '#333', strokeWidth: 1 }}
+                                        tickLine={{ stroke: '#333', strokeWidth: 1 }}
+                                        tick={{ fill: '#333', fontSize: 10 }}
+                                      />
+                                      <YAxis 
+                                        dataKey="name" 
+                                        type="category" 
+                                        width={90}
+                                        axisLine={{ stroke: '#333', strokeWidth: 1 }}
+                                        tickLine={{ stroke: '#333', strokeWidth: 1 }}
+                                        tick={{ fill: '#333', fontSize: 10 }}
+                                      />
+                                      <Tooltip
+                                        content={({ active, payload, label }) => {
+                                          if (active && payload && payload.length) {
+                                            return (
+                                              <div className="bg-white p-2 border border-gray-200 rounded-lg shadow-lg">
+                                                <p className="text-xs font-medium text-gray-900">{payload[0].payload.name}</p>
+                                                <p className="text-xs text-[#0A2463] font-bold">
+                                                  Score: {payload[0].value}/10
+                                                </p>
+                                              </div>
+                                            );
+                                          }
+                                          return null;
+                                        }}
+                                      />
+                                      <Bar dataKey="score" barSize={16} radius={[0, 4, 4, 0]} animationDuration={300}>
+                                        {generateAmenitiesData(property).map((entry, index) => (
+                                          <Cell 
+                                            key={`cell-${index}`} 
+                                            fill={entry.score >= 8 ? '#0A2463' : entry.score >= 6 ? '#0A2463' : '#0A2463'} 
+                                            stroke="none"
+                                          />
+                                        ))}
+                                      </Bar>
+                                    </BarChart>
+                                  </ResponsiveContainer>
+                                </div>
                               </div>
                             )}
                           </div>
                         </div>
-                        
-                        {properties.map((property, propertyIndex) => (
-                          <div key={propertyIndex} className="relative">
-                            {bestIndex === propertyIndex && (
-                              <div className="absolute -top-2 -right-2 z-10">
-                                <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                                  BEST
-                                </div>
-                              </div>
-                            )}
-                            <div className={`p-4 rounded-lg ${bestIndex === propertyIndex ? 'bg-green-50 border-2 border-green-200' : 'bg-gray-50'}`}>
-                              {renderFeatureValue(property, feature)}
-                            </div>
-                          </div>
-                        ))}
                       </div>
                     </div>
                   );
                 })}
               </div>
+              
+              {/* Pagination Controls */}
+              <div className="flex justify-center items-center gap-4 mb-8">
+                <button 
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    ({totalCount.toLocaleString()} total properties)
+                  </span>
+                </div>
+                
+                <button 
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Fixed Compare Button */}
+      {!showComparisonTable && selectedProperties.length >= 2 && (
+        <div className="fixed bottom-6 right-6 z-50 shadow-lg">
+          <button 
+            onClick={handleCompare}
+            className="px-6 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 bg-[#0A2463] hover:bg-[#0A2463]/90 text-white"
+          >
+            <BarChart3 className="w-5 h-5" />
+            Compare ({selectedProperties.length})
+          </button>
+        </div>
+      )}
+
+      {/* Amenities Modal */}
+      {showAmenities && selectedPropertyForAmenities && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-900">
+                  Amenities: {selectedPropertyForAmenities.name || `Property ${selectedPropertyForAmenities.id}`}
+                </h3>
+                <button 
+                  onClick={() => setShowAmenities(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="h-80 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart 
+                      data={generateAmenitiesData(selectedPropertyForAmenities)}
+                      margin={{ top: 10, right: 30, left: 20, bottom: 10 }}
+                      layout="vertical"
+                      barGap={0}
+                      barCategoryGap={12}
+                    >
+                      <XAxis 
+                        type="number" 
+                        domain={[0, 10]} 
+                        tickCount={6} 
+                        axisLine={{ stroke: '#333', strokeWidth: 1 }}
+                        tickLine={{ stroke: '#333', strokeWidth: 1 }}
+                        tick={{ fill: '#333', fontSize: 12 }}
+                      />
+                      <YAxis 
+                        dataKey="name" 
+                        type="category" 
+                        width={110}
+                        axisLine={{ stroke: '#333', strokeWidth: 1 }}
+                        tickLine={{ stroke: '#333', strokeWidth: 1 }}
+                        tick={{ fill: '#333', fontSize: 12 }}
+                      />
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                                <p className="text-sm font-medium text-gray-900">{payload[0].payload.name}</p>
+                                <p className="text-sm text-[#0A2463] font-bold">
+                                  Score: {payload[0].value}/10
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar dataKey="score" barSize={24} radius={[0, 4, 4, 0]} animationDuration={300}>
+                        {generateAmenitiesData(selectedPropertyForAmenities).map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.score >= 8 ? '#0A2463' : entry.score >= 6 ? '#0A2463' : '#0A2463'} 
+                            stroke="none"
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-lg font-semibold mb-4">Amenities Details</h4>
+                  <div className="space-y-3">
+                    {generateAmenitiesData(selectedPropertyForAmenities).map((amenity, index) => (
+                      <div key={index} className="flex items-center gap-3">
+                        <div className="w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-sm">
+                          {getAmenityIcon(amenity.name)}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-800">{amenity.name}</p>
+                          <div className="flex items-center gap-1">
+                            <div className="h-2 w-24 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full rounded-full" 
+                                style={{ 
+                                  width: `${amenity.score * 10}%`,
+                                  backgroundColor: amenity.score >= 8 ? '#0A2463' : amenity.score >= 6 ? '#3B82F6' : '#94A3B8'
+                                }}
+                              />
+                            </div>
+                            <span className="text-xs font-medium text-gray-600">{amenity.score}/10</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowAmenities(false)}
+                  className="py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default Comparator;
