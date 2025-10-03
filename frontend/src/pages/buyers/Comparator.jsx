@@ -935,7 +935,7 @@ const Comparator = ({ initialProperties = [] }) => {
               <div className="mb-4">
                 <button
                   onClick={handleShowAllProperties}
-                  className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                  className="w-full py-2 px-4 bg-blue-900 hover:bg-[#0A2463]/90 text-white font-medium rounded-lg transition-colors"
                 >
                   Show All Properties
                 </button>
