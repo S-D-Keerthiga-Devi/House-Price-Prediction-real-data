@@ -454,7 +454,7 @@ const RentAgreement = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 px-4 py-12 mt-20">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold text-white mb-3">Rent Agreement</h1>
