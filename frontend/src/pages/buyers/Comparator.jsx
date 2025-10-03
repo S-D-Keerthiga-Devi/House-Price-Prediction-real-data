@@ -158,7 +158,7 @@ const Comparator = ({ initialProperties = [] }) => {
       const score = parseFloat(property.overall_score);
       return isNaN(score) ? "N/A" : score.toFixed(1);
     }
-    
+
     // Fallback calculation if overall_score is not available
     const scores = [
       property.builderReputation || 0,
@@ -169,14 +169,14 @@ const Comparator = ({ initialProperties = [] }) => {
 
     // Filter out any NaN values
     const validScores = scores.filter(score => !isNaN(score));
-    
+
     // If no valid scores, return "N/A"
     if (validScores.length === 0) return "N/A";
-    
+
     // Calculate average of valid scores
     const sum = validScores.reduce((a, b) => a + b, 0);
     const avg = sum / validScores.length;
-    
+
     // Return formatted score with one decimal place as a string
     return avg.toFixed(1);
   }, []);
@@ -264,7 +264,7 @@ const Comparator = ({ initialProperties = [] }) => {
     // No need to scroll to top as we're keeping the same view
   }, []);
 
-  // Add property to comparison
+  // In Comparator.jsx, improve handleAddToCompare to ensure property is added properly
   const handleAddToCompare = useCallback((property) => {
     setSelectedProperties(prevSelected => {
       if (prevSelected.some(p => p.id === property.id)) {
@@ -289,8 +289,12 @@ const Comparator = ({ initialProperties = [] }) => {
         return prevSelected;
       }
     });
-    // Don't change the view to comparison table automatically
-  }, [calculateOverallScore]);
+
+    // Show notification when property is added
+    if (!selectedProperties.some(p => p.id === property.id)) {
+      showNotification(`Added ${property.name} to comparison`, "success");
+    }
+  }, [calculateOverallScore, selectedProperties, showNotification]);
 
   // Remove property from comparison
   const handleRemoveFromCompare = useCallback((propertyId) => {
@@ -320,7 +324,7 @@ const Comparator = ({ initialProperties = [] }) => {
     // First check in the current properties list
     const fullProperty = properties.find(p => p.id === propertyId);
     if (fullProperty) return fullProperty;
-    
+
     // If not found, check in all properties
     const searchProperty = allProperties.find(p => p.id === propertyId);
     if (searchProperty) {
@@ -328,7 +332,7 @@ const Comparator = ({ initialProperties = [] }) => {
       const locationMatch = properties.find(p => p.location === searchProperty.location);
       if (locationMatch) return locationMatch;
     }
-    
+
     return null;
   }, [properties, allProperties]);
 
@@ -356,19 +360,19 @@ const Comparator = ({ initialProperties = [] }) => {
             const locationScore = property.lifestyle_quality_index || 0;
             const investmentPotential = property.investment_potential || 0;
             const fiveYearGrowth = property.future_growth_prediction || 0;
-            
+
             const scores = [
               builderReputation,
               locationScore,
               investmentPotential,
               fiveYearGrowth / 10
             ];
-            
+
             const validScores = scores.filter(score => !isNaN(score));
-            const overallScore = validScores.length > 0 
+            const overallScore = validScores.length > 0
               ? (validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1)
               : "N/A";
-              
+
             return {
               id: property._id,
               name: property.developer_name && property.developer_name !== 'Unknown'
@@ -469,7 +473,7 @@ const Comparator = ({ initialProperties = [] }) => {
               setIsInitialLoad(false);
               return;
             }
-            
+
             // Transform the data to match our component structure
             const transformedProperties = response.properties.map((property, index) => {
               // Calculate overall score
@@ -477,19 +481,19 @@ const Comparator = ({ initialProperties = [] }) => {
               const locationScore = property.lifestyle_quality_index || 0;
               const investmentPotential = property.investment_potential || 0;
               const fiveYearGrowth = property.future_growth_prediction || 0;
-              
+
               const scores = [
                 builderReputation,
                 locationScore,
                 investmentPotential,
                 fiveYearGrowth / 10
               ];
-              
+
               const validScores = scores.filter(score => !isNaN(score));
-              const overallScore = validScores.length > 0 
+              const overallScore = validScores.length > 0
                 ? (validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1)
                 : "N/A";
-                
+
               return {
                 id: property._id,
                 name: property.developer_name && property.developer_name !== 'Unknown'
@@ -595,7 +599,7 @@ const Comparator = ({ initialProperties = [] }) => {
   // Filter properties by search query
   const filterPropertiesBySearch = useCallback((propertyList) => {
     if (!searchQuery.trim()) return propertyList;
-    
+
     const query = searchQuery.toLowerCase().trim();
     return propertyList.filter(property => {
       return (
@@ -605,7 +609,7 @@ const Comparator = ({ initialProperties = [] }) => {
       );
     });
   }, [searchQuery]);
-  
+
   // Handle show all properties
   const handleShowAllProperties = useCallback(() => {
     setSearchQuery('');
@@ -615,13 +619,13 @@ const Comparator = ({ initialProperties = [] }) => {
   // Memoized processed properties data
   const processedProperties = useMemo(() => {
     if (!properties || properties.length === 0) return [];
-    
+
     // Filter properties by city first
     const cityFilteredProperties = filterPropertiesByCity(properties);
-    
+
     // Then filter by search query
     const searchFilteredProperties = filterPropertiesBySearch(cityFilteredProperties);
-    
+
     // Get unique properties next
     const uniqueProperties = processUniqueProperties(searchFilteredProperties);
     const uniqueSelectedProperties = processUniqueProperties(selectedProperties);
@@ -656,13 +660,13 @@ const Comparator = ({ initialProperties = [] }) => {
   const propertiesForDisplay = useMemo(() => {
     // Start with the processed properties (current page)
     let displayProperties = [...processedProperties];
-    
+
     // Add any selected properties that are not already in the list
     selectedProperties.forEach(selectedProp => {
       if (!displayProperties.some(p => p.id === selectedProp.id)) {
         // Calculate overall score for the selected property
         const overallScore = calculateOverallScore(selectedProp);
-        
+
         displayProperties.push({
           ...selectedProp,
           overallScore,
@@ -676,7 +680,7 @@ const Comparator = ({ initialProperties = [] }) => {
         });
       }
     });
-    
+
     return displayProperties;
   }, [processedProperties, selectedProperties, calculateOverallScore]);
 
@@ -710,15 +714,15 @@ const Comparator = ({ initialProperties = [] }) => {
   // Handle property selection from search
   const handlePropertySelect = useCallback((property) => {
     if (!property) return;
-    
+
     // Find the full property details
     const fullProperty = findFullPropertyDetails(property.id);
-    
+
     if (fullProperty) {
       // If property is already selected, remove it
       if (selectedProperties.some(p => p.id === fullProperty.id)) {
         handleRemoveFromCompare(fullProperty.id);
-      } 
+      }
       // Otherwise add it if we have less than 3 properties
       else if (selectedProperties.length < 3) {
         handleAddToCompare(fullProperty);
@@ -771,12 +775,11 @@ const Comparator = ({ initialProperties = [] }) => {
 
       {/* Notification */}
       {notification.show && (
-        <div className={`fixed top-20 right-4 z-50 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
-          notification.type === 'warning' ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white'
-        }`}>
+        <div className={`fixed top-20 right-4 z-50 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${notification.type === 'warning' ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white'
+          }`}>
           <div className="flex items-center">
             <span>{notification.message}</span>
-            <button 
+            <button
               onClick={() => setNotification({ show: false, message: '', type: '' })}
               className="ml-4 text-white hover:text-gray-200"
             >
@@ -848,288 +851,313 @@ const Comparator = ({ initialProperties = [] }) => {
       {!loading && !error && !noPropertiesFound && !isInitialLoad && properties.length > 0 && selectedCity && (
         <div className="max-w-7xl mx-auto px-6 pt-8 pb-6">
           {/* Always show the two-column layout */}
-            <>
-              {/* Two-column layout */}
-              <div className="flex flex-col lg:flex-row gap-6">
-                {/* Left column - Property listings */}
-                <div className="w-full lg:w-1/3">
-                  {/* Search bar - now using PropertySearch component */}
-                  <div className="mb-6">
-                    <PropertySearch 
-                      key={selectedCity} // Force re-render when city changes
-                      selectedCity={selectedCity}
-                      // Only pass locations from available property cards for the selected city
-                      availableLocalities={allProperties
-                        .filter(prop => prop.city && prop.city.toLowerCase() === selectedCity.toLowerCase())
-                        .map(prop => prop.location)
-                        .filter(Boolean)
-                        .filter((loc, index, self) => self.indexOf(loc) === index)
-                        .sort()
-                      }
-                      onLocalitySelect={(locality) => {
-                        setSearchQuery(locality);
-                        // Find properties matching this locality
-                        const matchingProperties = allProperties.filter(
-                          prop => prop.location && prop.location.toLowerCase() === locality.toLowerCase() && 
-                          prop.city && prop.city.toLowerCase() === selectedCity.toLowerCase()
-                        );
-                        
-                        // Check if we have any properties for this city
-                        const cityProperties = allProperties.filter(
-                          prop => prop.city && prop.city.toLowerCase() === selectedCity.toLowerCase()
-                        );
-                        
-                        if (cityProperties.length === 0) {
-                          // No properties for this city at all
-                          setNoPropertiesFound(true);
-                          return;
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left column - Property listings */}
+            <div className="w-full lg:w-1/3">
+              {/* Search bar - now using PropertySearch component */}
+              <div className="mb-6">
+                <PropertySearch
+                  key={selectedCity} // Force re-render when city changes
+                  selectedCity={selectedCity}
+                  // IMPORTANT: Only pass localities that have property cards
+                  availableLocalities={allProperties && allProperties.length > 0 ?
+                    // First filter properties that have all required data
+                    allProperties
+                      .filter(prop => 
+                        prop.city && 
+                        prop.city.toLowerCase() === selectedCity.toLowerCase() &&
+                        prop.location && // Must have location
+                        prop.name && // Must have name
+                        prop.id // Must have ID
+                      )
+                      .map(prop => prop.location)
+                      .filter((loc, index, self) => self.indexOf(loc) === index) // Remove duplicates
+                      .sort()
+                    : []
+                  }
+                  // In Comparator.jsx, modify the onLocalitySelect function
+                  onLocalitySelect={(locality) => {
+                    setSearchQuery(locality);
+                    // Find properties matching this locality with complete data
+                    const matchingProperties = locality ?
+                      allProperties.filter(
+                        prop => 
+                          prop.location && 
+                          prop.location.toLowerCase() === locality.toLowerCase() &&
+                          prop.city && 
+                          prop.city.toLowerCase() === selectedCity.toLowerCase() &&
+                          prop.name &&
+                          prop.id
+                      ) :
+                      allProperties.filter(
+                        prop => 
+                          prop.city && 
+                          prop.city.toLowerCase() === selectedCity.toLowerCase() &&
+                          prop.name &&
+                          prop.id
+                      );
+
+                    // Update filtered properties to show all matching properties
+                    setProperties(matchingProperties);
+
+                    // IMPORTANT: If we have matching properties, ALWAYS add the first one to comparison
+                    if (matchingProperties.length > 0) {
+                      // Get the first property
+                      const propertyToAdd = matchingProperties[0];
+                      
+                      // Directly update the selectedProperties state
+                      setSelectedProperties(prevSelected => {
+                        // Skip if already selected
+                        if (prevSelected.some(p => p.id === propertyToAdd.id)) {
+                          return prevSelected;
                         }
                         
-                        if (matchingProperties.length > 0) {
-                          // Add the first matching property to comparison
-                          handleAddToCompare(matchingProperties[0]);
-                          
-                          // Scroll to property cards section
-                          setTimeout(() => {
-                            const propertyCardsSection = document.getElementById('property-cards-section');
-                            if (propertyCardsSection) {
-                              propertyCardsSection.scrollIntoView({ behavior: 'smooth' });
-                            }
-                          }, 100);
+                        // Add if we have less than 3 properties
+                        if (prevSelected.length < 3) {
+                          const propertyWithScore = {
+                            ...propertyToAdd,
+                            overallScore: calculateOverallScore(propertyToAdd)
+                          };
+                          return [...prevSelected, propertyWithScore];
                         }
-                      }}
-                      onClear={() => {
-                        setSearchQuery("");
-                      }}
-                    />
-                    <button
-                      onClick={handleShowAllProperties}
-                      className="mt-1 w-full bg-blue-900 hover:bg-[#0A2463]/90 text-white px-4 py-2 rounded-md font-medium transition-colors shadow-sm hover:shadow-md flex items-center justify-center"
-                    >
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Show All Properties
-                    </button>
-                  </div>
-                  
-                  {/* Property Cards Grid */}
-                  <div id="property-cards-section" className="grid grid-cols-1 gap-4 mb-8">
-                    {propertiesForDisplay.map((property) => {
-                      const isSelected = selectedProperties.some(p => p.id === property.id);
-                      const propertyIndex = propertiesForDisplay.indexOf(property);
+                        
+                        return prevSelected;
+                      });
+                      
+                      // Show notification
+                      showNotification(`Added ${propertyToAdd.name} to comparison`, "success");
+                    }
+                  }}
+                />
+              </div>
 
-                      return (
-                        <div key={property.id} className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-4">
-                          {/* Property Header */}
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{property.name}</h3>
-                              <div className="flex items-center text-gray-600 mt-1">
-                                <MapPin className="w-4 h-4 mr-1" />
-                                <span className="text-sm">{property.location}</span>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => handleAddToCompare(property)}
-                              disabled={selectedProperties.length >= 3 && !isSelected}
-                              className={`p-2 rounded-lg transition-colors ${
-                                isSelected
-                                  ? "bg-red-100 text-red-600 hover:bg-red-200"
-                                  : selectedProperties.length >= 3
-                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                  : "bg-blue-100 text-blue-600 hover:bg-blue-200"
-                              }`}
-                            >
-                              {isSelected ? (
-                                <X className="w-5 h-5" />
-                              ) : (
-                                <Plus className="w-5 h-5" />
-                              )}
-                            </button>
-                          </div>
+              {/* Show All Properties button */}
+              <div className="mb-4">
+                <button
+                  onClick={handleShowAllProperties}
+                  className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  Show All Properties
+                </button>
+              </div>
 
-                          {/* Property Details */}
-                          <div className="grid grid-cols-2 gap-3 mb-3">
-                            <div className="bg-gray-50 p-2 rounded-lg">
-                              <div className="text-xs text-gray-500">Price</div>
-                              <div className="font-semibold">{property.price}</div>
-                            </div>
-                            <div className="bg-gray-50 p-2 rounded-lg">
-                              <div className="text-xs text-gray-500">Area</div>
-                              <div className="font-semibold">{property.area || "N/A"}</div>
-                            </div>
-                            <div className="bg-gray-50 p-2 rounded-lg">
-                              <div className="text-xs text-gray-500">Overall Score</div>
-                              <div className="font-semibold">{property.overallScore}/10</div>
-                            </div>
-                            <div className="bg-gray-50 p-2 rounded-lg">
-                              <div className="text-xs text-gray-500">Investment</div>
-                              <div className="font-semibold flex items-center">
-                                {typeof property.investmentPotential === 'number' 
-                                  ? parseFloat(property.investmentPotential).toFixed(1) 
-                                  : "N/A"}/10
-                                {property.marketTrend === "Rising" && <TrendingUp className="w-3 h-3 ml-1 text-green-600" />}
-                                {property.marketTrend === "Declining" && <TrendingDown className="w-3 h-3 ml-1 text-red-600" />}
-                              </div>
-                            </div>
+              {/* Property Cards Grid */}
+              <div id="property-cards-section" className="grid grid-cols-1 gap-4 mb-8">
+                {propertiesForDisplay.map((property) => {
+                  const isSelected = selectedProperties.some(p => p.id === property.id);
+                  const propertyIndex = propertiesForDisplay.indexOf(property);
+
+                  return (
+                    <div key={property.id} className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-4">
+                      {/* Property Header */}
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{property.name}</h3>
+                          <div className="flex items-center text-gray-600 mt-1">
+                            <MapPin className="w-4 h-4 mr-1" />
+                            <span className="text-sm">{property.location}</span>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {/* Pagination Controls - Only show if we have properties */}
-                  {processedProperties.length > 0 && (
-                    <div className="flex justify-center items-center gap-4 mb-8">
-                      <button 
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1}
-                        className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Previous
-                      </button>
-                      
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">
-                          Page {currentPage} of {totalPages}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          ({totalCount.toLocaleString()} total properties)
-                        </span>
+                        <button
+                          onClick={() => handleAddToCompare(property)}
+                          disabled={selectedProperties.length >= 3 && !isSelected}
+                          className={`p-2 rounded-lg transition-colors ${isSelected
+                            ? "bg-red-100 text-red-600 hover:bg-red-200"
+                            : selectedProperties.length >= 3
+                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                              : "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                            }`}
+                        >
+                          {isSelected ? (
+                            <X className="w-5 h-5" />
+                          ) : (
+                            <Plus className="w-5 h-5" />
+                          )}
+                        </button>
                       </div>
-                      
-                      <button 
-                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage === totalPages}
-                        className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Next
-                      </button>
+
+                      {/* Property Details */}
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="bg-gray-50 p-2 rounded-lg">
+                          <div className="text-xs text-gray-500">Price</div>
+                          <div className="font-semibold">{property.price}</div>
+                        </div>
+                        <div className="bg-gray-50 p-2 rounded-lg">
+                          <div className="text-xs text-gray-500">Area</div>
+                          <div className="font-semibold">{property.area || "N/A"}</div>
+                        </div>
+                        <div className="bg-gray-50 p-2 rounded-lg">
+                          <div className="text-xs text-gray-500">Overall Score</div>
+                          <div className="font-semibold">{property.overallScore}/10</div>
+                        </div>
+                        <div className="bg-gray-50 p-2 rounded-lg">
+                          <div className="text-xs text-gray-500">Investment</div>
+                          <div className="font-semibold flex items-center">
+                            {typeof property.investmentPotential === 'number'
+                              ? parseFloat(property.investmentPotential).toFixed(1)
+                              : "N/A"}/10
+                            {property.marketTrend === "Rising" && <TrendingUp className="w-3 h-3 ml-1 text-green-600" />}
+                            {property.marketTrend === "Declining" && <TrendingDown className="w-3 h-3 ml-1 text-red-600" />}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  );
+                })}
+              </div>
+
+              {/* Pagination Controls - Only show if we have properties */}
+              {processedProperties.length > 0 && (
+                <div className="flex justify-center items-center gap-4 mb-8">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      ({totalCount.toLocaleString()} total properties)
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
                 </div>
-                
-                {/* Right column - Comparison area */}
-                <div className="w-full lg:w-2/3 bg-white border border-gray-200 rounded-xl p-4 h-fit">
-                  <h2 className="text-xl font-bold mb-4">Property Comparison</h2>
-                  
-                  {selectedProperties.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Building className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-700 mb-2">No Properties Selected</h3>
-                      <p className="text-gray-500 mb-6">Select up to 3 properties from the list to compare them side by side.</p>
-                    </div>
-                  ) : showComparisonTable && selectedProperties.length >= 2 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 border-r">Property</th>
-                            {selectedProperties.map((property) => (
-                              <th key={property.id} className="px-6 py-4 text-center text-sm font-medium text-gray-900 border-r min-w-[200px]">
-                                <div className="space-y-2">
-                                  <div>
-                                    <h3 className="font-semibold text-sm">{property.name}</h3>
-                                    <p className="text-green-600 font-bold text-sm">₹{(property.rate_sqft || 0).toLocaleString()}/sqft</p>
-                                    <p className="text-xs text-gray-600">{property.location}</p>
-                                  </div>
-                                  <button
-                                    onClick={() => handleRemoveFromCompare(property.id)}
-                                    className="text-red-500 hover:text-red-700 text-xs"
-                                  >
-                                    Remove
-                                  </button>
-                                </div>
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {metrics.map((metric, index) => (
-                            <tr key={metric.key} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                              <td className="px-6 py-4 text-sm font-medium text-gray-900 border-r">
-                                <div className="flex items-center gap-2">
-                                  <metric.icon className="w-4 h-4 text-gray-600" />
-                                  {metric.label}
+              )}
+            </div>
+
+            {/* Right column - Comparison area */}
+            <div className="w-full lg:w-2/3 bg-white border border-gray-200 rounded-xl p-4 h-fit">
+              <h2 className="text-xl font-bold mb-4">Property Comparison</h2>
+
+              {selectedProperties.length === 0 ? (
+                <div className="text-center py-12">
+                  <Building className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">No Properties Selected</h3>
+                  <p className="text-gray-500 mb-6">Select up to 3 properties from the list to compare them side by side.</p>
+                </div>
+              ) : showComparisonTable && selectedProperties.length >= 2 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 border-r">Property</th>
+                        {selectedProperties.map((property) => (
+                          <th key={property.id} className="px-6 py-4 text-center text-sm font-medium text-gray-900 border-r min-w-[200px]">
+                            <div className="space-y-2">
+                              <div>
+                                <h3 className="font-semibold text-sm">{property.name}</h3>
+                                <p className="text-green-600 font-bold text-sm">₹{(property.rate_sqft || 0).toLocaleString()}/sqft</p>
+                                <p className="text-xs text-gray-600">{property.location}</p>
+                              </div>
+                              <button
+                                onClick={() => handleRemoveFromCompare(property.id)}
+                                className="text-red-500 hover:text-red-700 text-xs"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {metrics.map((metric, index) => (
+                        <tr key={metric.key} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900 border-r">
+                            <div className="flex items-center gap-2">
+                              <metric.icon className="w-4 h-4 text-gray-600" />
+                              {metric.label}
+                            </div>
+                          </td>
+                          {selectedProperties.map((property) => {
+                            const value = property[metric.key];
+                            const isBest = getBestValueIndex(metric, selectedProperties) === selectedProperties.indexOf(property);
+
+                            return (
+                              <td key={`${property.id}-${metric.key}`} className="px-6 py-4 text-center text-sm border-r">
+                                <div className={`${isBest ? 'bg-green-100 text-green-800 font-semibold px-2 py-1 rounded' : ''}`}>
+                                  {metric.key === 'investmentPotential' && typeof value === 'number'
+                                    ? parseFloat(value).toFixed(1) + '/10'
+                                    : formatValue(value, metric.key === 'overallScore' ? 'score' : 'score')}
+                                  {isBest && <span className="ml-1"><Award className="w-4 h-4 inline text-green-800" /></span>}
                                 </div>
                               </td>
-                              {selectedProperties.map((property) => {
-                                const value = property[metric.key];
-                                const isBest = getBestValueIndex(metric, selectedProperties) === selectedProperties.indexOf(property);
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
 
-                                return (
-                                  <td key={`${property.id}-${metric.key}`} className="px-6 py-4 text-center text-sm border-r">
-                                    <div className={`${isBest ? 'bg-green-100 text-green-800 font-semibold px-2 py-1 rounded' : ''}`}>
-                                      {metric.key === 'investmentPotential' && typeof value === 'number' 
-                                        ? parseFloat(value).toFixed(1) + '/10'
-                                        : formatValue(value, metric.key === 'overallScore' ? 'score' : 'score')}
-                                      {isBest && <span className="ml-1"><Award className="w-4 h-4 inline text-green-800" /></span>}
-                                    </div>
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      
-                      <div className="mt-4 flex justify-between items-center">
-                        <div className="text-sm text-gray-600 flex items-center gap-1">
-                          <Award className="w-4 h-4 inline text-green-800" /> indicates the best value for each metric
-                        </div>
-                        <button
-                          onClick={() => setShowComparisonTable(false)}
-                          className="bg-blue-900 hover:bg-[#0A2463]/90 text-white px-4 py-2 rounded-lg transition-colors"
-                        >
-                          Back to Summary
-                        </button>
-                      </div>
+                  <div className="mt-4 flex justify-between items-center">
+                    <div className="text-sm text-gray-600 flex items-center gap-1">
+                      <Award className="w-4 h-4 inline text-green-800" /> indicates the best value for each metric
                     </div>
-                  ) : (
-                    <div>
-                      <div className="grid grid-cols-1 gap-4">
-                        {selectedProperties.map(property => (
-                          <div key={property.id} className="border border-gray-200 rounded-lg p-3 relative">
-                            <button 
-                              onClick={() => handleRemoveFromCompare(property.id)}
-                              className="absolute top-2 right-2 p-1 bg-red-100 text-red-600 rounded-full hover:bg-red-200"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                            
-                            <h3 className="font-medium mb-2">{property.name}</h3>
-                            
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div>
-                                <span className="text-gray-500">Price:</span> {property.price}
-                              </div>
-                              <div>
-                                <span className="text-gray-500">Area:</span> {property.area || "N/A"}
-                              </div>
-                              <div>
-                                <span className="text-gray-500">Score:</span> {property.overallScore}/10
-                              </div>
-                              <div>
-                                <span className="text-gray-500">Investment:</span> {typeof property.investmentPotential === 'number' ? parseFloat(property.investmentPotential).toFixed(1) : "N/A"}/10
-                              </div>
-                            </div>
+                    <button
+                      onClick={() => setShowComparisonTable(false)}
+                      className="bg-blue-900 hover:bg-[#0A2463]/90 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
+                      Back to Summary
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="grid grid-cols-1 gap-4">
+                    {selectedProperties.map(property => (
+                      <div key={property.id} className="border border-gray-200 rounded-lg p-3 relative">
+                        <button
+                          onClick={() => handleRemoveFromCompare(property.id)}
+                          className="absolute top-2 right-2 p-1 bg-red-100 text-red-600 rounded-full hover:bg-red-200"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+
+                        <h3 className="font-medium mb-2">{property.name}</h3>
+
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-gray-500">Price:</span> {property.price}
                           </div>
-                        ))}
+                          <div>
+                            <span className="text-gray-500">Area:</span> {property.area || "N/A"}
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Score:</span> {property.overallScore}/10
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Investment:</span> {typeof property.investmentPotential === 'number' ? parseFloat(property.investmentPotential).toFixed(1) : "N/A"}/10
+                          </div>
+                        </div>
                       </div>
-                      
-                      {selectedProperties.length >= 2 && (
-                        <button
-                          onClick={handleCompare}
-                          className="w-full mt-4 bg-[#0A2463] hover:bg-[#0A2463]/90 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                        >
-                          <BarChart3 className="w-5 h-5" />
-                          Compare Properties
-                        </button>
-                      )}
-                    </div>
+                    ))}
+                  </div>
+
+                  {selectedProperties.length >= 2 && (
+                    <button
+                      onClick={handleCompare}
+                      className="w-full mt-4 bg-[#0A2463] hover:bg-[#0A2463]/90 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                    >
+                      <BarChart3 className="w-5 h-5" />
+                      Compare Properties
+                    </button>
                   )}
                 </div>
-              </div>
-            </>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

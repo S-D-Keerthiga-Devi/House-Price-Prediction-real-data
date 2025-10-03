@@ -27,10 +27,10 @@ import { useNavigate } from "react-router-dom";
 const smartServicesTabs = {
   Buyers: [
     { name: "Property Valuation", icon: <Home className="w-10 h-10 text-blue-600" />, link: "/property-valuation" },
+    { name: "EMI Calculator", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/emi-calculator"},
     { name: "Rent Agreement", icon: <FileText className="w-10 h-10 text-green-600" />, link: "/rent-agreement" },
     { name: "Auctioned Property", icon: <Gavel className="w-10 h-10 text-orange-600" />, link: "/auctioned-property" },
     { name: "Escrow Services", icon: <Scale className="w-10 h-10 text-purple-600" />, link: "/escow-services" },
-    { name: "Comparator", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/comparator", isComparator: true },
     { name: "Comparator", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/comparator", isComparator: true },
   ],
   Developers: [

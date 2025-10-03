@@ -13,7 +13,7 @@ import { Provider } from 'react-redux'
 import { ToastContainer, toast } from 'react-toastify'
 import Dashboard from './pages/Dashboard'
 import PropertyValuation from './pages/PropertyValuation'
-import RentAgreement from './pages/RentAgreement'
+import RentAgreement from './pages/buyers/RentAgreement'
 import AuctionedProperty from './pages/AuctionedProperty'
 import EscrowServices from './pages/buyers/EscrowServices'
 import AdvertiseWithUs from './pages/AdvertiseWithUs'
@@ -43,6 +43,7 @@ import TrendingDevelopers from './pages/TrendingDevelopers'
 import VentureInvestment from './pages/VentureInvestment'
 import MarketTrends from './pages/MarketTrends'
 import PostProperty from './pages/PostProperty'
+import EMICalculator from './pages/buyers/EMICalculator'
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -66,6 +67,7 @@ const router = createBrowserRouter(
       <Route path="data-insights" element={<DataInsights />} />
       <Route path="dealer-connect" element={<DealerConnect />} />
       <Route path="extra-space-comfort" element={<ExtraSpaceComfort />} />
+      <Route path="emi-calculator" element={<EMICalculator />} />
       <Route path="home-interior" element={<HomeInterior />} />
       <Route path="special-auction-deals" element={<SpecialAuctionDeals />} />
       <Route path="price-income-index" element={<PriceIncomeIndex />} />
