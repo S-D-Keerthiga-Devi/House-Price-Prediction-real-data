@@ -2,35 +2,31 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { MapPin, TrendingUp, TrendingDown, Building, Star, BarChart3, Zap, X, Award, Plus, ArrowLeft, Shield, Car, Dumbbell, Coffee, Leaf, Search, Filter, RefreshCw } from "lucide-react";
 import { getAllPropertiesForComparison } from '../../api/house';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts';
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from 'react-router-dom';
 import PropertySearch from "../../components/PropertySearch";
 
 const Comparator = ({ initialProperties = [] }) => {
   const [properties, setProperties] = useState([]);
-  const [allProperties, setAllProperties] = useState([]); // New state for all properties
+  const [allProperties, setAllProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedProperties, setSelectedProperties] = useState([]);
   const [showComparisonTable, setShowComparisonTable] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  // State for amenities
   const [showAmenities, setShowAmenities] = useState(false);
   const [selectedPropertyForAmenities, setSelectedPropertyForAmenities] = useState(null);
   const [expandedAmenitiesCards, setExpandedAmenitiesCards] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  // New state to track if properties exist for the selected city
   const [noPropertiesFound, setNoPropertiesFound] = useState(false);
-  // Search state
   const [searchQuery, setSearchQuery] = useState("");
-  // State for notification message
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const cityFromURL = params.get("city");
-  const navigate = useNavigate(); // Added useNavigate hook
+  const navigate = useNavigate();
 
   const [selectedCity, setSelectedCity] = useState("");
 
@@ -40,7 +36,6 @@ const Comparator = ({ initialProperties = [] }) => {
     }
   }, [cityFromURL]);
 
-  // Reset states when city changes
   useEffect(() => {
     if (selectedCity) {
       setSelectedProperties([]);
@@ -50,12 +45,11 @@ const Comparator = ({ initialProperties = [] }) => {
       setSelectedPropertyForAmenities(null);
       setCurrentPage(1);
       setNoPropertiesFound(false);
-      setSearchQuery(""); // Reset search query
-      setAllProperties([]); // Clear all properties
+      setSearchQuery("");
+      setAllProperties([]);
     }
   }, [selectedCity]);
 
-  // Show notification function
   const showNotification = useCallback((message, type = 'info') => {
     setNotification({ show: true, message, type });
     setTimeout(() => {
@@ -63,7 +57,6 @@ const Comparator = ({ initialProperties = [] }) => {
     }, 3000);
   }, []);
 
-  // Memoized metrics definition - now includes overall score
   const metrics = useMemo(() => [
     { key: 'overallScore', label: 'Overall Score', higher: true, icon: Star },
     { key: 'builderReputation', label: 'Builder Reputation', higher: true, icon: Building },
@@ -74,9 +67,7 @@ const Comparator = ({ initialProperties = [] }) => {
     { key: 'valuation', label: 'Valuation Score', higher: true, icon: Star }
   ], []);
 
-  // Generate property amenities score data using real data from MongoDB
   const generateAmenitiesData = useCallback((property) => {
-    // Use actual property data from MongoDB
     return [
       { name: 'Security', score: property.security_score || parseFloat((Math.min(10, Math.max(1, property.amenities_count * 0.5 || 5))).toFixed(1)) },
       { name: 'Parking', score: property.parking_count ? Math.min(10, Math.max(1, property.parking_count * 2)) : parseFloat((Math.min(10, Math.max(1, property.amenities_count * 0.4 || 5))).toFixed(1)) },
@@ -86,7 +77,6 @@ const Comparator = ({ initialProperties = [] }) => {
     ];
   }, []);
 
-  // Memoized helper functions
   const getBestValueIndex = useCallback((metric, propertiesData) => {
     if (!propertiesData || propertiesData.length === 0) return 0;
 
@@ -113,13 +103,11 @@ const Comparator = ({ initialProperties = [] }) => {
       case 'percentage':
         return `${value}%`;
       case 'score':
-        // Format score to have at most 1 decimal place
         if (typeof value === 'number') {
           return `${value.toFixed(1)}/10`;
         } else if (value === "N/A") {
           return value;
         } else {
-          // Try to parse and format if it's a string number
           const numValue = parseFloat(value);
           return isNaN(numValue) ? value : `${numValue.toFixed(1)}/10`;
         }
@@ -150,16 +138,12 @@ const Comparator = ({ initialProperties = [] }) => {
     }
   }, []);
 
-  // Calculate overall score for a property
   const calculateOverallScore = useCallback((property) => {
-    // If we have a direct score from the property card, use it
     if (property.overall_score !== undefined && property.overall_score !== null) {
-      // Make sure it's a number and format it to 1 decimal place
       const score = parseFloat(property.overall_score);
       return isNaN(score) ? "N/A" : score.toFixed(1);
     }
 
-    // Fallback calculation if overall_score is not available
     const scores = [
       property.builderReputation || 0,
       property.locationScore || 0,
@@ -167,25 +151,19 @@ const Comparator = ({ initialProperties = [] }) => {
       (property.fiveYearGrowth || 0) / 10
     ];
 
-    // Filter out any NaN values
     const validScores = scores.filter(score => !isNaN(score));
 
-    // If no valid scores, return "N/A"
     if (validScores.length === 0) return "N/A";
 
-    // Calculate average of valid scores
     const sum = validScores.reduce((a, b) => a + b, 0);
     const avg = sum / validScores.length;
 
-    // Return formatted score with one decimal place as a string
     return avg.toFixed(1);
   }, []);
 
-  // Process properties to ensure unique locations and IDs
   const processUniqueProperties = useCallback((propertyList) => {
     if (!propertyList || propertyList.length === 0) return [];
 
-    // First, remove duplicates by ID
     const uniqueByIdMap = new Map();
     propertyList.forEach(property => {
       if (!uniqueByIdMap.has(property.id)) {
@@ -193,7 +171,6 @@ const Comparator = ({ initialProperties = [] }) => {
       }
     });
 
-    // Then, from the unique by ID, select the best by location
     const uniqueByLocationMap = new Map();
     uniqueByIdMap.forEach(property => {
       const locationKey = property.location;
@@ -206,7 +183,6 @@ const Comparator = ({ initialProperties = [] }) => {
     return Array.from(uniqueByLocationMap.values());
   }, [calculateOverallScore]);
 
-  // Get amenity icon based on category name
   const getAmenityIcon = useCallback((categoryName) => {
     switch (categoryName) {
       case 'Security':
@@ -224,11 +200,9 @@ const Comparator = ({ initialProperties = [] }) => {
     }
   }, []);
 
-  // Handle download comparison table data
   const handleDownloadComparisonTable = useCallback(() => {
     if (selectedProperties.length === 0) return;
 
-    // Create CSV content with headers
     const headers = ['Property Name', 'Location', 'Price', 'Area', 'Price per sqft', 'Overall Score', 'Builder Reputation', 'Location Score', 'Investment Potential', '5-Year Growth'];
 
     const csvContent = [
@@ -258,26 +232,21 @@ const Comparator = ({ initialProperties = [] }) => {
     document.body.removeChild(link);
   }, [selectedProperties, calculateOverallScore]);
 
-  // Handle compare button click
   const handleCompare = useCallback(() => {
     setShowComparisonTable(true);
-    // No need to scroll to top as we're keeping the same view
   }, []);
 
-  // In Comparator.jsx, improve handleAddToCompare to ensure property is added properly
   const handleAddToCompare = useCallback((property) => {
     setSelectedProperties(prevSelected => {
       if (prevSelected.some(p => p.id === property.id)) {
         return prevSelected.filter(p => p.id !== property.id);
       } else if (prevSelected.length < 3) {
-        // Calculate overall score if not already present
         const propertyWithScore = {
           ...property,
           overallScore: calculateOverallScore(property)
         };
         return [...prevSelected, propertyWithScore];
       } else {
-        // Show proper message instead of alert
         setNotification({
           show: true,
           message: "Maximum 3 properties can be selected for comparison",
@@ -290,28 +259,23 @@ const Comparator = ({ initialProperties = [] }) => {
       }
     });
 
-    // Show notification when property is added
     if (!selectedProperties.some(p => p.id === property.id)) {
       showNotification(`Added ${property.name} to comparison`, "success");
     }
   }, [calculateOverallScore, selectedProperties, showNotification]);
 
-  // Remove property from comparison
   const handleRemoveFromCompare = useCallback((propertyId) => {
     setSelectedProperties(prevSelected => prevSelected.filter(p => p.id !== propertyId));
-    // Reset to original property list if all properties are removed
     if (selectedProperties.length <= 1) {
       setShowComparisonTable(false);
     }
   }, [selectedProperties.length]);
 
-  // Handle showing amenities
   const handleShowAmenities = useCallback((property) => {
     setSelectedPropertyForAmenities(property);
     setShowAmenities(true);
   }, []);
 
-  // Toggle amenities card
   const toggleAmenitiesCard = useCallback((propertyId) => {
     setExpandedAmenitiesCards(prev => ({
       ...prev,
@@ -319,16 +283,12 @@ const Comparator = ({ initialProperties = [] }) => {
     }));
   }, []);
 
-  // Find full property details by ID
   const findFullPropertyDetails = useCallback((propertyId) => {
-    // First check in the current properties list
     const fullProperty = properties.find(p => p.id === propertyId);
     if (fullProperty) return fullProperty;
 
-    // If not found, check in all properties
     const searchProperty = allProperties.find(p => p.id === propertyId);
     if (searchProperty) {
-      // Find the corresponding full property from the paginated list
       const locationMatch = properties.find(p => p.location === searchProperty.location);
       if (locationMatch) return locationMatch;
     }
@@ -336,7 +296,6 @@ const Comparator = ({ initialProperties = [] }) => {
     return null;
   }, [properties, allProperties]);
 
-  // Fetch all properties for search (without pagination)
   useEffect(() => {
     const fetchAllProperties = async () => {
       if (!selectedCity) {
@@ -345,17 +304,14 @@ const Comparator = ({ initialProperties = [] }) => {
       }
 
       try {
-        // Fetch all properties for the selected city without pagination
         const response = await getAllPropertiesForComparison({
           city: selectedCity,
-          limit: 1000, // Large number to get all properties
+          limit: 1000,
           page: 1
         });
 
         if (response && response.success && response.properties) {
-          // Transform the data (same transformation as in the other fetch)
           const transformedProperties = response.properties.map((property) => {
-            // Calculate overall score
             const builderReputation = property.builder_grade || 0;
             const locationScore = property.lifestyle_quality_index || 0;
             const investmentPotential = property.investment_potential || 0;
@@ -389,9 +345,7 @@ const Comparator = ({ initialProperties = [] }) => {
               investmentPotential: property.investment_potential || 0,
               marketTrend: property.future_growth_prediction > 80 ? 'Rising' :
                 property.future_growth_prediction > 60 ? 'Stable' : 'Declining',
-              // Add overall score
               overall_score: overallScore,
-              // Additional fields from database
               area: property.area,
               bedrooms: property.bedrooms,
               bathroom: property.bathroom,
@@ -412,7 +366,6 @@ const Comparator = ({ initialProperties = [] }) => {
             };
           });
 
-          // Remove duplicates
           const uniqueProperties = processUniqueProperties(transformedProperties);
           setAllProperties(uniqueProperties);
         } else {
@@ -427,7 +380,6 @@ const Comparator = ({ initialProperties = [] }) => {
     fetchAllProperties();
   }, [selectedCity, processUniqueProperties]);
 
-  // Fetch properties from API (with pagination)
   useEffect(() => {
     const fetchProperties = async () => {
       if (!selectedCity) {
@@ -442,125 +394,109 @@ const Comparator = ({ initialProperties = [] }) => {
       }
 
       try {
-        // If initialProperties are provided, use them, otherwise fetch from API
-        if (initialProperties.length > 0) {
-          setProperties(initialProperties);
-          setIsInitialLoad(false);
-          setLoading(false);
-        } else {
-          // Add timeout to prevent infinite loading (increased to 30 seconds)
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Request timeout')), 30000)
-          );
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timeout')), 30000)
+        );
 
-          // Fetch properties from API with pagination and city filter
-          const response = await Promise.race([
-            getAllPropertiesForComparison({
-              page: currentPage,
-              limit: 50,
-              city: selectedCity // Pass the selected city to the API
-            }),
-            timeoutPromise
-          ]);
+        const response = await Promise.race([
+          getAllPropertiesForComparison({
+            page: currentPage,
+            limit: 50,
+            city: selectedCity
+          }),
+          timeoutPromise
+        ]);
 
-          if (response && response.success && response.properties) {
-            if (response.properties.length === 0) {
-              // No properties found for this city
-              setNoPropertiesFound(true);
-              setProperties([]);
-              setAllProperties([]);
-              setLoading(false);
-              setIsInitialLoad(false);
-              return;
-            }
-
-            // Transform the data to match our component structure
-            const transformedProperties = response.properties.map((property, index) => {
-              // Calculate overall score
-              const builderReputation = property.builder_grade || 0;
-              const locationScore = property.lifestyle_quality_index || 0;
-              const investmentPotential = property.investment_potential || 0;
-              const fiveYearGrowth = property.future_growth_prediction || 0;
-
-              const scores = [
-                builderReputation,
-                locationScore,
-                investmentPotential,
-                fiveYearGrowth / 10
-              ];
-
-              const validScores = scores.filter(score => !isNaN(score));
-              const overallScore = validScores.length > 0
-                ? (validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1)
-                : "N/A";
-
-              return {
-                id: property._id,
-                name: property.developer_name && property.developer_name !== 'Unknown'
-                  ? `${property.developer_name} - ${property.location}`
-                  : `${property.location} Property`,
-                price: `₹${(property.price_value || 0).toLocaleString()}`,
-                location: property.location || 'Location Not Available',
-                city: property.city || 'City Not Available',
-                builderReputation: property.builder_grade || 0,
-                locationScore: property.lifestyle_quality_index || 0,
-                lifestyleIndex: property.lifestyle_quality_index || 0,
-                valuation: property.investment_potential || 0,
-                neighbourhoodClass: property.neighbourhood_avg_income > 100000 ? 'Premium' :
-                  property.neighbourhood_avg_income > 50000 ? 'Upper Middle' : 'Middle',
-                schoolsNearby: property.schools_nearby || property.amenities_count || 0,
-                hospitalsNearby: property.hospitals_nearby || Math.ceil(property.amenities_count * 0.3) || 0,
-                collegesNearby: property.colleges_nearby || Math.ceil(property.amenities_count * 0.2) || 0,
-                metroDistance: property.metro_distance || property.public_transport_score || 0,
-                aqi: property.aqi || property.environmental_quality || 0,
-                greenCover: property.green_cover || property.environmental_quality || 0,
-                noiseLevel: property.noise_level || (100 - property.environmental_quality) || 0,
-                trafficScore: property.traffic_score || property.public_transport_score || 0,
-                fiveYearGrowth: property.future_growth_prediction || 0,
-                investmentPotential: property.investment_potential || 0,
-                internationalRanking: property.international_ranking || property.lifestyle_quality_index * 10 || 0,
-                marketTrend: property.future_growth_prediction > 80 ? 'Rising' :
-                  property.future_growth_prediction > 60 ? 'Stable' : 'Declining',
-                // Add overall score
-                overall_score: overallScore,
-                // Additional fields from database
-                area: property.area,
-                bedrooms: property.bedrooms,
-                bathroom: property.bathroom,
-                balconies: property.balconies,
-                developer_name: property.developer_name,
-                furnishing_status: property.furnishing_status,
-                construction_status: property.construction_status,
-                price_value: property.price_value,
-                rate_sqft: property.rate_sqft,
-                property_age_years: property.property_age_years,
-                parking_count: property.parking_count,
-                days_on_market: property.days_on_market,
-                amenities_count: property.amenities_count,
-                facing_score: property.facing_score,
-                rental_yield: property.rental_yield,
-                neighbourhood_avg_income: property.neighbourhood_avg_income,
-                affordability_index: property.affordability_index
-              };
-            });
-
-            // Set properties and update states in one go to prevent blinking
-            setProperties(transformedProperties);
-            setTotalPages(response.totalPages || 1);
-            setTotalCount(response.totalCount || 0);
-            setIsInitialLoad(false);
-            setLoading(false);
-            setNoPropertiesFound(false);
-          } else {
-            // No properties found for this city
+        if (response && response.success && response.properties) {
+          if (response.properties.length === 0) {
+            setNoPropertiesFound(true);
             setProperties([]);
             setAllProperties([]);
-            setTotalPages(1);
-            setTotalCount(0);
-            setIsInitialLoad(false);
             setLoading(false);
-            setNoPropertiesFound(true);
+            setIsInitialLoad(false);
+            return;
           }
+
+          const transformedProperties = response.properties.map((property, index) => {
+            const builderReputation = property.builder_grade || 0;
+            const locationScore = property.lifestyle_quality_index || 0;
+            const investmentPotential = property.investment_potential || 0;
+            const fiveYearGrowth = property.future_growth_prediction || 0;
+
+            const scores = [
+              builderReputation,
+              locationScore,
+              investmentPotential,
+              fiveYearGrowth / 10
+            ];
+
+            const validScores = scores.filter(score => !isNaN(score));
+            const overallScore = validScores.length > 0
+              ? (validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1)
+              : "N/A";
+
+            return {
+              id: property._id,
+              name: property.developer_name && property.developer_name !== 'Unknown'
+                ? `${property.developer_name} - ${property.location}`
+                : `${property.location} Property`,
+              price: `₹${(property.price_value || 0).toLocaleString()}`,
+              location: property.location || 'Location Not Available',
+              city: property.city || 'City Not Available',
+              builderReputation: property.builder_grade || 0,
+              locationScore: property.lifestyle_quality_index || 0,
+              lifestyleIndex: property.lifestyle_quality_index || 0,
+              valuation: property.investment_potential || 0,
+              neighbourhoodClass: property.neighbourhood_avg_income > 100000 ? 'Premium' :
+                property.neighbourhood_avg_income > 50000 ? 'Upper Middle' : 'Middle',
+              schoolsNearby: property.schools_nearby || property.amenities_count || 0,
+              hospitalsNearby: property.hospitals_nearby || Math.ceil(property.amenities_count * 0.3) || 0,
+              collegesNearby: property.colleges_nearby || Math.ceil(property.amenities_count * 0.2) || 0,
+              metroDistance: property.metro_distance || property.public_transport_score || 0,
+              aqi: property.aqi || property.environmental_quality || 0,
+              greenCover: property.green_cover || property.environmental_quality || 0,
+              noiseLevel: property.noise_level || (100 - property.environmental_quality) || 0,
+              trafficScore: property.traffic_score || property.public_transport_score || 0,
+              fiveYearGrowth: property.future_growth_prediction || 0,
+              investmentPotential: property.investment_potential || 0,
+              internationalRanking: property.international_ranking || property.lifestyle_quality_index * 10 || 0,
+              marketTrend: property.future_growth_prediction > 80 ? 'Rising' :
+                property.future_growth_prediction > 60 ? 'Stable' : 'Declining',
+              overall_score: overallScore,
+              area: property.area,
+              bedrooms: property.bedrooms,
+              bathroom: property.bathroom,
+              balconies: property.balconies,
+              developer_name: property.developer_name,
+              furnishing_status: property.furnishing_status,
+              construction_status: property.construction_status,
+              price_value: property.price_value,
+              rate_sqft: property.rate_sqft,
+              property_age_years: property.property_age_years,
+              parking_count: property.parking_count,
+              days_on_market: property.days_on_market,
+              amenities_count: property.amenities_count,
+              facing_score: property.facing_score,
+              rental_yield: property.rental_yield,
+              neighbourhood_avg_income: property.neighbourhood_avg_income,
+              affordability_index: property.affordability_index
+            };
+          });
+
+          setProperties(transformedProperties);
+          setTotalPages(response.totalPages || 1);
+          setTotalCount(response.totalCount || 0);
+          setIsInitialLoad(false);
+          setLoading(false);
+          setNoPropertiesFound(false);
+        } else {
+          setProperties([]);
+          setAllProperties([]);
+          setTotalPages(1);
+          setTotalCount(0);
+          setIsInitialLoad(false);
+          setLoading(false);
+          setNoPropertiesFound(true);
         }
       } catch (err) {
         console.error("Error fetching properties:", err);
@@ -574,19 +510,15 @@ const Comparator = ({ initialProperties = [] }) => {
     fetchProperties();
   }, [initialProperties, isInitialLoad, currentPage, selectedCity]);
 
-  // Function to normalize city names for case-insensitive comparison
   const normalizeCity = useCallback((city) => {
     if (!city) return '';
-    // Convert to lowercase for case-insensitive comparison
     const normalized = city.toLowerCase().trim();
-    // Special case for Gurgaon/Gurugram which are the same city
     if (normalized === 'gurgaon' || normalized === 'gurugram') {
       return 'gurgaon/gurugram';
     }
     return normalized;
   }, []);
 
-  // Filter properties by selected city
   const filterPropertiesByCity = useCallback((propertyList) => {
     if (!selectedCity || selectedCity === '') return propertyList;
 
@@ -596,7 +528,6 @@ const Comparator = ({ initialProperties = [] }) => {
     });
   }, [selectedCity, normalizeCity]);
 
-  // Filter properties by search query
   const filterPropertiesBySearch = useCallback((propertyList) => {
     if (!searchQuery.trim()) return propertyList;
 
@@ -610,30 +541,22 @@ const Comparator = ({ initialProperties = [] }) => {
     });
   }, [searchQuery]);
 
-  // Handle show all properties
   const handleShowAllProperties = useCallback(() => {
     setSearchQuery('');
     setShowComparisonTable(false);
   }, []);
 
-  // Memoized processed properties data
   const processedProperties = useMemo(() => {
     if (!properties || properties.length === 0) return [];
 
-    // Filter properties by city first
     const cityFilteredProperties = filterPropertiesByCity(properties);
-
-    // Then filter by search query
     const searchFilteredProperties = filterPropertiesBySearch(cityFilteredProperties);
-
-    // Get unique properties next
     const uniqueProperties = processUniqueProperties(searchFilteredProperties);
     const uniqueSelectedProperties = processUniqueProperties(selectedProperties);
 
     const propertiesData = showComparisonTable ? uniqueSelectedProperties : uniqueProperties;
 
     return propertiesData.map((property, propertyIndex) => {
-      // Round scores to one decimal place for simplicity
       const overallScore = Math.round(calculateOverallScore(property) * 10) / 10;
       const winCount = metrics.filter(
         (metric) => getBestValueIndex(metric, propertiesData) === propertyIndex
@@ -645,7 +568,6 @@ const Comparator = ({ initialProperties = [] }) => {
         overallScore,
         winCount,
         winPercentage,
-        // Round all metric values to one decimal place
         builderReputation: Math.round(property.builderReputation * 10) / 10,
         locationScore: Math.round(property.locationScore * 10) / 10,
         investmentPotential: Math.round(property.investmentPotential * 10) / 10,
@@ -654,23 +576,18 @@ const Comparator = ({ initialProperties = [] }) => {
         valuation: Math.round(property.valuation * 10) / 10
       };
     });
-  }, [properties, selectedProperties, showComparisonTable, calculateOverallScore, metrics, getBestValueIndex, processUniqueProperties]);
+  }, [properties, selectedProperties, showComparisonTable, calculateOverallScore, metrics, getBestValueIndex, processUniqueProperties, filterPropertiesByCity, filterPropertiesBySearch]);
 
-  // Create a combined list of properties for display - includes current page properties and any selected properties
   const propertiesForDisplay = useMemo(() => {
-    // Start with the processed properties (current page)
     let displayProperties = [...processedProperties];
 
-    // Add any selected properties that are not already in the list
     selectedProperties.forEach(selectedProp => {
       if (!displayProperties.some(p => p.id === selectedProp.id)) {
-        // Calculate overall score for the selected property
         const overallScore = calculateOverallScore(selectedProp);
 
         displayProperties.push({
           ...selectedProp,
           overallScore,
-          // Round all metric values to one decimal place
           builderReputation: Math.round(selectedProp.builderReputation * 10) / 10,
           locationScore: Math.round(selectedProp.locationScore * 10) / 10,
           investmentPotential: Math.round(selectedProp.investmentPotential * 10) / 10,
@@ -684,7 +601,6 @@ const Comparator = ({ initialProperties = [] }) => {
     return displayProperties;
   }, [processedProperties, selectedProperties, calculateOverallScore]);
 
-  // Create table data with overall score for comparison table
   const tableData = useMemo(() => {
     if (!showComparisonTable || selectedProperties.length === 0) return [];
 
@@ -694,43 +610,35 @@ const Comparator = ({ initialProperties = [] }) => {
     }));
   }, [selectedProperties, showComparisonTable, calculateOverallScore]);
 
-  // Use tableData for comparison table, propertiesForDisplay for cards
   const propertiesData = showComparisonTable ? tableData : propertiesForDisplay;
 
   const handleServiceClick = (service) => {
     if (service.isComparator) {
-      // Dispatch custom event to trigger message box in header for Comparators
       const event = new CustomEvent('showComparatorMessage');
       window.dispatchEvent(event);
       return;
     }
 
-    // Handle navigation for all services that have a link
     if (service.link) {
       navigate(service.link);
     }
   };
 
-  // Handle property selection from search
   const handlePropertySelect = useCallback((property) => {
     if (!property) return;
 
-    // Find the full property details
     const fullProperty = findFullPropertyDetails(property.id);
 
     if (fullProperty) {
-      // If property is already selected, remove it
       if (selectedProperties.some(p => p.id === fullProperty.id)) {
         handleRemoveFromCompare(fullProperty.id);
       }
-      // Otherwise add it if we have less than 3 properties
       else if (selectedProperties.length < 3) {
         handleAddToCompare(fullProperty);
       } else {
         showNotification("Maximum 3 properties can be selected for comparison", "warning");
       }
     } else {
-      // If we can't find the full property details, try to use the property from allProperties
       const searchProperty = allProperties.find(p => p.id === property.id);
       if (searchProperty) {
         if (selectedProperties.some(p => p.id === searchProperty.id)) {
@@ -743,6 +651,11 @@ const Comparator = ({ initialProperties = [] }) => {
       }
     }
   }, [selectedProperties, findFullPropertyDetails, allProperties, handleRemoveFromCompare, handleAddToCompare, showNotification]);
+
+  // Check if we should show the "No Properties Found" card
+  const shouldShowNoPropertiesCard = useMemo(() => {
+    return noPropertiesFound || (selectedCity && properties.length === 0 && !loading && !isInitialLoad);
+  }, [noPropertiesFound, selectedCity, properties.length, loading, isInitialLoad]);
 
   return (
     <div className="min-h-screen bg-white mt-20">
@@ -813,25 +726,8 @@ const Comparator = ({ initialProperties = [] }) => {
         </div>
       )}
 
-      {/* No Properties Found State */}
-      {!loading && noPropertiesFound && selectedCity && (
-        <div className="max-w-7xl mx-auto px-6 py-10">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-            <div className="text-yellow-500 text-6xl mb-4">🏘️</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">No Properties Found</h2>
-            <p className="text-gray-600 mb-6">We couldn't find any properties in {selectedCity}. Try searching for a different city.</p>
-            <button
-              onClick={() => handleServiceClick({ isComparator: true })}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
-            >
-              Select a Different City
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Error State */}
-      {error && !loading && !noPropertiesFound && (
+      {error && !loading && (
         <div className="max-w-7xl mx-auto px-6 py-10">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <div className="text-red-500 text-6xl mb-4">⚠️</div>
@@ -848,71 +744,46 @@ const Comparator = ({ initialProperties = [] }) => {
       )}
 
       {/* Main Content */}
-      {!loading && !error && !noPropertiesFound && !isInitialLoad && properties.length > 0 && selectedCity && (
+      {!loading && !error && selectedCity && (
         <div className="max-w-7xl mx-auto px-6 pt-8 pb-6">
-          {/* Always show the two-column layout */}
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left column - Property listings */}
             <div className="w-full lg:w-1/3">
-              {/* Search bar - now using PropertySearch component */}
+              {/* Search bar */}
               <div className="mb-6">
                 <PropertySearch
-                  key={selectedCity} // Force re-render when city changes
+                  key={selectedCity}
                   selectedCity={selectedCity}
-                  // IMPORTANT: Only pass localities that have property cards
                   availableLocalities={allProperties && allProperties.length > 0 ?
-                    // First filter properties that have all required data
                     allProperties
-                      .filter(prop => 
-                        prop.city && 
-                        prop.city.toLowerCase() === selectedCity.toLowerCase() &&
-                        prop.location && // Must have location
-                        prop.name && // Must have name
-                        prop.id // Must have ID
-                      )
+                      .filter(prop => prop.city && prop.city.toLowerCase() === selectedCity.toLowerCase())
                       .map(prop => prop.location)
-                      .filter((loc, index, self) => self.indexOf(loc) === index) // Remove duplicates
+                      .filter(Boolean)
+                      .filter((loc, index, self) => self.indexOf(loc) === index)
                       .sort()
                     : []
                   }
-                  // In Comparator.jsx, modify the onLocalitySelect function
                   onLocalitySelect={(locality) => {
                     setSearchQuery(locality);
-                    // Find properties matching this locality with complete data
                     const matchingProperties = locality ?
                       allProperties.filter(
-                        prop => 
-                          prop.location && 
-                          prop.location.toLowerCase() === locality.toLowerCase() &&
-                          prop.city && 
-                          prop.city.toLowerCase() === selectedCity.toLowerCase() &&
-                          prop.name &&
-                          prop.id
+                        prop => prop.location && prop.location.toLowerCase() === locality.toLowerCase() &&
+                          prop.city && prop.city.toLowerCase() === selectedCity.toLowerCase()
                       ) :
                       allProperties.filter(
-                        prop => 
-                          prop.city && 
-                          prop.city.toLowerCase() === selectedCity.toLowerCase() &&
-                          prop.name &&
-                          prop.id
+                        prop => prop.city && prop.city.toLowerCase() === selectedCity.toLowerCase()
                       );
 
-                    // Update filtered properties to show all matching properties
                     setProperties(matchingProperties);
 
-                    // IMPORTANT: If we have matching properties, ALWAYS add the first one to comparison
                     if (matchingProperties.length > 0) {
-                      // Get the first property
                       const propertyToAdd = matchingProperties[0];
-                      
-                      // Directly update the selectedProperties state
+
                       setSelectedProperties(prevSelected => {
-                        // Skip if already selected
                         if (prevSelected.some(p => p.id === propertyToAdd.id)) {
                           return prevSelected;
                         }
-                        
-                        // Add if we have less than 3 properties
+
                         if (prevSelected.length < 3) {
                           const propertyWithScore = {
                             ...propertyToAdd,
@@ -920,12 +791,18 @@ const Comparator = ({ initialProperties = [] }) => {
                           };
                           return [...prevSelected, propertyWithScore];
                         }
-                        
+
                         return prevSelected;
                       });
-                      
-                      // Show notification
+
                       showNotification(`Added ${propertyToAdd.name} to comparison`, "success");
+                    }
+                  }}
+                  onSearchDifferentCity={() => {
+                    setSelectedCity("");
+                    if (window.history && window.history.replaceState) {
+                      const newUrl = window.location.pathname;
+                      window.history.replaceState({}, document.title, newUrl);
                     }
                   }}
                 />
@@ -941,99 +818,118 @@ const Comparator = ({ initialProperties = [] }) => {
                 </button>
               </div>
 
-              {/* Property Cards Grid */}
-              <div id="property-cards-section" className="grid grid-cols-1 gap-4 mb-8">
-                {propertiesForDisplay.map((property) => {
-                  const isSelected = selectedProperties.some(p => p.id === property.id);
-                  const propertyIndex = propertiesForDisplay.indexOf(property);
-
-                  return (
-                    <div key={property.id} className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-4">
-                      {/* Property Header */}
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{property.name}</h3>
-                          <div className="flex items-center text-gray-600 mt-1">
-                            <MapPin className="w-4 h-4 mr-1" />
-                            <span className="text-sm">{property.location}</span>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleAddToCompare(property)}
-                          disabled={selectedProperties.length >= 3 && !isSelected}
-                          className={`p-2 rounded-lg transition-colors ${isSelected
-                            ? "bg-red-100 text-red-600 hover:bg-red-200"
-                            : selectedProperties.length >= 3
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                              : "bg-blue-100 text-blue-600 hover:bg-blue-200"
-                            }`}
-                        >
-                          {isSelected ? (
-                            <X className="w-5 h-5" />
-                          ) : (
-                            <Plus className="w-5 h-5" />
-                          )}
-                        </button>
-                      </div>
-
-                      {/* Property Details */}
-                      <div className="grid grid-cols-2 gap-3 mb-3">
-                        <div className="bg-gray-50 p-2 rounded-lg">
-                          <div className="text-xs text-gray-500">Price</div>
-                          <div className="font-semibold">{property.price}</div>
-                        </div>
-                        <div className="bg-gray-50 p-2 rounded-lg">
-                          <div className="text-xs text-gray-500">Area</div>
-                          <div className="font-semibold">{property.area || "N/A"}</div>
-                        </div>
-                        <div className="bg-gray-50 p-2 rounded-lg">
-                          <div className="text-xs text-gray-500">Overall Score</div>
-                          <div className="font-semibold">{property.overallScore}/10</div>
-                        </div>
-                        <div className="bg-gray-50 p-2 rounded-lg">
-                          <div className="text-xs text-gray-500">Investment</div>
-                          <div className="font-semibold flex items-center">
-                            {typeof property.investmentPotential === 'number'
-                              ? parseFloat(property.investmentPotential).toFixed(1)
-                              : "N/A"}/10
-                            {property.marketTrend === "Rising" && <TrendingUp className="w-3 h-3 ml-1 text-green-600" />}
-                            {property.marketTrend === "Declining" && <TrendingDown className="w-3 h-3 ml-1 text-red-600" />}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Pagination Controls - Only show if we have properties */}
-              {processedProperties.length > 0 && (
-                <div className="flex justify-center items-center gap-4 mb-8">
+              {/* No Properties Found Card */}
+              {shouldShowNoPropertiesCard && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center mb-6">
+                  <div className="text-yellow-500 text-6xl mb-4">🏘️</div>
+                  <h2 className="text-xl font-bold text-gray-800 mb-2">No Properties Found</h2>
+                  <p className="text-gray-600 mb-6">We couldn't find any properties in {selectedCity}. Try searching for a different city.</p>
                   <button
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => handleServiceClick({ isComparator: true })}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
                   >
-                    Previous
-                  </button>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      ({totalCount.toLocaleString()} total properties)
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
+                    Select a Different City
                   </button>
                 </div>
+              )}
+
+              {/* Property Cards Grid - Only show when properties exist */}
+              {!shouldShowNoPropertiesCard && properties.length > 0 && (
+                <>
+                  <div id="property-cards-section" className="grid grid-cols-1 gap-4 mb-8">
+                    {propertiesForDisplay.map((property) => {
+                      const isSelected = selectedProperties.some(p => p.id === property.id);
+                      const propertyIndex = propertiesForDisplay.indexOf(property);
+
+                      return (
+                        <div key={property.id} className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-4">
+                          {/* Property Header */}
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{property.name}</h3>
+                              <div className="flex items-center text-gray-600 mt-1">
+                                <MapPin className="w-4 h-4 mr-1" />
+                                <span className="text-sm">{property.location}</span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleAddToCompare(property)}
+                              disabled={selectedProperties.length >= 3 && !isSelected}
+                              className={`p-2 rounded-lg transition-colors ${isSelected
+                                ? "bg-red-100 text-red-600 hover:bg-red-200"
+                                : selectedProperties.length >= 3
+                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                  : "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                                }`}
+                            >
+                              {isSelected ? (
+                                <X className="w-5 h-5" />
+                              ) : (
+                                <Plus className="w-5 h-5" />
+                              )}
+                            </button>
+                          </div>
+
+                          {/* Property Details */}
+                          <div className="grid grid-cols-2 gap-3 mb-3">
+                            <div className="bg-gray-50 p-2 rounded-lg">
+                              <div className="text-xs text-gray-500">Price</div>
+                              <div className="font-semibold">{property.price}</div>
+                            </div>
+                            <div className="bg-gray-50 p-2 rounded-lg">
+                              <div className="text-xs text-gray-500">Area</div>
+                              <div className="font-semibold">{property.area || "N/A"}</div>
+                            </div>
+                            <div className="bg-gray-50 p-2 rounded-lg">
+                              <div className="text-xs text-gray-500">Overall Score</div>
+                              <div className="font-semibold">{property.overallScore}/10</div>
+                            </div>
+                            <div className="bg-gray-50 p-2 rounded-lg">
+                              <div className="text-xs text-gray-500">Investment</div>
+                              <div className="font-semibold flex items-center">
+                                {typeof property.investmentPotential === 'number'
+                                  ? parseFloat(property.investmentPotential).toFixed(1)
+                                  : "N/A"}/10
+                                {property.marketTrend === "Rising" && <TrendingUp className="w-3 h-3 ml-1 text-green-600" />}
+                                {property.marketTrend === "Declining" && <TrendingDown className="w-3 h-3 ml-1 text-red-600" />}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {processedProperties.length > 0 && (
+                    <div className="flex justify-center items-center gap-4 mb-8">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">
+                          Page {currentPage} of {totalPages}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          ({totalCount.toLocaleString()} total properties)
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 

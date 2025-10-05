@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home, Plus, Trash2, Save } from 'lucide-react';
 
 export default function EMICalculator() {
@@ -12,6 +12,7 @@ export default function EMICalculator() {
   const [hoveredSegment, setHoveredSegment] = useState(null);
   const [savedData, setSavedData] = useState([]);
   const [expandedYears, setExpandedYears] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
   
   const calculateEMI = () => {
     const principal = loanAmount;
@@ -33,10 +34,9 @@ export default function EMICalculator() {
     };
   };
   
-  const handleSaveData = () => {
+  const handleSaveData = async () => {
     const result = calculateEMI();
     const dataToSave = {
-      id: Date.now(),
       loanAmount,
       tenure,
       interest,
@@ -47,13 +47,34 @@ export default function EMICalculator() {
         amount: prePaymentAmount,
         frequency: prePaymentFrequency,
         startDate: prePaymentStartDate
-      } : null,
-      timestamp: new Date().toISOString()
+      } : null
     };
     
-    setSavedData([...savedData, dataToSave]);
-    alert('Data saved successfully! Ready to store in database.');
-    console.log('Data to save:', dataToSave);
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:4000/api/emi', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dataToSave),
+      });
+
+      const responseData = await response.json();
+
+      if (responseData.success) {
+        setSavedData([...savedData, { ...dataToSave, timestamp: new Date().toISOString() }]);
+        alert('Data saved successfully!');
+        console.log('Saved data:', responseData.data);
+      } else {
+        alert('Failed to save data: ' + responseData.message);
+      }
+    } catch (error) {
+      console.error('Error saving data:', error);
+      alert('Error saving data: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const generateAmortizationSchedule = () => {
@@ -155,6 +176,23 @@ export default function EMICalculator() {
     return schedule;
   };
   
+  // Fetch saved data on component mount
+  useEffect(() => {
+    const fetchSavedData = async () => {
+      try {
+        const response = await fetch('http://localhost:4000/api/emi');
+        const data = await response.json();
+        if (data.success) {
+          setSavedData(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching saved data:', error);
+      }
+    };
+
+    fetchSavedData();
+  }, []);
+  
   const result = calculateEMI();
   const amortizationSchedule = generateAmortizationSchedule();
   
@@ -193,10 +231,27 @@ export default function EMICalculator() {
           </div>
           <button
             onClick={handleSaveData}
-            className="flex items-center gap-2 bg-blue-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-800 transition-all duration-300 shadow-md hover:shadow-lg"
+            disabled={isLoading}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-300 shadow-md hover:shadow-lg ${
+              isLoading 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-blue-900 text-white hover:bg-blue-800'
+            }`}
           >
-            <Save size={20} />
-            Save Data
+            {isLoading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save size={20} />
+                Save Data
+              </>
+            )}
           </button>
         </div>
         
@@ -472,7 +527,7 @@ export default function EMICalculator() {
         </div>
         
         {/* Amortization Table */}
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-900">
+        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-900 mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Home Loan Amortization Table</h2>
           
           <div className="overflow-x-auto">
@@ -563,6 +618,57 @@ export default function EMICalculator() {
               </tbody>
             </table>
           </div>
+        </div>
+        
+        {/* Saved EMI Results Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-900">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Saved EMI Results</h2>
+          
+          {savedData.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-blue-900 text-white">
+                    <th className="p-3 text-left text-sm font-semibold">Date</th>
+                    <th className="p-3 text-right text-sm font-semibold">Loan Amount</th>
+                    <th className="p-3 text-right text-sm font-semibold">Tenure</th>
+                    <th className="p-3 text-right text-sm font-semibold">Interest</th>
+                    <th className="p-3 text-right text-sm font-semibold">EMI</th>
+                    <th className="p-3 text-right text-sm font-semibold">Total Interest</th>
+                    <th className="p-3 text-right text-sm font-semibold">Pre-Payment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {savedData.map((data, index) => (
+                    <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="p-3 text-sm">
+                        {new Date(data.timestamp).toLocaleDateString()}
+                      </td>
+                      <td className="p-3 text-right text-sm font-semibold">
+                        {formatCurrency(data.loanAmount)}
+                      </td>
+                      <td className="p-3 text-right text-sm">{data.tenure} years</td>
+                      <td className="p-3 text-right text-sm">{data.interest}%</td>
+                      <td className="p-3 text-right text-sm font-semibold">
+                        {formatCurrency(data.emi)}
+                      </td>
+                      <td className="p-3 text-right text-sm">
+                        {formatCurrency(data.totalInterest)}
+                      </td>
+                      <td className="p-3 text-right text-sm">
+                        {data.prePayment ? 
+                          `${formatCurrency(data.prePayment.amount)} (${data.prePayment.frequency})` : 
+                          'None'
+                        }
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-600">No saved EMI results found. Calculate and save your EMI results to see them here.</p>
+          )}
         </div>
       </div>
     </div>
