@@ -36,6 +36,24 @@ const Comparator = ({ initialProperties = [] }) => {
     }
   }, [cityFromURL]);
 
+  // Function to check if properties exist for a city
+  const checkPropertiesExist = useCallback(async (city) => {
+    try {
+      const response = await getAllPropertiesForComparison({
+        page: 1,
+        limit: 1,
+        city: city
+      });
+      
+      if (response && response.success) {
+        setNoPropertiesFound(response.properties.length === 0);
+      }
+    } catch (error) {
+      console.error("Error checking properties:", error);
+      setNoPropertiesFound(true);
+    }
+  }, []);
+
   useEffect(() => {
     if (selectedCity) {
       setSelectedProperties([]);
@@ -44,11 +62,13 @@ const Comparator = ({ initialProperties = [] }) => {
       setShowAmenities(false);
       setSelectedPropertyForAmenities(null);
       setCurrentPage(1);
-      setNoPropertiesFound(false);
       setSearchQuery("");
       setAllProperties([]);
+      
+      // Immediately check if properties exist for this city
+      checkPropertiesExist(selectedCity);
     }
-  }, [selectedCity]);
+  }, [selectedCity, checkPropertiesExist]);
 
   const showNotification = useCallback((message, type = 'info') => {
     setNotification({ show: true, message, type });
@@ -390,7 +410,6 @@ const Comparator = ({ initialProperties = [] }) => {
       if (isInitialLoad) {
         setLoading(true);
         setError(null);
-        setNoPropertiesFound(false);
       }
 
       try {
@@ -654,8 +673,8 @@ const Comparator = ({ initialProperties = [] }) => {
 
   // Check if we should show the "No Properties Found" card
   const shouldShowNoPropertiesCard = useMemo(() => {
-    return noPropertiesFound || (selectedCity && properties.length === 0 && !loading && !isInitialLoad);
-  }, [noPropertiesFound, selectedCity, properties.length, loading, isInitialLoad]);
+    return false; // Disable the default card to show our custom message box instead
+  }, [selectedCity, noPropertiesFound, loading]);
 
   return (
     <div className="min-h-screen bg-white mt-20">
@@ -817,8 +836,23 @@ const Comparator = ({ initialProperties = [] }) => {
                   Show All Properties
                 </button>
               </div>
-
-              {/* No Properties Found Card */}
+              
+              {/* Message box for when city data is unavailable - Only show when no data is available */}
+              {noPropertiesFound && !loading && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center mb-6">
+                  <div className="text-yellow-500 text-6xl mb-4">🏙️</div>
+                  <h2 className="text-xl font-bold text-gray-800 mb-2">No Data Available</h2>
+                  <p className="text-gray-600 mb-6">We don't have property data for {selectedCity || 'this city'} yet. Please select another city.</p>
+                  <button
+                    onClick={() => handleServiceClick({ isComparator: true })}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+                  >
+                    Select Another City
+                  </button>
+                </div>
+              )}
+              
+              {/* No Properties Found Card - Show immediately when no properties are found */}
               {shouldShowNoPropertiesCard && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center mb-6">
                   <div className="text-yellow-500 text-6xl mb-4">🏘️</div>
@@ -834,7 +868,7 @@ const Comparator = ({ initialProperties = [] }) => {
               )}
 
               {/* Property Cards Grid - Only show when properties exist */}
-              {!shouldShowNoPropertiesCard && properties.length > 0 && (
+              {!noPropertiesFound && properties.length > 0 && (
                 <>
                   <div id="property-cards-section" className="grid grid-cols-1 gap-4 mb-8">
                     {propertiesForDisplay.map((property) => {

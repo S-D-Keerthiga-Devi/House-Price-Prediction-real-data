@@ -1,8 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Minus, Trash2 } from 'lucide-react';
+import { createRentAgreement, updateRentAgreement } from '../../services/rentAgreementService';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { useSelector } from 'react-redux';
 
 const RentAgreement = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showPreview, setShowPreview] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { status: isAuthenticated } = useSelector(state => state.auth);
+  const [authChecked, setAuthChecked] = useState(false);
+  
+  useEffect(() => {
+    if (!authChecked && !isAuthenticated) {
+      toast.error("Please login to access rent agreement");
+      navigate('/login', { state: { from: location.pathname } });
+      setAuthChecked(true);
+    }
+  }, [isAuthenticated, navigate, location.pathname, authChecked]);
+  
   const [formData, setFormData] = useState({
     agreementCity: 'Gurgaon',
     agreementType: 'Rental Agreement',
@@ -68,7 +86,7 @@ const RentAgreement = () => {
     }
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validate required fields
     const requiredFields = [
       'propertyAddress', 'leasePeriod', 'rentAmount', 
@@ -79,7 +97,7 @@ const RentAgreement = () => {
     const isFormValid = requiredFields.every(field => formData[field] !== '');
     
     if (!isFormValid) {
-      alert('Please fill all required fields');
+      toast.error('Please fill all required fields');
       return;
     }
     
@@ -97,17 +115,42 @@ const RentAgreement = () => {
     );
     
     if (!landlordValid || !tenantValid) {
-      alert('Please fill all landlord and tenant details');
+      toast.error('Please fill all landlord and tenant details');
       return;
     }
     
     setShowPreview(true);
   };
+  
+  const saveAgreement = async (status = 'draft') => {
+    try {
+      setLoading(true);
+      const agreementData = {
+        ...formData,
+        status
+      };
+      
+      const response = await createRentAgreement(agreementData);
+      
+      if (response && response.data && response.data.success) {
+        toast.success(`Rent agreement ${status === 'completed' ? 'created' : 'saved as draft'} successfully`);
+        // Always redirect to dashboard after saving (both draft and completed)
+        navigate('/dashboard');
+      } else {
+        throw new Error(response?.data?.message || 'Failed to save agreement');
+      }
+      
+      return response;
+    } catch (error) {
+      toast.error(error.message || 'Failed to save agreement');
+      console.error('Error saving agreement:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const saveDraft = () => {
-    // Save form data to localStorage
-    localStorage.setItem('rentAgreementDraft', JSON.stringify(formData));
-    alert('Draft saved successfully!');
+    saveAgreement('draft');
   };
 
   const updateLandlord = (index, field, value) => {
@@ -446,6 +489,13 @@ const RentAgreement = () => {
               className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-semibold"
             >
               Print Document
+            </button>
+            <button
+              onClick={() => saveAgreement('completed')}
+              disabled={loading}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold disabled:bg-gray-400"
+            >
+              {loading ? 'Saving...' : 'Save Agreement'}
             </button>
           </div>
         </div>
@@ -810,15 +860,17 @@ const RentAgreement = () => {
         <div className="flex justify-center gap-4 pb-8">
           <button
             onClick={handleSubmit}
-            className="bg-green-600 text-white px-10 py-4 rounded-lg font-semibold hover:bg-green-700 transition shadow-lg text-lg"
+            disabled={loading}
+            className="bg-green-600 text-white px-10 py-4 rounded-lg font-semibold hover:bg-green-700 transition shadow-lg text-lg disabled:bg-gray-400"
           >
-            Submit
+            {loading ? 'Processing...' : 'Submit'}
           </button>
           <button
             onClick={saveDraft}
-            className="bg-gray-200 text-gray-700 px-10 py-4 rounded-lg font-semibold hover:bg-gray-300 transition text-lg"
+            disabled={loading}
+            className="bg-gray-200 text-gray-700 px-10 py-4 rounded-lg font-semibold hover:bg-gray-300 transition text-lg disabled:bg-gray-100"
           >
-            Save as Draft
+            {loading ? 'Saving...' : 'Save as Draft'}
           </button>
         </div>
       </div>

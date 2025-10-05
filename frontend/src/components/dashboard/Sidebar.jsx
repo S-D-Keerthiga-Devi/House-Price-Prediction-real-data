@@ -1,8 +1,9 @@
-import { User, Home, FileText, Layers, Wrench, Users, Heart, UserCheck, PlusCircle, Megaphone, Menu } from "lucide-react";
+import { User, Home, FileText, Layers, Wrench, Users, Heart, UserCheck, PlusCircle, Megaphone, Menu, FileSignature } from "lucide-react";
 
 const menuItems = [
   { id: "UserProfile", label: "User Profile", icon: <User size={18} /> },
   { id: "Listings", label: "Listings", icon: <Home size={18} /> },
+  { id: "RentAgreements", label: "Rent Agreements", icon: <FileSignature size={18} /> },
   { id: "Plan", label: "Plan", icon: <FileText size={18} /> },
   { id: "Services", label: "Services", icon: <Wrench size={18} /> },
   { id: "Leads", label: "Leads", icon: <Users size={18} /> },

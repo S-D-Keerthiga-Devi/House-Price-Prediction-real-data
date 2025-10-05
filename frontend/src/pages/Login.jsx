@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { loginUser } from "../api/auth";
 import { login as authLogin } from "../store/authSlice";
@@ -8,6 +8,7 @@ import CountryCodeSelect from "@/components/CountryCodeSelect";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const [step, setStep] = useState("mobile"); // "mobile" or "otp"
   const [mobile, setMobile] = useState("");
@@ -38,7 +39,14 @@ const Login = () => {
         localStorage.setItem("userData", JSON.stringify(userWithCode));
 
         toast.success(res.message || "Login Successful");
-        navigate("/dashboard");
+        
+        // Check if there's a redirect path in location state
+        const { state } = location;
+        if (state && state.from) {
+          navigate(state.from);
+        } else {
+          navigate("/dashboard");
+        }
       } else {
         toast.error(res.message || "Invalid OTP");
       }

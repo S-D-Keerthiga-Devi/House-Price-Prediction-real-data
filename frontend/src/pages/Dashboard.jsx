@@ -10,6 +10,7 @@ import Wishlist from "../components/dashboard/Wishlist";
 import MyAgent from "../components/dashboard/MyAgent";
 import PostProperty from "../components/dashboard/PostProperty";
 import AdCampaigns from "../components/dashboard/AdCampaigns";
+import RentAgreements from "../components/dashboard/RentAgreements";
 
 const Dashboard = () => {
   const [activeMenu, setActiveMenu] = useState("UserProfile");
@@ -34,6 +35,8 @@ const Dashboard = () => {
         return <PostProperty />;
       case "AdCampaigns":
         return <AdCampaigns />;
+      case "RentAgreements":
+        return <RentAgreements />;
       default:
         return <UserProfile />;
     }

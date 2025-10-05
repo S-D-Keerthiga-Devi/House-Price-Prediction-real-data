@@ -7,6 +7,7 @@ import authRouter from "./routes/authRoutes.js"
 import userRouter from "./routes/userRoutes.js";
 import localitiesRouter from "./routes/localitiesRoutes.js";
 import emiResultRouter from "./routes/emiResultRoutes.js";
+import rentAgreementRouter from "./routes/rentAgreementRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 4000
@@ -33,5 +34,6 @@ app.use('/api/auth', authRouter)
 app.use('/api/user', userRouter)
 app.use('/api/house', localitiesRouter);
 app.use('/api/emi', emiResultRouter);
+app.use('/api/rent-agreement', rentAgreementRouter);
 
 app.listen(port, () => console.log(`server started on PORT ${port}`))
