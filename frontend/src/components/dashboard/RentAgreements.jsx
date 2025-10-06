@@ -16,7 +16,7 @@ const RentAgreements = () => {
     try {
       setLoading(true);
       const response = await getUserRentAgreements();
-      if (response && response.data && response.data.success) {
+      if (response && response.status === 200 && response.data && response.data.success) {
         setAgreements(response.data.agreements || []);
       } else {
         toast.error('Failed to fetch agreements');

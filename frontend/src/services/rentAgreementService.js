@@ -8,7 +8,7 @@ export const createRentAgreement = async (agreementData) => {
     const response = await axios.post(`${API_URL}/rent-agreement`, agreementData, {
       withCredentials: true
     });
-    return response.data;
+    return response;
   } catch (error) {
     throw error.response?.data || { message: 'Failed to create rent agreement' };
   }
@@ -20,7 +20,7 @@ export const getUserRentAgreements = async () => {
     const response = await axios.get(`${API_URL}/rent-agreement`, {
       withCredentials: true
     });
-    return response.data;
+    return response;
   } catch (error) {
     throw error.response?.data || { message: 'Failed to fetch rent agreements' };
   }
@@ -32,9 +32,16 @@ export const getRentAgreementById = async (id) => {
     const response = await axios.get(`${API_URL}/rent-agreement/${id}`, {
       withCredentials: true
     });
-    return response.data;
+    
+    // Validate response structure before returning
+    if (!response || !response.data) {
+      throw new Error('Invalid response structure');
+    }
+    
+    return response;
   } catch (error) {
-    throw error.response?.data || { message: 'Failed to fetch rent agreement' };
+    console.error('Error in getRentAgreementById:', error);
+    throw error.response?.data || { message: 'Failed to fetch rent agreement', error: error.message };
   }
 };
 

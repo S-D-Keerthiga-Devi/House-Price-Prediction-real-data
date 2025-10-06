@@ -58,7 +58,7 @@ export const getRentAgreementById = async (req, res) => {
     }
     
     // Check if the user owns this agreement
-    if (rentAgreement.userId.toString() !== req.user._id.toString()) {
+    if (rentAgreement.userId.toString() !== req.user.id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'You are not authorized to access this agreement'
@@ -134,7 +134,7 @@ export const deleteRentAgreement = async (req, res) => {
     }
     
     // Check if the user owns this agreement
-    if (rentAgreement.userId.toString() !== req.user._id.toString()) {
+    if (rentAgreement.userId.toString() !== req.user.id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'You are not authorized to delete this agreement'

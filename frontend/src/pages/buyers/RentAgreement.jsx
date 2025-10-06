@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Minus, Trash2 } from 'lucide-react';
-import { createRentAgreement, updateRentAgreement } from '../../services/rentAgreementService';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Minus, Trash2, Search, MapPin } from 'lucide-react';
+import { createRentAgreement, updateRentAgreement, getRentAgreementById } from '../../services/rentAgreementService';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
 
 const RentAgreement = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { id } = useParams();
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
   const { status: isAuthenticated } = useSelector(state => state.auth);
   const [authChecked, setAuthChecked] = useState(false);
+  const [viewMode, setViewMode] = useState(false);
   
   useEffect(() => {
     if (!authChecked && !isAuthenticated) {
@@ -19,12 +21,151 @@ const RentAgreement = () => {
       navigate('/login', { state: { from: location.pathname } });
       setAuthChecked(true);
     }
-  }, [isAuthenticated, navigate, location.pathname, authChecked]);
+    
+    // If ID is provided, fetch the agreement data
+    if (id) {
+      fetchAgreementData(id);
+      setViewMode(true);
+    }
+  }, [isAuthenticated, navigate, location.pathname, authChecked, id]);
+  // Fetch agreement data by ID
+  const fetchAgreementData = async (agreementId) => {
+    try {
+      setLoading(true);
+      console.log('Fetching agreement data for ID:', agreementId);
+      const response = await getRentAgreementById(agreementId);
+      
+      console.log('API Response:', response);
+      
+      if (response && response.status === 200 && response.data) {
+        // The backend returns data in response.data.rentAgreement format
+        const agreementData = response.data.rentAgreement;
+        
+        if (!agreementData) {
+          throw new Error('No agreement data found in response');
+        }
+        
+        console.log('Agreement data:', agreementData);
+        
+        // Create a properly structured formData object with default values for any missing fields
+        const updatedFormData = {
+          agreementCity: agreementData.agreementCity || 'Gurgaon',
+          agreementType: agreementData.agreementType || 'Rental Agreement',
+          executionDate: agreementData.executionDate || '3 Oct 2025',
+          landlords: agreementData.landlords && agreementData.landlords.length > 0 ? agreementData.landlords : [{
+            title: 'Mr.',
+            name: '',
+            parentName: '',
+            contactNumber: '',
+            email: '',
+            pan: '',
+            aadhaar: '',
+            addressLine1: '',
+            addressLine2: '',
+            state: '',
+            city: '',
+            pincode: ''
+          }],
+          tenants: agreementData.tenants && agreementData.tenants.length > 0 ? agreementData.tenants : [{
+            title: 'Mr.',
+            name: '',
+            parentName: '',
+            contactNumber: '',
+            email: '',
+            pan: '',
+            aadhaar: '',
+            addressLine1: '',
+            addressLine2: '',
+            state: '',
+            city: '',
+            pincode: ''
+          }],
+          propertyAddress: agreementData.propertyAddress || '',
+          leasePeriod: agreementData.leasePeriod || '11',
+          rentAmount: agreementData.rentAmount || '',
+          rentType: agreementData.rentType || 'Monthly',
+          rentPaymentDay: agreementData.rentPaymentDay || '',
+          rentIncrement: agreementData.rentIncrement || '',
+          refundableDeposit: agreementData.refundableDeposit || '',
+          noticePeriod: agreementData.noticePeriod || '',
+          lockInPeriod: agreementData.lockInPeriod || '',
+          utilities: agreementData.utilities || {
+            ac: 0,
+            aircooler: 0,
+            bed: 0,
+            chair: 0,
+            cupboard: 0,
+            curtain: 0,
+            electricGeyser: 0,
+            fan: 0,
+            gasGeyser: 0,
+            refrigerator: 0,
+            sofa: 0,
+            table: 0,
+            tubeLight: 0,
+            tv: 0,
+            washingMachine: 0,
+            watercooler: 0
+          }
+        };
+        
+        console.log('Updated form data:', updatedFormData);
+        setFormData(updatedFormData);
+        setShowPreview(true);
+      } else {
+        console.error('Invalid response structure:', response);
+        toast.error('Failed to fetch rent agreement details');
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error fetching agreement:', error);
+      toast.error(`Error fetching rent agreement details: ${error.message || 'Unknown error'}`);
+      navigate('/dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Get current date in format "DD MMM YYYY"
+  const getCurrentDate = () => {
+    const date = new Date();
+    const options = { day: 'numeric', month: 'short', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  };
+
+  // Cities list for dropdown
+  const [cities, setCities] = useState([
+    "Mumbai", "Delhi", "Bangalore", "Chennai", "Kolkata", "Hyderabad", 
+    "Pune", "Ahmedabad", "Jaipur", "Gurgaon", "Noida", "Lucknow", 
+    "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal", "Visakhapatnam", 
+    "Patna", "Vadodara", "Ludhiana", "Agra", "Nashik", "Faridabad", 
+    "Meerut", "Rajkot", "Varanasi", "Srinagar", "Aurangabad", "Dhanbad"
+  ]);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [cityQuery, setCityQuery] = useState('');
+  const cityDropdownRef = useRef(null);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (cityDropdownRef.current && !cityDropdownRef.current.contains(event.target)) {
+        setShowCityDropdown(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  
+  // Filter cities based on search query
+  const filteredCities = cities.filter(city => 
+    city.toLowerCase().includes(cityQuery.toLowerCase())
+  );
   
   const [formData, setFormData] = useState({
     agreementCity: 'Gurgaon',
     agreementType: 'Rental Agreement',
-    executionDate: '3 Oct 2025',
+    executionDate: getCurrentDate(),
     
     landlords: [{
       title: 'Mr.',
@@ -87,6 +228,11 @@ const RentAgreement = () => {
   });
 
   const handleSubmit = async () => {
+    // Skip validation in view mode
+    if (viewMode) {
+      return;
+    }
+    
     // Validate required fields
     const requiredFields = [
       'propertyAddress', 'leasePeriod', 'rentAmount', 
@@ -132,7 +278,7 @@ const RentAgreement = () => {
       
       const response = await createRentAgreement(agreementData);
       
-      if (response && response.data && response.data.success) {
+      if (response && response.status === 200 && response.data && response.data.success) {
         toast.success(`Rent agreement ${status === 'completed' ? 'created' : 'saved as draft'} successfully`);
         // Always redirect to dashboard after saving (both draft and completed)
         navigate('/dashboard');
@@ -508,30 +654,95 @@ const RentAgreement = () => {
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold text-white mb-3">Rent Agreement</h1>
-          <p className="text-blue-100 text-lg">Create your rental agreement online in a swift and hassle free manner</p>
+          <p className="text-blue-100 text-lg">{viewMode ? 'View your rental agreement details' : 'Create your rental agreement online in a swift and hassle free manner'}</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-xl p-6 mb-6">
           <div className="grid grid-cols-2 gap-6">
             <div>
               <label className="block text-gray-700 font-semibold mb-2">Agreement City*</label>
-              <input
-                type="text"
-                value={formData.agreementCity}
-                onChange={(e) => setFormData({...formData, agreementCity: e.target.value})}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div ref={cityDropdownRef} className="relative">
+                <div 
+                  className={`flex items-center w-full border border-gray-300 rounded-lg px-4 py-3 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${viewMode ? 'bg-gray-100' : ''}`}
+                  onClick={() => !viewMode && setShowCityDropdown(!showCityDropdown)}
+                >
+                  <MapPin size={18} className="text-blue-600 mr-2" />
+                  <input
+                    type="text"
+                    value={cityQuery || formData.agreementCity}
+                    onChange={(e) => {
+                      setCityQuery(e.target.value);
+                      setShowCityDropdown(true);
+                    }}
+                    disabled={viewMode}
+                    placeholder="Search city..."
+                    className="w-full bg-transparent border-none focus:outline-none"
+                  />
+                  {!viewMode && (
+                    <button type="button" onClick={() => setShowCityDropdown(!showCityDropdown)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                
+                {showCityDropdown && !viewMode && (
+                  <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {filteredCities.length > 0 ? (
+                      filteredCities.map((city, index) => {
+                        // Group cities by first letter
+                        const currentFirstLetter = city.charAt(0).toUpperCase();
+                        const prevCity = index > 0 ? filteredCities[index - 1] : null;
+                        const prevFirstLetter = prevCity ? prevCity.charAt(0).toUpperCase() : null;
+                        const isNewLetterSection = currentFirstLetter !== prevFirstLetter;
+                        
+                        return (
+                          <React.Fragment key={index}>
+                            {isNewLetterSection && (
+                              <li className="sticky top-0 px-4 py-1 text-xs font-semibold text-blue-600 bg-blue-50">
+                                {currentFirstLetter}
+                              </li>
+                            )}
+                            <li
+                              onClick={() => {
+                                setFormData({...formData, agreementCity: city});
+                                setCityQuery('');
+                                setShowCityDropdown(false);
+                              }}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm flex items-center"
+                            >
+                              <MapPin size={16} className="mr-2 text-gray-400" />
+                              {city}
+                            </li>
+                          </React.Fragment>
+                        );
+                      })
+                    ) : (
+                      <li className="px-4 py-2 text-sm text-gray-500">No cities found</li>
+                    )}
+                  </ul>
+                )}
+              </div>
             </div>
             <div>
               <label className="block text-gray-700 font-semibold mb-2">Agreement Type*</label>
-              <select
-                value={formData.agreementType}
-                onChange={(e) => setFormData({...formData, agreementType: e.target.value})}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option>Rental Agreement</option>
-                <option>Lease Agreement</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={formData.agreementType}
+                  onChange={(e) => setFormData({...formData, agreementType: e.target.value})}
+                  disabled={viewMode}
+                  className={`w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none ${viewMode ? 'bg-gray-100' : ''}`}
+                >
+                  <option>Rental Agreement</option>
+                  <option>Lease Agreement</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -556,101 +767,122 @@ const RentAgreement = () => {
                 )}
               </div>
               <div className="grid grid-cols-3 gap-4">
-                <select
-                  value={landlord.title}
-                  onChange={(e) => updateLandlord(idx, 'title', e.target.value)}
-                  className="border rounded px-3 py-2"
-                >
-                  <option>Mr.</option>
-                  <option>Mrs.</option>
-                  <option>Ms.</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={landlord.title}
+                    onChange={(e) => updateLandlord(idx, 'title', e.target.value)}
+                    disabled={viewMode}
+                    className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none ${viewMode ? 'bg-gray-100' : ''}`}
+                  >
+                    <option>Mr.</option>
+                    <option>Mrs.</option>
+                    <option>Ms.</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
                 <input
                   type="text"
                   placeholder="Landlord Name*"
                   value={landlord.name}
                   onChange={(e) => updateLandlord(idx, 'name', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="Parent Name*"
                   value={landlord.parentName}
                   onChange={(e) => updateLandlord(idx, 'parentName', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="Contact Number*"
                   value={landlord.contactNumber}
                   onChange={(e) => updateLandlord(idx, 'contactNumber', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="email"
                   placeholder="Email ID*"
                   value={landlord.email}
                   onChange={(e) => updateLandlord(idx, 'email', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="PAN Number*"
                   value={landlord.pan}
                   onChange={(e) => updateLandlord(idx, 'pan', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="Aadhaar Number*"
                   value={landlord.aadhaar}
                   onChange={(e) => updateLandlord(idx, 'aadhaar', e.target.value)}
-                  className="border rounded px-3 py-2 col-span-3"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 col-span-3 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="Address Line 1*"
                   value={landlord.addressLine1}
                   onChange={(e) => updateLandlord(idx, 'addressLine1', e.target.value)}
-                  className="border rounded px-3 py-2 col-span-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 col-span-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="Address Line 2"
                   value={landlord.addressLine2}
                   onChange={(e) => updateLandlord(idx, 'addressLine2', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="State*"
                   value={landlord.state}
                   onChange={(e) => updateLandlord(idx, 'state', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="City*"
                   value={landlord.city}
                   onChange={(e) => updateLandlord(idx, 'city', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="Pincode*"
                   value={landlord.pincode}
                   onChange={(e) => updateLandlord(idx, 'pincode', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
               </div>
             </div>
           ))}
-          <button
-            onClick={addLandlord}
-            className="text-blue-700 border-2 border-blue-700 px-4 py-2 rounded-lg hover:bg-blue-50 flex items-center gap-2 font-semibold"
-          >
-            <Plus size={20} /> Add Landlord
-          </button>
+          {!viewMode && (
+            <button
+              onClick={addLandlord}
+              className="text-blue-700 border-2 border-blue-700 px-4 py-2 rounded-lg hover:bg-blue-50 flex items-center gap-2 font-semibold"
+            >
+              <Plus size={20} /> Add Landlord
+            </button>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow-xl p-6 mb-6">
@@ -670,101 +902,122 @@ const RentAgreement = () => {
                 )}
               </div>
               <div className="grid grid-cols-3 gap-4">
-                <select
-                  value={tenant.title}
-                  onChange={(e) => updateTenant(idx, 'title', e.target.value)}
-                  className="border rounded px-3 py-2"
-                >
-                  <option>Mr.</option>
-                  <option>Mrs.</option>
-                  <option>Ms.</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={tenant.title}
+                    onChange={(e) => updateTenant(idx, 'title', e.target.value)}
+                    disabled={viewMode}
+                    className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none ${viewMode ? 'bg-gray-100' : ''}`}
+                  >
+                    <option>Mr.</option>
+                    <option>Mrs.</option>
+                    <option>Ms.</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
                 <input
                   type="text"
                   placeholder="Tenant Name*"
                   value={tenant.name}
                   onChange={(e) => updateTenant(idx, 'name', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="Parent Name*"
                   value={tenant.parentName}
                   onChange={(e) => updateTenant(idx, 'parentName', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="Contact Number*"
                   value={tenant.contactNumber}
                   onChange={(e) => updateTenant(idx, 'contactNumber', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="email"
                   placeholder="Email ID*"
                   value={tenant.email}
                   onChange={(e) => updateTenant(idx, 'email', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="PAN Number*"
                   value={tenant.pan}
                   onChange={(e) => updateTenant(idx, 'pan', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="Aadhaar Number*"
                   value={tenant.aadhaar}
                   onChange={(e) => updateTenant(idx, 'aadhaar', e.target.value)}
-                  className="border rounded px-3 py-2 col-span-3"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 col-span-3 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="Address Line 1*"
                   value={tenant.addressLine1}
                   onChange={(e) => updateTenant(idx, 'addressLine1', e.target.value)}
-                  className="border rounded px-3 py-2 col-span-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 col-span-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="Address Line 2"
                   value={tenant.addressLine2}
                   onChange={(e) => updateTenant(idx, 'addressLine2', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="State*"
                   value={tenant.state}
                   onChange={(e) => updateTenant(idx, 'state', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="City*"
                   value={tenant.city}
                   onChange={(e) => updateTenant(idx, 'city', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
                 <input
                   type="text"
                   placeholder="Pincode*"
                   value={tenant.pincode}
                   onChange={(e) => updateTenant(idx, 'pincode', e.target.value)}
-                  className="border rounded px-3 py-2"
+                  disabled={viewMode}
+                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
               </div>
             </div>
           ))}
-          <button
-            onClick={addTenant}
-            className="text-blue-700 border-2 border-blue-700 px-4 py-2 rounded-lg hover:bg-blue-50 flex items-center gap-2 font-semibold"
-          >
-            <Plus size={20} /> Add Tenant
-          </button>
+          {!viewMode && (
+            <button
+              onClick={addTenant}
+              className="text-blue-700 border-2 border-blue-700 px-4 py-2 rounded-lg hover:bg-blue-50 flex items-center gap-2 font-semibold"
+            >
+              <Plus size={20} /> Add Tenant
+            </button>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow-xl p-6 mb-6">
@@ -775,56 +1028,64 @@ const RentAgreement = () => {
               placeholder="Property Address*"
               value={formData.propertyAddress}
               onChange={(e) => setFormData({...formData, propertyAddress: e.target.value})}
-              className="border rounded px-3 py-2 col-span-2"
+              disabled={viewMode}
+              className={`border rounded px-3 py-2 col-span-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
             <input
               type="number"
               placeholder="Lease Period (Months)*"
               value={formData.leasePeriod}
               onChange={(e) => setFormData({...formData, leasePeriod: e.target.value})}
-              className="border rounded px-3 py-2"
+              disabled={viewMode}
+              className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
             <input
               type="number"
               placeholder="Rent Amount*"
               value={formData.rentAmount}
               onChange={(e) => setFormData({...formData, rentAmount: e.target.value})}
-              className="border rounded px-3 py-2"
+              disabled={viewMode}
+              className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
             <input
               type="number"
               placeholder="Rent Payment Day*"
               value={formData.rentPaymentDay}
               onChange={(e) => setFormData({...formData, rentPaymentDay: e.target.value})}
-              className="border rounded px-3 py-2"
+              disabled={viewMode}
+              className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
             <input
               type="number"
               placeholder="Rent Increment %*"
               value={formData.rentIncrement}
               onChange={(e) => setFormData({...formData, rentIncrement: e.target.value})}
-              className="border rounded px-3 py-2"
+              disabled={viewMode}
+              className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
             <input
               type="number"
               placeholder="Refundable Deposit*"
               value={formData.refundableDeposit}
               onChange={(e) => setFormData({...formData, refundableDeposit: e.target.value})}
-              className="border rounded px-3 py-2"
+              disabled={viewMode}
+              className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
             <input
               type="number"
               placeholder="Notice Period (Days)*"
               value={formData.noticePeriod}
               onChange={(e) => setFormData({...formData, noticePeriod: e.target.value})}
-              className="border rounded px-3 py-2"
+              disabled={viewMode}
+              className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
             <input
               type="number"
               placeholder="Lock-in Period (Months)*"
               value={formData.lockInPeriod}
               onChange={(e) => setFormData({...formData, lockInPeriod: e.target.value})}
-              className="border rounded px-3 py-2"
+              disabled={viewMode}
+              className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
           </div>
         </div>
@@ -839,7 +1100,8 @@ const RentAgreement = () => {
                   <button
                     type="button"
                     onClick={() => updateUtility(item, -1)}
-                    className="bg-blue-700 text-white w-8 h-8 rounded flex items-center justify-center hover:bg-blue-800 transition"
+                    disabled={viewMode}
+                    className={`${viewMode ? 'bg-gray-400' : 'bg-blue-700 hover:bg-blue-800'} text-white w-8 h-8 rounded flex items-center justify-center transition`}
                   >
                     <Minus size={16} />
                   </button>
@@ -847,7 +1109,8 @@ const RentAgreement = () => {
                   <button
                     type="button"
                     onClick={() => updateUtility(item, 1)}
-                    className="bg-blue-700 text-white w-8 h-8 rounded flex items-center justify-center hover:bg-blue-800 transition"
+                    disabled={viewMode}
+                    className={`${viewMode ? 'bg-gray-400' : 'bg-blue-700 hover:bg-blue-800'} text-white w-8 h-8 rounded flex items-center justify-center transition`}
                   >
                     <Plus size={16} />
                   </button>
@@ -858,20 +1121,31 @@ const RentAgreement = () => {
         </div>
 
         <div className="flex justify-center gap-4 pb-8">
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="bg-green-600 text-white px-10 py-4 rounded-lg font-semibold hover:bg-green-700 transition shadow-lg text-lg disabled:bg-gray-400"
-          >
-            {loading ? 'Processing...' : 'Submit'}
-          </button>
-          <button
-            onClick={saveDraft}
-            disabled={loading}
-            className="bg-gray-200 text-gray-700 px-10 py-4 rounded-lg font-semibold hover:bg-gray-300 transition text-lg disabled:bg-gray-100"
-          >
-            {loading ? 'Saving...' : 'Save as Draft'}
-          </button>
+          {viewMode ? (
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="bg-blue-600 text-white px-10 py-4 rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg text-lg"
+            >
+              Back to Dashboard
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="bg-green-600 text-white px-10 py-4 rounded-lg font-semibold hover:bg-green-700 transition shadow-lg text-lg disabled:bg-gray-400"
+              >
+                {loading ? 'Processing...' : 'Submit'}
+              </button>
+              <button
+                onClick={saveDraft}
+                disabled={loading}
+                className="bg-gray-200 text-gray-700 px-10 py-4 rounded-lg font-semibold hover:bg-gray-300 transition text-lg disabled:bg-gray-100"
+              >
+                {loading ? 'Saving...' : 'Save as Draft'}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

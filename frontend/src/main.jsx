@@ -55,6 +55,7 @@ const router = createBrowserRouter(
       <Route path="price-trends" element={<PriceTrends />} />
       <Route path="property-valuation" element={<PropertyValuation />} />
       <Route path="rent-agreement" element={<RentAgreement />} />
+      <Route path="rent-agreement/:id" element={<RentAgreement />} />
       <Route path="auctioned-property" element={<AuctionedProperty />} />
       <Route path="escow-services" element={<EscrowServices />} />
       <Route path="advertise-with-us" element={<AdvertiseWithUs />} />
