@@ -4,6 +4,7 @@ import { createRentAgreement, updateRentAgreement, getRentAgreementById } from '
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
+import { FormControl, Select, MenuItem } from "@mui/material";
 
 const RentAgreement = () => {
   const navigate = useNavigate();
@@ -14,39 +15,40 @@ const RentAgreement = () => {
   const { status: isAuthenticated } = useSelector(state => state.auth);
   const [authChecked, setAuthChecked] = useState(false);
   const [viewMode, setViewMode] = useState(false);
-  
+
   useEffect(() => {
     if (!authChecked && !isAuthenticated) {
       toast.error("Please login to access rent agreement");
       navigate('/login', { state: { from: location.pathname } });
       setAuthChecked(true);
     }
-    
+
     // If ID is provided, fetch the agreement data
     if (id) {
       fetchAgreementData(id);
       setViewMode(true);
     }
   }, [isAuthenticated, navigate, location.pathname, authChecked, id]);
+  
   // Fetch agreement data by ID
   const fetchAgreementData = async (agreementId) => {
     try {
       setLoading(true);
       console.log('Fetching agreement data for ID:', agreementId);
       const response = await getRentAgreementById(agreementId);
-      
+
       console.log('API Response:', response);
-      
+
       if (response && response.status === 200 && response.data) {
         // The backend returns data in response.data.rentAgreement format
         const agreementData = response.data.rentAgreement;
-        
+
         if (!agreementData) {
           throw new Error('No agreement data found in response');
         }
-        
+
         console.log('Agreement data:', agreementData);
-        
+
         // Create a properly structured formData object with default values for any missing fields
         const updatedFormData = {
           agreementCity: agreementData.agreementCity || 'Gurgaon',
@@ -108,7 +110,7 @@ const RentAgreement = () => {
             watercooler: 0
           }
         };
-        
+
         console.log('Updated form data:', updatedFormData);
         setFormData(updatedFormData);
         setShowPreview(true);
@@ -125,7 +127,7 @@ const RentAgreement = () => {
       setLoading(false);
     }
   };
-  
+
   // Get current date in format "DD MMM YYYY"
   const getCurrentDate = () => {
     const date = new Date();
@@ -133,18 +135,108 @@ const RentAgreement = () => {
     return date.toLocaleDateString('en-US', options);
   };
 
-  // Cities list for dropdown
-  const [cities, setCities] = useState([
-    "Mumbai", "Delhi", "Bangalore", "Chennai", "Kolkata", "Hyderabad", 
-    "Pune", "Ahmedabad", "Jaipur", "Gurgaon", "Noida", "Lucknow", 
-    "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal", "Visakhapatnam", 
-    "Patna", "Vadodara", "Ludhiana", "Agra", "Nashik", "Faridabad", 
-    "Meerut", "Rajkot", "Varanasi", "Srinagar", "Aurangabad", "Dhanbad"
-  ]);
+  // Cities from OpenStreetMap API
+  const [cities, setCities] = useState([]);
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [cityQuery, setCityQuery] = useState('');
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
   const cityDropdownRef = useRef(null);
-  
+
+  // Get default location from localStorage (same as in Location.jsx)
+  useEffect(() => {
+    const storedCity = localStorage.getItem("selectedCity") || localStorage.getItem("detectedCity") || "";
+    if (storedCity && !formData.agreementCity) {
+      setFormData(prev => ({ ...prev, agreementCity: storedCity }));
+    }
+  }, []);
+
+  // Fetch cities from OpenStreetMap API
+  const fetchCities = async (query) => {
+    setIsLoadingCities(true);
+    try {
+      // Complete list of Indian cities A-Z
+      const allIndianCities = [
+        'Agartala', 'Agra', 'Ahmedabad', 'Aizawl', 'Ajmer', 'Akola', 'Aligarh', 'Allahabad', 'Alwar', 'Ambala', 'Amravati', 'Amritsar', 'Asansol', 'Aurangabad',
+        'Bangalore', 'Bareilly', 'Bathinda', 'Belgaum', 'Bellary', 'Bhagalpur', 'Bharatpur', 'Bhavnagar', 'Bhilai', 'Bhiwandi', 'Bhopal', 'Bhubaneswar', 'Bikaner', 'Bilaspur', 'Bokaro', 'Brahmapur',
+        'Chandigarh', 'Chennai', 'Coimbatore', 'Cuttack',
+        'Darbhanga', 'Dehradun', 'Delhi', 'Dhanbad', 'Dibrugarh', 'Dimapur', 'Durgapur',
+        'Erode', 'Faridabad', 'Firozabad', 'Gandhinagar', 'Gangtok', 'Gaya', 'Ghaziabad', 'Gorakhpur', 'Gulbarga', 'Guntur', 'Gurgaon', 'Gurugram', 'Guwahati', 'Gwalior',
+        'Haldwani', 'Haridwar', 'Hisar', 'Howrah', 'Hubballi-Dharwad', 'Hyderabad',
+        'Imphal', 'Indore', 'Itanagar', 'Jabalpur', 'Jaipur', 'Jalandhar', 'Jammu', 'Jamnagar', 'Jamshedpur', 'Jhansi', 'Jodhpur', 'Jorhat',
+        'Kadapa', 'Kakinada', 'Kalyan-Dombivli', 'Kanpur', 'Karnal', 'Kavaratti', 'Kochi', 'Kohima', 'Kolhapur', 'Kolkata', 'Kollam', 'Kota', 'Kozhikode',
+        'Kurnool', 'Kurukshetra',
+        'Latur', 'Lucknow', 'Ludhiana',
+        'Madurai', 'Mangalore', 'Mathura', 'Meerut', 'Mirzapur', 'Moradabad', 'Mumbai', 'Muzaffarnagar', 'Muzaffarpur', 'Mysore',
+        'Nagpur', 'Nanded', 'Nashik', 'Navi Mumbai', 'Nellore', 'New Delhi', 'Noida',
+        'Pali', 'Panaji', 'Panipat', 'Parbhani', 'Pathankot', 'Patiala', 'Patna', 'Pondicherry', 'Port Blair', 'Pune',
+        'Raipur', 'Rajahmundry', 'Rajkot', 'Ranchi', 'Ratlam', 'Rewa', 'Rohtak', 'Rourkela',
+        'Sagar', 'Saharanpur', 'Salem', 'Sangli', 'Satara', 'Satna', 'Secunderabad', 'Shahjahanpur', 'Shillong', 'Shimla', 'Siliguri', 'Silvassa', 'Solapur', 'Srinagar', 'Surat', 'Surathkal',
+        'Thane', 'Thanjavur', 'Thiruvananthapuram', 'Thrissur', 'Tinsukia', 'Tiruchirapalli', 'Tirunelveli', 'Tirupati', 'Tiruppur', 'Tiruvottiyur', 'Tumkur',
+        'Udaipur', 'Ujjain', 'Ulhasnagar', 'Vadodara', 'Varanasi', 'Vellore', 'Vijayawada', 'Visakhapatnam', 'Warangal'
+      ];
+
+      // If query is empty or short, show all cities
+      if (!query || query.length < 2) {
+        setCities(allIndianCities);
+        setIsLoadingCities(false);
+        return;
+      }
+
+      // For specific queries, filter the list and also search using OpenStreetMap API
+      const filteredCities = allIndianCities.filter(city =>
+        city.toLowerCase().includes(query.toLowerCase())
+      );
+
+      // Also search using OpenStreetMap API for more results
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}+India&addressdetails=1&limit=50&countrycodes=in`
+      );
+      const data = await response.json();
+
+      // Extract city names from the response
+      const cityNames = data
+        .map(item => {
+          // Try to get the city name from address details
+          if (item.address) {
+            return item.address.city ||
+              item.address.town ||
+              item.address.village ||
+              item.address.hamlet ||
+              item.address.county ||
+              item.address.state_district;
+          }
+          // Fallback to display name (first part)
+          return item.display_name?.split(',')[0];
+        })
+        .filter(city => city !== null && city !== undefined);
+
+      // Combine filtered cities with API results, remove duplicates and sort alphabetically
+      const combinedCities = [...filteredCities, ...cityNames];
+      const uniqueCities = [...new Set(combinedCities)].sort((a, b) => a.localeCompare(b));
+      setCities(uniqueCities);
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      // Fallback to complete list if API fails
+      const fallbackCities = [
+        'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai',
+        'Kolkata', 'Pune', 'Ahmedabad', 'Jaipur', 'Gurgaon', 'Gurugram',
+        'Lucknow', 'Kanpur', 'Nagpur', 'Indore', 'Thane', 'Bhopal'
+      ].sort((a, b) => a.localeCompare(b));
+      setCities(fallbackCities);
+    } finally {
+      setIsLoadingCities(false);
+    }
+  };
+
+  // Debounce function for API calls
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchCities(cityQuery);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [cityQuery]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -152,21 +244,20 @@ const RentAgreement = () => {
         setShowCityDropdown(false);
       }
     };
-    
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  
+
   // Filter cities based on search query
-  const filteredCities = cities.filter(city => 
+  const filteredCities = cities.filter(city =>
     city.toLowerCase().includes(cityQuery.toLowerCase())
   );
-  
+
   const [formData, setFormData] = useState({
-    agreementCity: 'Gurgaon',
+    agreementCity: '',
     agreementType: 'Rental Agreement',
     executionDate: getCurrentDate(),
-    
     landlords: [{
       title: 'Mr.',
       name: '',
@@ -181,7 +272,7 @@ const RentAgreement = () => {
       city: '',
       pincode: ''
     }],
-    
+
     tenants: [{
       title: 'Mr.',
       name: '',
@@ -196,7 +287,7 @@ const RentAgreement = () => {
       city: '',
       pincode: ''
     }],
-    
+
     propertyAddress: '',
     leasePeriod: '11',
     rentAmount: '',
@@ -206,7 +297,7 @@ const RentAgreement = () => {
     refundableDeposit: '',
     noticePeriod: '',
     lockInPeriod: '',
-    
+
     utilities: {
       ac: 0,
       aircooler: 0,
@@ -232,42 +323,42 @@ const RentAgreement = () => {
     if (viewMode) {
       return;
     }
-    
+
     // Validate required fields
     const requiredFields = [
-      'propertyAddress', 'leasePeriod', 'rentAmount', 
+      'propertyAddress', 'leasePeriod', 'rentAmount',
       'rentPaymentDay', 'rentIncrement', 'refundableDeposit',
       'noticePeriod', 'lockInPeriod'
     ];
-    
+
     const isFormValid = requiredFields.every(field => formData[field] !== '');
-    
+
     if (!isFormValid) {
       toast.error('Please fill all required fields');
       return;
     }
-    
+
     // Validate landlord and tenant details
-    const landlordValid = formData.landlords.every(landlord => 
-      landlord.name && landlord.parentName && landlord.contactNumber && 
-      landlord.email && landlord.pan && landlord.aadhaar && 
+    const landlordValid = formData.landlords.every(landlord =>
+      landlord.name && landlord.parentName && landlord.contactNumber &&
+      landlord.email && landlord.pan && landlord.aadhaar &&
       landlord.addressLine1 && landlord.state && landlord.city && landlord.pincode
     );
-    
-    const tenantValid = formData.tenants.every(tenant => 
-      tenant.name && tenant.parentName && tenant.contactNumber && 
-      tenant.email && tenant.pan && tenant.aadhaar && 
+
+    const tenantValid = formData.tenants.every(tenant =>
+      tenant.name && tenant.parentName && tenant.contactNumber &&
+      tenant.email && tenant.pan && tenant.aadhaar &&
       tenant.addressLine1 && tenant.state && tenant.city && tenant.pincode
     );
-    
+
     if (!landlordValid || !tenantValid) {
       toast.error('Please fill all landlord and tenant details');
       return;
     }
-    
+
     setShowPreview(true);
   };
-  
+
   const saveAgreement = async (status = 'draft') => {
     try {
       setLoading(true);
@@ -275,9 +366,9 @@ const RentAgreement = () => {
         ...formData,
         status
       };
-      
+
       const response = await createRentAgreement(agreementData);
-      
+
       if (response && response.status === 200 && response.data && response.data.success) {
         toast.success(`Rent agreement ${status === 'completed' ? 'created' : 'saved as draft'} successfully`);
         // Always redirect to dashboard after saving (both draft and completed)
@@ -285,7 +376,7 @@ const RentAgreement = () => {
       } else {
         throw new Error(response?.data?.message || 'Failed to save agreement');
       }
-      
+
       return response;
     } catch (error) {
       toast.error(error.message || 'Failed to save agreement');
@@ -302,8 +393,8 @@ const RentAgreement = () => {
   const updateLandlord = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
-      landlords: prev.landlords.map((l, i) => 
-        i === index ? {...l, [field]: value} : l
+      landlords: prev.landlords.map((l, i) =>
+        i === index ? { ...l, [field]: value } : l
       )
     }));
   };
@@ -311,8 +402,8 @@ const RentAgreement = () => {
   const updateTenant = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
-      tenants: prev.tenants.map((t, i) => 
-        i === index ? {...t, [field]: value} : t
+      tenants: prev.tenants.map((t, i) =>
+        i === index ? { ...t, [field]: value } : t
       )
     }));
   };
@@ -389,11 +480,11 @@ const RentAgreement = () => {
             {formData.landlords.map((landlord, idx) => (
               <div key={idx} className="mb-6 p-4 bg-blue-50 rounded">
                 <p className="text-gray-800 leading-relaxed">
-                  <strong>{landlord.title} {landlord.name}</strong>, S/O <strong>{landlord.parentName}</strong>, 
-                  having contact number <strong>+91-{landlord.contactNumber}</strong>, 
-                  Email Id: <strong>{landlord.email}</strong>, 
-                  PAN: <strong>{landlord.pan}</strong>, 
-                  UID(Aadhaar No.): <strong>{landlord.aadhaar}</strong>, 
+                  <strong>{landlord.title} {landlord.name}</strong>, S/O <strong>{landlord.parentName}</strong>,
+                  having contact number <strong>+91-{landlord.contactNumber}</strong>,
+                  Email Id: <strong>{landlord.email}</strong>,
+                  PAN: <strong>{landlord.pan}</strong>,
+                  UID(Aadhaar No.): <strong>{landlord.aadhaar}</strong>,
                   residing at <strong>{landlord.addressLine1}, {landlord.addressLine2}, {landlord.city}, {landlord.state}, {landlord.pincode}</strong>
                   {idx === 0 ? ' (Hereinafter called the Lessor-1 and/or the First Party)' : ` (Lessor-${idx + 1})`}
                 </p>
@@ -405,11 +496,11 @@ const RentAgreement = () => {
             {formData.tenants.map((tenant, idx) => (
               <div key={idx} className="mb-6 p-4 bg-blue-50 rounded">
                 <p className="text-gray-800 leading-relaxed">
-                  <strong>{tenant.title} {tenant.name}</strong>, S/O <strong>{tenant.parentName}</strong>, 
-                  having contact number <strong>+91-{tenant.contactNumber}</strong>, 
-                  Email Id: <strong>{tenant.email}</strong>, 
-                  PAN: <strong>{tenant.pan}</strong>, 
-                  UID(Aadhaar No.): <strong>{tenant.aadhaar}</strong>, 
+                  <strong>{tenant.title} {tenant.name}</strong>, S/O <strong>{tenant.parentName}</strong>,
+                  having contact number <strong>+91-{tenant.contactNumber}</strong>,
+                  Email Id: <strong>{tenant.email}</strong>,
+                  PAN: <strong>{tenant.pan}</strong>,
+                  UID(Aadhaar No.): <strong>{tenant.aadhaar}</strong>,
                   residing at <strong>{tenant.addressLine1}, {tenant.addressLine2}, {tenant.city}, {tenant.state}, {tenant.pincode}</strong>
                   {idx === 0 ? ' (Hereinafter called the Lessee-1 and/or Second Party)' : ` (Lessee-${idx + 1})`}
                 </p>
@@ -425,9 +516,9 @@ const RentAgreement = () => {
 
             <div className="mb-6 p-4 bg-gray-50 rounded">
               <p className="text-gray-800 mb-4">
-                Whereas on the request of the Lessee, the Lessor has agreed to let out the Demised Premises to the LESSEE, 
-                and the LESSEE has agreed to take it on rent for a period of <strong>{formData.leasePeriod} Month(s)</strong> w.e.f. 
-                the Agreement Start Date for its bonafide Residential use. Whereas the LESSOR has represented that the Demised Premises 
+                Whereas on the request of the Lessee, the Lessor has agreed to let out the Demised Premises to the LESSEE,
+                and the LESSEE has agreed to take it on rent for a period of <strong>{formData.leasePeriod} Month(s)</strong> w.e.f.
+                the Agreement Start Date for its bonafide Residential use. Whereas the LESSOR has represented that the Demised Premises
                 is free from all encumbrances and the LESSOR has a clean and unrestricted right to the Demised Premises.
               </p>
             </div>
@@ -579,7 +670,7 @@ const RentAgreement = () => {
               <p className="mb-4 text-gray-800">
                 Items provided by the LESSOR at the time of execution of Lease Deed between the LESSOR and the LESSEE are as follows:
               </p>
-              
+
               <div className="grid grid-cols-2 gap-3">
                 {Object.entries(formData.utilities).filter(([_, qty]) => qty > 0).map(([item, qty]) => (
                   <div key={item} className="flex justify-between p-2 bg-white rounded border">
@@ -662,64 +753,87 @@ const RentAgreement = () => {
             <div>
               <label className="block text-gray-700 font-semibold mb-2">Agreement City*</label>
               <div ref={cityDropdownRef} className="relative">
-                <div 
+                <div
                   className={`flex items-center w-full border border-gray-300 rounded-lg px-4 py-3 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${viewMode ? 'bg-gray-100' : ''}`}
-                  onClick={() => !viewMode && setShowCityDropdown(!showCityDropdown)}
+                  onClick={() => {
+                    if (!viewMode) {
+                      setShowCityDropdown(true);
+                      fetchCities(""); // Show all cities on click
+                    }
+                  }}
                 >
                   <MapPin size={18} className="text-blue-600 mr-2" />
                   <input
                     type="text"
-                    value={cityQuery || formData.agreementCity}
+                    value={cityQuery}
                     onChange={(e) => {
                       setCityQuery(e.target.value);
+                      setFormData({ ...formData, agreementCity: e.target.value });
                       setShowCityDropdown(true);
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!viewMode) {
+                        setShowCityDropdown(true);
+                        fetchCities(""); // Show all cities on click
+                      }
                     }}
                     disabled={viewMode}
                     placeholder="Search city..."
                     className="w-full bg-transparent border-none focus:outline-none"
                   />
                   {!viewMode && (
-                    <button type="button" onClick={() => setShowCityDropdown(!showCityDropdown)}>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
+                    <>
+                      {(cityQuery || formData.agreementCity) && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCityQuery('');
+                            setFormData({ ...formData, agreementCity: '' });
+                          }}
+                          className="text-gray-400 hover:text-gray-600 mr-2"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      )}
+                      <button type="button" onClick={() => setShowCityDropdown(!showCityDropdown)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </>
                   )}
                 </div>
-                
+
                 {showCityDropdown && !viewMode && (
                   <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {filteredCities.length > 0 ? (
-                      filteredCities.map((city, index) => {
-                        // Group cities by first letter
-                        const currentFirstLetter = city.charAt(0).toUpperCase();
-                        const prevCity = index > 0 ? filteredCities[index - 1] : null;
-                        const prevFirstLetter = prevCity ? prevCity.charAt(0).toUpperCase() : null;
-                        const isNewLetterSection = currentFirstLetter !== prevFirstLetter;
-                        
-                        return (
-                          <React.Fragment key={index}>
-                            {isNewLetterSection && (
-                              <li className="sticky top-0 px-4 py-1 text-xs font-semibold text-blue-600 bg-blue-50">
-                                {currentFirstLetter}
-                              </li>
-                            )}
-                            <li
-                              onClick={() => {
-                                setFormData({...formData, agreementCity: city});
-                                setCityQuery('');
-                                setShowCityDropdown(false);
-                              }}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm flex items-center"
-                            >
-                              <MapPin size={16} className="mr-2 text-gray-400" />
-                              {city}
-                            </li>
-                          </React.Fragment>
-                        );
-                      })
+                    {isLoadingCities ? (
+                      <li className="px-4 py-2 text-sm text-gray-500">Loading cities...</li>
+                    ) : cities.length > 0 ? (
+                      <>
+                        <li className="px-4 py-2 text-xs font-semibold text-blue-600 bg-blue-50">
+                          {!cityQuery ? "All Cities" : "Search Results"}
+                        </li>
+                        {cities.map((city, index) => (
+                          <li
+                            key={index}
+                            onClick={() => {
+                              setFormData({ ...formData, agreementCity: city });
+                              setCityQuery(city);
+                              setShowCityDropdown(false);
+                            }}
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm flex items-center"
+                          >
+                            <MapPin size={16} className="mr-2 text-gray-400" />
+                            {city}
+                          </li>
+                        ))}
+                      </>
                     ) : (
-                      <li className="px-4 py-2 text-sm text-gray-500">No cities found</li>
+                      <li className="px-4 py-2 text-sm text-gray-500">No cities found. Try a different search.</li>
                     )}
                   </ul>
                 )}
@@ -727,21 +841,42 @@ const RentAgreement = () => {
             </div>
             <div>
               <label className="block text-gray-700 font-semibold mb-2">Agreement Type*</label>
-              <div className="relative">
-                <select
-                  value={formData.agreementType}
-                  onChange={(e) => setFormData({...formData, agreementType: e.target.value})}
-                  disabled={viewMode}
-                  className={`w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none ${viewMode ? 'bg-gray-100' : ''}`}
-                >
-                  <option>Rental Agreement</option>
-                  <option>Lease Agreement</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </div>
+              <div className="relative w-full">
+                <FormControl fullWidth>
+                  <Select
+                    value={formData.agreementType || "Rental Agreement"}
+                    onChange={(e) =>
+                      setFormData({ ...formData, agreementType: e.target.value })
+                    }
+                    disabled={viewMode}
+                    displayEmpty
+                    sx={{
+                      borderRadius: "0.5rem",
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#d1d5db",
+                      },
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: viewMode ? "#d1d5db" : "#60a5fa",
+                      },
+                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#3b82f6",
+                        boxShadow: "0 0 0 2px rgba(59,130,246,0.2)",
+                      },
+                      "& .MuiSelect-select": {
+                        py: "12px",
+                        px: "16px",
+                        fontSize: "1rem",
+                        fontWeight: 500,
+                        color: viewMode ? "#6b7280" : "#374151",
+                        backgroundColor: viewMode ? "#f3f4f6" : "#fff",
+                        borderRadius: "0.5rem",
+                      },
+                    }}
+                  >
+                    <MenuItem value="Rental Agreement">Rental Agreement</MenuItem>
+                    <MenuItem value="Lease Agreement">Lease Agreement</MenuItem>
+                  </Select>
+                </FormControl>
               </div>
             </div>
           </div>
@@ -768,21 +903,41 @@ const RentAgreement = () => {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="relative">
-                  <select
-                    value={landlord.title}
-                    onChange={(e) => updateLandlord(idx, 'title', e.target.value)}
-                    disabled={viewMode}
-                    className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none ${viewMode ? 'bg-gray-100' : ''}`}
-                  >
-                    <option>Mr.</option>
-                    <option>Mrs.</option>
-                    <option>Ms.</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </div>
+                  <FormControl fullWidth>
+                    <Select
+                      value={landlord.title || ""}
+                      onChange={(e) => updateLandlord(idx, "title", e.target.value)}
+                      disabled={viewMode}
+                      displayEmpty
+                      sx={{
+                        borderRadius: "0.5rem",
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#d1d5db", // gray-300
+                        },
+                        "&:hover .MuiOutlinedInput-notchedOutline": {
+                          borderColor: viewMode ? "#d1d5db" : "#60a5fa", // hover border-blue-400
+                        },
+                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#3b82f6", // blue-500
+                          boxShadow: "0 0 0 2px rgba(59,130,246,0.2)",
+                        },
+                        "& .MuiSelect-select": {
+                          py: "8px",
+                          px: "12px",
+                          fontSize: "0.95rem",
+                          fontWeight: 500,
+                          color: viewMode ? "#6b7280" : "#374151", // gray-500 : gray-700
+                          backgroundColor: viewMode ? "#f3f4f6" : "#fff", // gray-100 : white
+                          borderRadius: "0.5rem",
+                        },
+                      }}
+                    >
+                      <MenuItem value="Mr.">Mr.</MenuItem>
+                      <MenuItem value="Mrs.">Mrs.</MenuItem>
+                      <MenuItem value="Ms.">Ms.</MenuItem>
+                    </Select>
+                  </FormControl>
+
                 </div>
                 <input
                   type="text"
@@ -903,21 +1058,41 @@ const RentAgreement = () => {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="relative">
-                  <select
-                    value={tenant.title}
-                    onChange={(e) => updateTenant(idx, 'title', e.target.value)}
-                    disabled={viewMode}
-                    className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none ${viewMode ? 'bg-gray-100' : ''}`}
-                  >
-                    <option>Mr.</option>
-                    <option>Mrs.</option>
-                    <option>Ms.</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </div>
+
+                  <FormControl fullWidth>
+                    <Select
+                      value={tenant.title || ""}
+                      onChange={(e) => updateTenant(idx, "title", e.target.value)}
+                      disabled={viewMode}
+                      displayEmpty
+                      sx={{
+                        borderRadius: "0.5rem",
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#d1d5db", // Tailwind gray-300
+                        },
+                        "&:hover .MuiOutlinedInput-notchedOutline": {
+                          borderColor: viewMode ? "#d1d5db" : "#60a5fa", // blue hover
+                        },
+                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#3b82f6", // blue-500
+                          boxShadow: "0 0 0 2px rgba(59,130,246,0.2)", // soft focus ring
+                        },
+                        "& .MuiSelect-select": {
+                          py: "8px",
+                          px: "12px",
+                          fontSize: "0.95rem",
+                          fontWeight: 500,
+                          color: viewMode ? "#6b7280" : "#374151", // gray tone
+                          backgroundColor: viewMode ? "#f3f4f6" : "#fff",
+                          borderRadius: "0.5rem",
+                        },
+                      }}
+                    >
+                      <MenuItem value="Mr.">Mr.</MenuItem>
+                      <MenuItem value="Mrs.">Mrs.</MenuItem>
+                      <MenuItem value="Ms.">Ms.</MenuItem>
+                    </Select>
+                  </FormControl>
                 </div>
                 <input
                   type="text"
@@ -1027,7 +1202,7 @@ const RentAgreement = () => {
               type="text"
               placeholder="Property Address*"
               value={formData.propertyAddress}
-              onChange={(e) => setFormData({...formData, propertyAddress: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, propertyAddress: e.target.value })}
               disabled={viewMode}
               className={`border rounded px-3 py-2 col-span-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
@@ -1035,7 +1210,7 @@ const RentAgreement = () => {
               type="number"
               placeholder="Lease Period (Months)*"
               value={formData.leasePeriod}
-              onChange={(e) => setFormData({...formData, leasePeriod: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, leasePeriod: e.target.value })}
               disabled={viewMode}
               className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
@@ -1043,7 +1218,7 @@ const RentAgreement = () => {
               type="number"
               placeholder="Rent Amount*"
               value={formData.rentAmount}
-              onChange={(e) => setFormData({...formData, rentAmount: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, rentAmount: e.target.value })}
               disabled={viewMode}
               className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
@@ -1051,7 +1226,7 @@ const RentAgreement = () => {
               type="number"
               placeholder="Rent Payment Day*"
               value={formData.rentPaymentDay}
-              onChange={(e) => setFormData({...formData, rentPaymentDay: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, rentPaymentDay: e.target.value })}
               disabled={viewMode}
               className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
@@ -1059,7 +1234,7 @@ const RentAgreement = () => {
               type="number"
               placeholder="Rent Increment %*"
               value={formData.rentIncrement}
-              onChange={(e) => setFormData({...formData, rentIncrement: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, rentIncrement: e.target.value })}
               disabled={viewMode}
               className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
@@ -1067,7 +1242,7 @@ const RentAgreement = () => {
               type="number"
               placeholder="Refundable Deposit*"
               value={formData.refundableDeposit}
-              onChange={(e) => setFormData({...formData, refundableDeposit: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, refundableDeposit: e.target.value })}
               disabled={viewMode}
               className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
@@ -1075,7 +1250,7 @@ const RentAgreement = () => {
               type="number"
               placeholder="Notice Period (Days)*"
               value={formData.noticePeriod}
-              onChange={(e) => setFormData({...formData, noticePeriod: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, noticePeriod: e.target.value })}
               disabled={viewMode}
               className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
@@ -1083,7 +1258,7 @@ const RentAgreement = () => {
               type="number"
               placeholder="Lock-in Period (Months)*"
               value={formData.lockInPeriod}
-              onChange={(e) => setFormData({...formData, lockInPeriod: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, lockInPeriod: e.target.value })}
               disabled={viewMode}
               className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
             />
