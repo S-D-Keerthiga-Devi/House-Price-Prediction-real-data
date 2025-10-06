@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api` || 'http://localhost:4000/api' || 'https://house-price-prediction-real-data.onrender.com';
 
 // Create a new rent agreement
 export const createRentAgreement = async (agreementData) => {
