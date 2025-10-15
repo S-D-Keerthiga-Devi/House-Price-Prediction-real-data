@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Plus, Minus, Trash2, Search, MapPin } from 'lucide-react';
 import { createRentAgreement, updateRentAgreement, getRentAgreementById } from '../../services/rentAgreementService';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
@@ -15,6 +17,16 @@ const RentAgreement = () => {
   const { status: isAuthenticated } = useSelector(state => state.auth);
   const [authChecked, setAuthChecked] = useState(false);
   const [viewMode, setViewMode] = useState(false);
+  const partyLabels = (type) => {
+    const isLease = type === 'Lease Agreement';
+    return {
+      title: isLease ? 'LEASE DEED' : 'RENT AGREEMENT',
+      partyA: isLease ? 'Lessor' : 'Landlord',
+      partyB: isLease ? 'Lessee' : 'Tenant',
+      partyAUpper: isLease ? 'LESSOR' : 'LANDLORD',
+      partyBUpper: isLease ? 'LESSEE' : 'TENANT',
+    };
+  };
 
   useEffect(() => {
     if (!authChecked && !isAuthenticated) {
@@ -108,7 +120,13 @@ const RentAgreement = () => {
             tv: 0,
             washingMachine: 0,
             watercooler: 0
-          }
+          },
+          witnesses: (agreementData.witnesses && agreementData.witnesses.length > 0)
+            ? agreementData.witnesses
+            : [
+                { name: '', address: '', contactNumber: '' },
+                { name: '', address: '', contactNumber: '' }
+              ]
         };
 
         console.log('Updated form data:', updatedFormData);
@@ -315,8 +333,38 @@ const RentAgreement = () => {
       tv: 0,
       washingMachine: 0,
       watercooler: 0
-    }
+    },
+    witnesses: [
+      { name: '', address: '', contactNumber: '' },
+      { name: '', address: '', contactNumber: '' }
+    ]
   });
+
+  // Helpers: validations and messages
+  const alphaRegex = /^[A-Za-z\s.]+$/;
+  const numRegex = /^\d+$/;
+  const panRegex = /^[A-Z]{5}\d{4}[A-Z]{1}$/i; // e.g., ABCDE1234F
+  const aadhaarRegex = /^\d{12}$/; // 12 digits
+  const phoneRegex = /^\d{10}$/; // 10 digits
+  const pinRegex = /^\d{6}$/; // 6 digits
+
+  const validatePersons = (list, role) => {
+    const messages = [];
+    list.forEach((p, i) => {
+      const idx = i + 1;
+      if (!alphaRegex.test(p.name || '')) messages.push(`${role} ${idx}: Name must contain alphabets only`);
+      if (!alphaRegex.test(p.parentName || '')) messages.push(`${role} ${idx}: Parent name must contain alphabets only`);
+      if (!phoneRegex.test(p.contactNumber || '')) messages.push(`${role} ${idx}: Contact number must be 10 digits`);
+      if (!(p.email || '').includes('@')) messages.push(`${role} ${idx}: Enter a valid email address`);
+      if (!panRegex.test(p.pan || '')) messages.push(`${role} ${idx}: PAN must be 10 characters (e.g., ABCDE1234F)`);
+      if (!aadhaarRegex.test(p.aadhaar || '')) messages.push(`${role} ${idx}: Aadhaar must be 12 digits`);
+      if (!p.addressLine1 || p.addressLine1.length < 3) messages.push(`${role} ${idx}: Address Line 1 is required`);
+      if (!alphaRegex.test(p.state || '')) messages.push(`${role} ${idx}: State must contain alphabets only`);
+      if (!alphaRegex.test(p.city || '')) messages.push(`${role} ${idx}: City must contain alphabets only`);
+      if (!pinRegex.test(p.pincode || '')) messages.push(`${role} ${idx}: Pincode must be 6 digits`);
+    });
+    return messages;
+  };
 
   const handleSubmit = async () => {
     // Skip validation in view mode
@@ -339,20 +387,32 @@ const RentAgreement = () => {
     }
 
     // Validate landlord and tenant details
-    const landlordValid = formData.landlords.every(landlord =>
-      landlord.name && landlord.parentName && landlord.contactNumber &&
-      landlord.email && landlord.pan && landlord.aadhaar &&
-      landlord.addressLine1 && landlord.state && landlord.city && landlord.pincode
-    );
+    // Collect detailed messages
+    const landlordMsgs = validatePersons(formData.landlords, partyLabels(formData.agreementType).partyA);
 
-    const tenantValid = formData.tenants.every(tenant =>
-      tenant.name && tenant.parentName && tenant.contactNumber &&
-      tenant.email && tenant.pan && tenant.aadhaar &&
-      tenant.addressLine1 && tenant.state && tenant.city && tenant.pincode
-    );
+    const tenantMsgs = validatePersons(formData.tenants, partyLabels(formData.agreementType).partyB);
 
-    if (!landlordValid || !tenantValid) {
-      toast.error('Please fill all landlord and tenant details');
+    const numericValid = [
+      formData.leasePeriod, formData.rentAmount, formData.rentPaymentDay, formData.rentIncrement,
+      formData.refundableDeposit, formData.noticePeriod, formData.lockInPeriod
+    ].every(v => numRegex.test(String(v || '')));
+
+    const witnessMsgs = (formData.witnesses || []).reduce((acc, w, i) => {
+      const idx = i + 1;
+      if (!alphaRegex.test(w.name || '')) acc.push(`Witness ${idx}: Name must contain alphabets only`);
+      if (!w.address || w.address.length < 3) acc.push(`Witness ${idx}: Address is required`);
+      if (!phoneRegex.test(w.contactNumber || '')) acc.push(`Witness ${idx}: Contact number must be 10 digits`);
+      return acc;
+    }, []);
+
+    if (!numericValid || landlordMsgs.length || tenantMsgs.length || witnessMsgs.length) {
+      const messages = [
+        ...landlordMsgs,
+        ...tenantMsgs,
+        ...witnessMsgs,
+        ...(numericValid ? [] : ['Numeric fields (amounts, days, months) must contain digits only'])
+      ];
+      toast.error(messages[0]);
       return;
     }
 
@@ -448,6 +508,13 @@ const RentAgreement = () => {
     }
   };
 
+  const updateWitness = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      witnesses: prev.witnesses.map((w, i) => i === index ? { ...w, [field]: value } : w)
+    }));
+  };
+
   const updateUtility = (item, delta) => {
     setFormData(prev => ({
       ...prev,
@@ -459,13 +526,15 @@ const RentAgreement = () => {
   };
 
   if (showPreview) {
+    const labels = partyLabels(formData.agreementType);
     return (
       <div className="min-h-screen bg-gray-100 py-8 px-4 mt-20">
-        <div className="max-w-4xl mx-auto bg-white shadow-2xl">
+        <style>{`@media print{ body{margin:0;background:#fff} header, footer, .no-print{display:none!important} .print-area{box-shadow:none;border:0;margin:0} @page { margin: 0; } }`}</style>
+        <div className="max-w-4xl mx-auto bg-white shadow-2xl print-area">
           <div className="border-8 border-double border-blue-900 p-8">
             <div className="text-center mb-8 border-b-4 border-blue-900 pb-4">
               <div className="text-sm text-gray-600 mb-2">GOVERNMENT OF INDIA</div>
-              <h1 className="text-3xl font-bold text-blue-900">LEASE DEED</h1>
+              <h1 className="text-3xl font-bold text-blue-900">{labels.title}</h1>
               <div className="text-sm text-gray-600 mt-2">(Rent Agreement on Stamp Paper)</div>
             </div>
 
@@ -486,7 +555,7 @@ const RentAgreement = () => {
                   PAN: <strong>{landlord.pan}</strong>,
                   UID(Aadhaar No.): <strong>{landlord.aadhaar}</strong>,
                   residing at <strong>{landlord.addressLine1}, {landlord.addressLine2}, {landlord.city}, {landlord.state}, {landlord.pincode}</strong>
-                  {idx === 0 ? ' (Hereinafter called the Lessor-1 and/or the First Party)' : ` (Lessor-${idx + 1})`}
+                  {idx === 0 ? ` (Hereinafter called the ${labels.partyA}-1 and/or the First Party)` : ` (${labels.partyA}-${idx + 1})`}
                 </p>
               </div>
             ))}
@@ -502,16 +571,16 @@ const RentAgreement = () => {
                   PAN: <strong>{tenant.pan}</strong>,
                   UID(Aadhaar No.): <strong>{tenant.aadhaar}</strong>,
                   residing at <strong>{tenant.addressLine1}, {tenant.addressLine2}, {tenant.city}, {tenant.state}, {tenant.pincode}</strong>
-                  {idx === 0 ? ' (Hereinafter called the Lessee-1 and/or Second Party)' : ` (Lessee-${idx + 1})`}
+                  {idx === 0 ? ` (Hereinafter called the ${labels.partyB}-1 and/or Second Party)` : ` (${labels.partyB}-${idx + 1})`}
                 </p>
               </div>
             ))}
 
             <p className="mb-4 text-gray-700">
-              For the purpose hereof, the Lessor-1 shall be collectively referred to as Lessor and Lessee-1 shall be collectively referred to as Lessee
+              For the purpose hereof, the {labels.partyA}-1 shall be collectively referred to as {labels.partyA} and {labels.partyB}-1 shall be collectively referred to as {labels.partyB}
             </p>
             <p className="mb-6 text-gray-700">
-              The Lessor and Lessee are referred to collectively as the <strong>"Parties"</strong> and individually the <strong>"Party"</strong> as the context may require.
+              The {labels.partyA} and {labels.partyB} are referred to collectively as the <strong>"Parties"</strong> and individually the <strong>"Party"</strong> as the context may require.
             </p>
 
             <div className="mb-6 p-4 bg-gray-50 rounded">
@@ -684,29 +753,29 @@ const RentAgreement = () => {
             <div className="mt-12 grid grid-cols-2 gap-8">
               <div className="text-center">
                 <div className="border-t-2 border-blue-900 pt-2 mt-16">
-                  <p className="font-bold text-blue-900">LESSOR</p>
+                  <p className="font-bold text-blue-900">{labels.partyAUpper}</p>
                   <p className="text-sm text-gray-600">First Party</p>
                 </div>
               </div>
               <div className="text-center">
                 <div className="border-t-2 border-blue-900 pt-2 mt-16">
-                  <p className="font-bold text-blue-900">LESSEE</p>
+                  <p className="font-bold text-blue-900">{labels.partyBUpper}</p>
                   <p className="text-sm text-gray-600">Second Party</p>
                 </div>
               </div>
             </div>
 
             <div className="mt-12 grid grid-cols-2 gap-8">
-              <div className="text-center">
-                <div className="border-t-2 border-gray-400 pt-2 mt-16">
-                  <p className="font-bold text-gray-700">WITNESS 1</p>
+              {formData.witnesses.map((w, i) => (
+                <div key={i} className="text-center">
+                  <div className="border-t-2 border-gray-400 pt-2 mt-16">
+                    <p className="font-bold text-gray-700">WITNESS {i+1}</p>
+                    <p className="text-sm text-gray-600">{w.name}</p>
+                    <p className="text-xs text-gray-500">{w.address}</p>
+                    <p className="text-xs text-gray-500">+91-{w.contactNumber}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="text-center">
-                <div className="border-t-2 border-gray-400 pt-2 mt-16">
-                  <p className="font-bold text-gray-700">WITNESS 2</p>
-                </div>
-              </div>
+              ))}
             </div>
 
             <div className="mt-8 text-center text-xs text-gray-500">
@@ -714,26 +783,45 @@ const RentAgreement = () => {
             </div>
           </div>
 
-          <div className="text-center py-6 space-x-4">
-            <button
-              onClick={() => setShowPreview(false)}
-              className="bg-blue-900 text-white px-8 py-3 rounded-lg hover:bg-blue-800 transition font-semibold"
-            >
-              Back to Edit
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-semibold"
-            >
-              Print Document
-            </button>
-            <button
-              onClick={() => saveAgreement('completed')}
-              disabled={loading}
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold disabled:bg-gray-400"
-            >
-              {loading ? 'Saving...' : 'Save Agreement'}
-            </button>
+          <div className="text-center py-6 space-x-4 no-print">
+            {viewMode ? (
+              <>
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="bg-blue-900 text-white px-8 py-3 rounded-lg hover:bg-blue-800 transition font-semibold"
+                >
+                  Back to Dashboard
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-semibold"
+                >
+                  Print Document
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="bg-blue-900 text-white px-8 py-3 rounded-lg hover:bg-blue-800 transition font-semibold"
+                >
+                  Back to Edit
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-semibold"
+                >
+                  Print Document
+                </button>
+                <button
+                  onClick={() => saveAgreement('completed')}
+                  disabled={loading}
+                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition font-semibold disabled:bg-gray-400"
+                >
+                  {loading ? 'Saving...' : 'Submit'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1193,6 +1281,43 @@ const RentAgreement = () => {
               <Plus size={20} /> Add Tenant
             </button>
           )}
+        </div>
+
+        <div className="bg-white rounded-lg shadow-xl p-6 mb-6">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Witness Details</h3>
+          <div className="grid grid-cols-2 gap-6">
+            {formData.witnesses.map((w, idx) => (
+              <div key={idx} className="p-4 border-2 border-blue-200 rounded-lg bg-blue-50">
+                <h4 className="font-semibold text-blue-900 mb-3">Witness {idx + 1}</h4>
+                <div className="grid grid-cols-1 gap-3">
+                  <input
+                    type="text"
+                    placeholder="Witness Name*"
+                    value={w.name}
+                    onChange={(e) => updateWitness(idx, 'name', e.target.value)}
+                    disabled={viewMode}
+                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Witness Address*"
+                    value={w.address}
+                    onChange={(e) => updateWitness(idx, 'address', e.target.value)}
+                    disabled={viewMode}
+                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Witness Contact Number*"
+                    value={w.contactNumber}
+                    onChange={(e) => updateWitness(idx, 'contactNumber', e.target.value)}
+                    disabled={viewMode}
+                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-xl p-6 mb-6">

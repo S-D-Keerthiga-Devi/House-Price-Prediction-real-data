@@ -28,27 +28,32 @@ const Login = () => {
   // Step 2: Verify OTP with backend
   const handleVerifyOtp = async () => {
     try {
-      const res = await loginUser({ phone: mobile, otp, countryCode });
-      if (res.success) {
-        // Include countryCode in userData
-        const userWithCode = { ...res.user, countryCode };
-        dispatch(authLogin({ userData: userWithCode }));
+      // For testing purposes, if OTP is 1234, proceed with login
+      if (otp === "1234") {
+        const res = await loginUser({ phone: mobile, otp, countryCode });
+        if (res.success) {
+          // Include countryCode in userData
+          const userWithCode = { ...res.user, countryCode };
+          dispatch(authLogin({ userData: userWithCode }));
 
-        // Save token and userData in localStorage
-        localStorage.setItem("token", res.token);
-        localStorage.setItem("userData", JSON.stringify(userWithCode));
+          // Save token and userData in localStorage
+          localStorage.setItem("token", res.token);
+          localStorage.setItem("userData", JSON.stringify(userWithCode));
 
-        toast.success(res.message || "Login Successful");
-        
-        // Check if there's a redirect path in location state
-        const { state } = location;
-        if (state && state.from) {
-          navigate(state.from);
+          toast.success(res.message || "Login Successful");
+          
+          // Check if there's a redirect path in location state
+          const { state } = location;
+          if (state && state.from) {
+            navigate(state.from);
+          } else {
+            navigate("/dashboard");
+          }
         } else {
-          navigate("/dashboard");
+          toast.error(res.message || "Invalid OTP");
         }
       } else {
-        toast.error(res.message || "Invalid OTP");
+        toast.error("Invalid OTP. Please use 1234 for testing.");
       }
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);

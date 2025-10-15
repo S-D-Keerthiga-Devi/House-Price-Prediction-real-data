@@ -8,13 +8,15 @@ import userRouter from "./routes/userRoutes.js";
 import localitiesRouter from "./routes/localitiesRoutes.js";
 import emiResultRouter from "./routes/emiResultRoutes.js";
 import rentAgreementRouter from "./routes/rentAgreementRoutes.js";
+import interiorDesignRouter from "./routes/interiorDesignRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 4000
 const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', 'https://keerthiga-house-price-prediction.vercel.app']
 connectDB()
 
-app.use(express.json());
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(cookieParser());
 app.use(cors({
     origin: function(origin, callback) {
@@ -35,5 +37,6 @@ app.use('/api/user', userRouter)
 app.use('/api/house', localitiesRouter);
 app.use('/api/emi', emiResultRouter);
 app.use('/api/rent-agreement', rentAgreementRouter);
+app.use('/api/interior', interiorDesignRouter);
 
 app.listen(port, () => console.log(`server started on PORT ${port}`))

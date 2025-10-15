@@ -38,7 +38,11 @@ const RentAgreements = () => {
   };
 
   const handleViewAgreement = (id) => {
-    navigate(`/rent-agreement/${id}`);
+    if (!id) {
+      toast.error('Invalid agreement id');
+      return;
+    }
+    navigate(`/rent-agreement/${id}`, { state: { from: '/dashboard' } });
   };
 
   return (
@@ -74,7 +78,7 @@ const RentAgreements = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {agreements.map((agreement) => (
-                <tr key={agreement._id} className="hover:bg-gray-50">
+                <tr key={agreement._id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleViewAgreement(agreement._id)}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{agreement.propertyAddress}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {agreement.landlords && agreement.landlords[0] ? agreement.landlords[0].name : 'N/A'}
@@ -87,12 +91,7 @@ const RentAgreements = () => {
                     {getStatusBadge(agreement.status)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => handleViewAgreement(agreement._id)}
-                      className="text-blue-600 hover:text-blue-900 mr-3"
-                    >
-                      View
-                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); handleViewAgreement(agreement._id); }} className="text-blue-600 hover:text-blue-900 mr-3">View</button>
                   </td>
                 </tr>
               ))}

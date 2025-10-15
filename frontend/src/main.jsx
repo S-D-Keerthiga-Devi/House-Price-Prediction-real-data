@@ -44,6 +44,7 @@ import VentureInvestment from './pages/VentureInvestment'
 import MarketTrends from './pages/MarketTrends'
 import PostProperty from './pages/PostProperty'
 import EMICalculator from './pages/buyers/EMICalculator'
+import InteriorDesign from './pages/buyers/InteriorDesign'
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -76,6 +77,7 @@ const router = createBrowserRouter(
       <Route path="listings" element={<Listings />} />
       <Route path="trending-dealers" element={<TrendingDealers />} />
       <Route path="heatmaps" element={<Heatmaps />} />
+      <Route path="interior" element={<InteriorDesign />} />
       <Route path="market-trends" element={<MarketTrends />} />
       <Route path="hot-selling-projects" element={<HotSellingProjects />} />
       <Route path="property-legal" element={<PropertyLegalServices />} />

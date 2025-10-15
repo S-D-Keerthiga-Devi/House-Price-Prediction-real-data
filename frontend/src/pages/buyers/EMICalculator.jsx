@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Plus, Trash2, Save } from 'lucide-react';
+import { Home, Plus, Trash2, Save, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import { useSelector } from 'react-redux';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 export default function EMICalculator() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { status: isAuthenticated } = useSelector(state => state.auth);
+  const [authChecked, setAuthChecked] = useState(false);
   const [loanAmount, setLoanAmount] = useState(5000000);
   const [tenure, setTenure] = useState(10);
   const [interest, setInterest] = useState(9);
@@ -14,6 +22,15 @@ export default function EMICalculator() {
   const [expandedYears, setExpandedYears] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   
+  // Auth guard similar to RentAgreement
+  useEffect(() => {
+    if (!authChecked && !isAuthenticated) {
+      toast.error('Please login to access EMI Calculator');
+      navigate('/login', { state: { from: location.pathname } });
+      setAuthChecked(true);
+    }
+  }, [isAuthenticated, navigate, location.pathname, authChecked]);
+
   const calculateEMI = () => {
     const principal = loanAmount;
     const ratePerMonth = interest / 12 / 100;
@@ -34,8 +51,220 @@ export default function EMICalculator() {
     };
   };
   
-  const handleSaveData = async () => {
+  const toDataURL = (url) => new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width; canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+
+  const handleDownloadPdf = async () => {
     const result = calculateEMI();
+    const doc = new jsPDF();
+    doc.setFont('helvetica', 'normal');
+  
+    // Header bar - Navy blue
+    doc.setFillColor(41, 55, 124); // Navy blue #29377C
+    doc.rect(0, 0, 210, 32, 'F');
+  
+    // Logo block: Navy blue square with white 'H'
+    doc.setFillColor(41, 55, 124);
+    doc.roundedRect(12, 8, 16, 16, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('H', 19.2, 18.5);
+    
+    // Header title
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Home Loan EMI Report', 32, 18.5);
+  
+    // Card container with navy border
+    doc.setDrawColor(41, 55, 124);
+    doc.setLineWidth(0.8);
+    doc.roundedRect(15, 42, 180, 92, 3, 3);
+  
+    // Section headers with light gray background
+    doc.setFillColor(248, 248, 248);
+    doc.roundedRect(20, 46, 75, 9, 2, 2, 'F');
+    doc.roundedRect(105, 46, 85, 9, 2, 2, 'F');
+    
+    doc.setTextColor(41, 55, 124);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Loan Details', 24, 52);
+    doc.text('EMI Summary', 109, 52);
+  
+    // Left column - Inputs
+    doc.setTextColor(40, 40, 40);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    let y = 64;
+    
+    // Loan Amount
+    doc.setFont('helvetica', 'bold');
+    doc.text('Loan Amount:', 24, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatCurrency(loanAmount), 88, y, { align: 'right' });
+    y += 10;
+    
+    // Tenure
+    doc.setFont('helvetica', 'bold');
+    doc.text('Tenure:', 24, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${tenure} Years`, 88, y, { align: 'right' });
+    y += 10;
+    
+    // Interest Rate
+    doc.setFont('helvetica', 'bold');
+    doc.text('Interest Rate:', 24, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${interest}% p.a.`, 88, y, { align: 'right' });
+    y += 10;
+    
+    // Pre-payment section
+    if (showPrePayment) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Pre-payment:', 24, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(formatCurrency(prePaymentAmount), 88, y, { align: 'right' });
+      y += 7;
+      
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`${prePaymentFrequency} | Start: ${prePaymentStartDate}`, 24, y);
+      doc.setFontSize(10);
+      doc.setTextColor(40, 40, 40);
+      y += 10;
+    }
+  
+    // Right column - Results
+    y = 64;
+    
+    // EMI
+    doc.setFont('helvetica', 'bold');
+    doc.text('Monthly EMI:', 109, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(41, 55, 124);
+    doc.text(formatCurrency(result.emi), 188, y, { align: 'right' });
+    doc.setTextColor(40, 40, 40);
+    y += 10;
+    
+    // Total Interest
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total Interest:', 109, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(220, 53, 69);
+    doc.text(formatCurrency(result.totalInterest), 188, y, { align: 'right' });
+    doc.setTextColor(40, 40, 40);
+    y += 10;
+    
+    // Processing Fees
+    doc.setFont('helvetica', 'bold');
+    doc.text('Processing Fees:', 109, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(formatCurrency(result.processingFees), 188, y, { align: 'right' });
+    y += 10;
+  
+    // Divider line
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.3);
+    doc.line(109, y + 2, 188, y + 2);
+  
+    // Total Amount section
+    y += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(41, 55, 124);
+    doc.text('Total Payable:', 109, y);
+    const totalPayable = result.emi * tenure * 12 + result.processingFees;
+    doc.text(formatCurrency(totalPayable), 188, y, { align: 'right' });
+  
+    // Amortization table header
+    let tableY = 145;
+    doc.setFillColor(41, 55, 124); // Navy blue
+    doc.rect(15, tableY, 180, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('Amortization Schedule (Yearly Summary)', 20, tableY + 7);
+  
+    // Table column headers
+    tableY += 10;
+    const colX = [20, 60, 100, 140, 175];
+    doc.setFillColor(248, 248, 248);
+    doc.rect(15, tableY, 180, 8, 'F');
+    doc.setTextColor(41, 55, 124);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Year', colX[0], tableY + 6);
+    doc.text('Principal', colX[1], tableY + 6);
+    doc.text('Interest', colX[2], tableY + 6);
+    doc.text('Balance', colX[3], tableY + 6);
+    doc.text('Paid %', colX[4], tableY + 6, { align: 'right' });
+  
+    // Table border
+    doc.setDrawColor(41, 55, 124);
+    doc.setLineWidth(0.5);
+    doc.line(15, tableY + 8, 195, tableY + 8);
+  
+    // Table rows
+    let rowY = tableY + 15;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    
+    for (let i = 0; i < amortizationSchedule.length; i++) {
+      const row = amortizationSchedule[i];
+      
+      if (rowY > 275) {
+        doc.addPage();
+        rowY = 20;
+      }
+      
+      // Alternating row background
+      if (i % 2 === 0) {
+        doc.setFillColor(252, 252, 252);
+        doc.rect(15, rowY - 4, 180, 7, 'F');
+      }
+      
+      doc.setTextColor(40, 40, 40);
+      doc.text(String(row.year), colX[0], rowY);
+      doc.text(formatNumber(Math.round(row.principal)), colX[1], rowY);
+      doc.text(formatNumber(Math.round(row.interest)), colX[2], rowY);
+      doc.text(formatNumber(Math.round(row.balance)), colX[3], rowY);
+      
+      // Percentage with navy blue color
+      doc.setTextColor(41, 55, 124);
+      doc.text(`${row.paid.toFixed(1)}%`, colX[4], rowY, { align: 'right' });
+      
+      rowY += 7;
+    }
+  
+    // Footer
+    const footerY = Math.min(rowY + 8, 287);
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.3);
+    doc.line(20, footerY - 3, 190, footerY - 3);
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.setFont('helvetica', 'normal');
+    const currentDate = new Date().toLocaleDateString('en-IN', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    doc.text(`Generated by HousePredict | ${currentDate}`, 20, footerY);
+  
+    // Save to DB
     const dataToSave = {
       loanAmount,
       tenure,
@@ -50,31 +279,17 @@ export default function EMICalculator() {
       } : null
     };
     
-    setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:4000/api/emi', {
+      await fetch('http://localhost:4000/api/emi', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dataToSave),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToSave)
       });
-
-      const responseData = await response.json();
-
-      if (responseData.success) {
-        setSavedData([...savedData, { ...dataToSave, timestamp: new Date().toISOString() }]);
-        alert('Data saved successfully!');
-        console.log('Saved data:', responseData.data);
-      } else {
-        alert('Failed to save data: ' + responseData.message);
-      }
-    } catch (error) {
-      console.error('Error saving data:', error);
-      alert('Error saving data: ' + error.message);
-    } finally {
-      setIsLoading(false);
+    } catch (e) {
+      // ignore persist errors; still allow PDF download
     }
+  
+    doc.save('emi_report.pdf');
   };
   
   const generateAmortizationSchedule = () => {
@@ -230,28 +445,11 @@ export default function EMICalculator() {
             <h1 className="text-3xl font-bold text-gray-900">Home Loan EMI Calculator</h1>
           </div>
           <button
-            onClick={handleSaveData}
-            disabled={isLoading}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-300 shadow-md hover:shadow-lg ${
-              isLoading 
-                ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-blue-900 text-white hover:bg-blue-800'
-            }`}
+            onClick={handleDownloadPdf}
+            className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-300 shadow-md hover:shadow-lg bg-blue-900 text-white hover:bg-blue-800"
           >
-            {isLoading ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save size={20} />
-                Save Data
-              </>
-            )}
+            <Download size={20} />
+            Download PDF
           </button>
         </div>
         
@@ -277,10 +475,17 @@ export default function EMICalculator() {
                 }}
               />
               <input
-                type="text"
-                value={formatCurrency(loanAmount)}
-                readOnly
-                className="w-full mt-3 p-3 border-2 border-gray-300 rounded-lg text-lg font-semibold text-gray-900 bg-gray-50 focus:outline-none"
+                type="number"
+                min={100000}
+                max={50000000}
+                step={10000}
+                value={loanAmount}
+                onChange={(e)=>{
+                  const val = Number(e.target.value || 0);
+                  const clamped = Math.max(100000, Math.min(50000000, val));
+                  setLoanAmount(clamped);
+                }}
+                className="w-full mt-3 p-3 border-2 border-gray-300 rounded-lg text-lg font-semibold text-gray-900 bg-white focus:outline-none focus:border-blue-900"
               />
             </div>
             
@@ -620,56 +825,7 @@ export default function EMICalculator() {
           </div>
         </div>
         
-        {/* Saved EMI Results Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-900">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Saved EMI Results</h2>
-          
-          {savedData.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-blue-900 text-white">
-                    <th className="p-3 text-left text-sm font-semibold">Date</th>
-                    <th className="p-3 text-right text-sm font-semibold">Loan Amount</th>
-                    <th className="p-3 text-right text-sm font-semibold">Tenure</th>
-                    <th className="p-3 text-right text-sm font-semibold">Interest</th>
-                    <th className="p-3 text-right text-sm font-semibold">EMI</th>
-                    <th className="p-3 text-right text-sm font-semibold">Total Interest</th>
-                    <th className="p-3 text-right text-sm font-semibold">Pre-Payment</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {savedData.map((data, index) => (
-                    <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="p-3 text-sm">
-                        {new Date(data.timestamp).toLocaleDateString()}
-                      </td>
-                      <td className="p-3 text-right text-sm font-semibold">
-                        {formatCurrency(data.loanAmount)}
-                      </td>
-                      <td className="p-3 text-right text-sm">{data.tenure} years</td>
-                      <td className="p-3 text-right text-sm">{data.interest}%</td>
-                      <td className="p-3 text-right text-sm font-semibold">
-                        {formatCurrency(data.emi)}
-                      </td>
-                      <td className="p-3 text-right text-sm">
-                        {formatCurrency(data.totalInterest)}
-                      </td>
-                      <td className="p-3 text-right text-sm">
-                        {data.prePayment ? 
-                          `${formatCurrency(data.prePayment.amount)} (${data.prePayment.frequency})` : 
-                          'None'
-                        }
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-gray-600">No saved EMI results found. Calculate and save your EMI results to see them here.</p>
-          )}
-        </div>
+        {/* Saved results removed as requested */}
       </div>
     </div>
   );

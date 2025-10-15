@@ -208,6 +208,11 @@ const rentAgreementSchema = new mongoose.Schema({
       default: 0
     }
   },
+  witnesses: [{
+    name: { type: String, default: '' },
+    address: { type: String, default: '' },
+    contactNumber: { type: String, default: '' }
+  }],
   status: {
     type: String,
     enum: ['draft', 'completed'],
