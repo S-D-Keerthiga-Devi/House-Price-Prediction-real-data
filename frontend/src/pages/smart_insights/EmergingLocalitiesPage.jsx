@@ -26,14 +26,14 @@ import { useLocation } from "react-router-dom";
 import { houseDetails } from "../../api/house.js";
 import EmergingLocalities from "./EmergingLocalities";
 
-export default function PropertyTrends() {
+export default function EmergingLocalitiesPage() {
   const [timeSeriesData, setTimeSeriesData] = useState([]);
   const [categories, setCategories] = useState([]);
   const [cities, setCities] = useState([]);
   const [selectedType, setSelectedType] = useState("Apartment");
   const [timePeriod, setTimePeriod] = useState("Monthly");
   const [searchType, setSearchType] = useState("");
-  const [activeTab, setActiveTab] = useState("price-trends");
+  const [activeTab, setActiveTab] = useState("emerging-localities");
   const [tabScrollPosition, setTabScrollPosition] = useState(0);
   const [selectedSubLocality, setSelectedSubLocality] = useState("");
   const tabContainerRef = useRef(null);
@@ -820,7 +820,7 @@ export default function PropertyTrends() {
   };
 
   return (
-    <section className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-16 px-4 mt-10">
+    <section className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-12 md:py-16 px-3 md:px-4 mt-16 md:mt-10">
       <div className="max-w-7xl mx-auto">
         {/* City Info Card - now shown for all tabs when a city is selected */}
         {selectedCity && (
@@ -830,7 +830,7 @@ export default function PropertyTrends() {
         )}
 
         {/* Tabs Navigation */}
-        <div className="relative mb-8">
+        <div className="relative mb-6 md:mb-8">
           <div className="flex items-center bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <button
               onClick={() => scrollTabs('left')}
@@ -842,7 +842,7 @@ export default function PropertyTrends() {
 
             <div
               ref={tabContainerRef}
-              className="flex overflow-x-auto scrollbar-hide flex-1"
+              className="flex overflow-x-auto scrollbar-hide flex-1 min-w-0"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               <div className="flex">
@@ -888,7 +888,7 @@ export default function PropertyTrends() {
         </div>
 
         {/* Tab Content */}
-        <div className="mt-8">
+        <div className="mt-6 md:mt-8">
           {renderTabContent()}
         </div>
       </div>

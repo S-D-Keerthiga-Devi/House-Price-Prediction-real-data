@@ -147,7 +147,7 @@ function EmergingLocalities() {
 
   const processData = () => {
     let processed = data.filter(item => {
-      const matchesSearch = searchTerm === '' || item.location.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = searchTerm === '' || (item.location || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = filterCategory === 'all' || item.property_category === filterCategory;
       return matchesSearch && matchesCategory;
     });
@@ -200,13 +200,30 @@ function EmergingLocalities() {
         lastUpdated: `${latest.month} ${latest.year}`,
         quarter: latest.quarter,
         categories: Object.keys(categoryCount),
+        segment: latest.property_category || 'Others',
         totalListings: items.length,
         categoryBreakdown: categoryCount
       };
     });
 
+    // Keep only top 20% positive growth per segment (property category)
+    const bySegment = {};
+    locationStats
+      .filter(s => parseFloat(s.trendPercentage) > 0)
+      .forEach(s => {
+        const seg = filterCategory === 'all' ? (s.segment || 'Others') : filterCategory;
+        if (!bySegment[seg]) bySegment[seg] = [];
+        bySegment[seg].push(s);
+      });
+
+    const topStats = Object.values(bySegment).flatMap(list => {
+      const sorted = list.sort((a,b)=> (parseFloat(b.trendPercentage)||0) - (parseFloat(a.trendPercentage)||0));
+      const keep = Math.max(1, Math.ceil(sorted.length * 0.2));
+      return sorted.slice(0, keep);
+    });
+
     // Sort based on selected criteria
-    return locationStats.sort((a, b) => {
+    return topStats.sort((a, b) => {
       switch (sortBy) {
         case 'rate_desc': return b.currentRate - a.currentRate;
         case 'rate_asc': return a.currentRate - b.currentRate;
@@ -237,49 +254,12 @@ function EmergingLocalities() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header Section */}
-      <div className="bg-white shadow-sm border-b mt-20">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-800 mb-4">
-              Emerging Localities
-            </h1>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Property rates and price trends across major cities
-            </p>
-            {selectedCity && (
-              <p className="text-blue-600 text-xl font-semibold mt-4">
-                Showing data for: {selectedCity}
-              </p>
-            )}
-          </div>
-
-          {/* City Selection Message */}
-          {!selectedCity && (
-            <div className="max-w-2xl mx-auto bg-blue-50 border border-blue-200 rounded-xl p-6">
-              <div className="text-center">
-                <MapPin className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-blue-800 mb-2">
-                  Select a City to Explore
-                </h3>
-                <p className="text-blue-700 mb-4">
-                  Use the location search in the header above to choose a city and explore its emerging localities
-                </p>
-                <p className="text-sm text-blue-600">
-                  The page will automatically load data for the selected city
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
+    <div className="space-y-6">
+      {/* Filters */}
+      <div>
         {/* Show filters only if we have data */}
         {data.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Search Localities */}
               <div className="relative">
@@ -346,11 +326,9 @@ function EmergingLocalities() {
 
         {/* Results Count */}
         {data.length > 0 && (
-          <div className="mb-6">
-            <p className="text-gray-600">
-              Showing {processedData.length} localities in {selectedCity}
-            </p>
-          </div>
+          <p className="text-gray-600">
+            Showing {processedData.length} localities in {selectedCity}
+          </p>
         )}
 
         {/* Loading State */}
@@ -375,7 +353,7 @@ function EmergingLocalities() {
             </div>
             <h3 className="text-lg font-medium text-gray-800 mb-2">No City Selected</h3>
             <p className="text-gray-600">
-              Please select a city using the location search in the header to view emerging localities
+              Please select a city to view emerging localities
             </p>
           </div>
         )}
@@ -537,8 +515,8 @@ function EmergingLocalities() {
             </p>
           </div>
         )}
-      </div>
     </div>
+  </div>
   );
 }
 

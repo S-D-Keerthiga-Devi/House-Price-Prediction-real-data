@@ -69,19 +69,19 @@ const insightServices = [
   {
     name: "Heatmaps",
     image: "https://images.pexels.com/photos/590022/pexels-photo-590022.jpeg",
-    link: "/heatmaps",
+    link: "/heatmaps-page",
     isHeatmaps: true
   },
   {
     name: "Price to Income Index",
     image: "https://images.pexels.com/photos/6802042/pexels-photo-6802042.jpeg",
-    link: "/price-income-index",
+    link: "/price-income-index-page",
     isPriceToIncome: true
   },
   {
     name: "Emerging Localities",
     image: "https://images.unsplash.com/photo-1523217582562-09d0def993a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&q=60",
-    link: "/emerging-localities",
+    link: "/emerging-localities-page",
     isEmergingLocalities: true // Special flag for Emerging Localities
   },
 ];
@@ -141,7 +141,7 @@ const ServiceSection = ({ title, description, services, bgColor, onServiceClick 
         <p className="text-gray-700 text-lg max-w-2xl">{description}</p>
         <div className="mt-3 w-20 h-1 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full"></div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
         {services.map((service, idx) => {
           const cardContent = (
             <Card
@@ -149,7 +149,7 @@ const ServiceSection = ({ title, description, services, bgColor, onServiceClick 
               className="overflow-hidden shadow-md hover:shadow-lg cursor-pointer transition-all duration-300 transform hover:-translate-y-2 border border-gray-200 group"
               onClick={() => onServiceClick && onServiceClick(service)}
             >
-              <div className="h-40 bg-gray-100">
+              <div className="h-32 sm:h-36 md:h-40 bg-gray-100">
                 <img
                   src={service.image}
                   alt={service.name}
@@ -184,21 +184,18 @@ const Services = () => {
     }
     
     if (service.isEmergingLocalities) {
-      // Dispatch custom event to trigger message box in header for Emerging Localities
       const event = new CustomEvent('showEmergingLocalitiesMessage');
       window.dispatchEvent(event);
       return;
     }
 
     if(service.isHeatmaps){
-      // Dispatch custom event to trigger message box in header for Heatmaps
       const event = new CustomEvent('showHeatmapsMessage');
       window.dispatchEvent(event);
       return;
     }
 
     if(service.isPriceToIncome){
-      // Dispatch custom event to trigger message box in header for Heatmaps
       const event = new CustomEvent('showPriceToIncomeMessage');
       window.dispatchEvent(event);
       return;

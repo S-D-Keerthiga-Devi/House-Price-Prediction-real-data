@@ -216,77 +216,66 @@ export default function PriceIncomeIndex() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="w-full max-w-6xl mx-auto p-6 space-y-6 pt-20">
-        {/* Header */}
-        <div className="text-center space-y-3 mb-8">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <MapPin className="h-8 w-8 text-blue-700" />
-            <h1 className="text-4xl font-bold text-navy-900">{selectedCity}</h1>
-          </div>
-          <h2 className="text-2xl font-semibold text-navy-700">
-            House Price Index - Quarterly Growth
-          </h2>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold">{stats.avg.toFixed(1)}%</div>
-              <div className="text-sm">Average Growth</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-700">
-                {stats.max.toFixed(1)}%
-              </div>
-              <div className="text-sm">Highest Quarter</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {stats.min.toFixed(1)}%
-              </div>
-              <div className="text-sm">Lowest Quarter</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div
-                className={`text-2xl font-bold ${
-                  stats.trend > 0 ? "text-green-700" : "text-red-600"
-                }`}
-              >
-                {stats.trend > 0 ? "+" : ""}
-                {stats.trend.toFixed(1)}%
-              </div>
-              <div className="text-sm">Recent Trend</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Chart */}
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex gap-2 items-center">
-              <TrendingUp className="h-6 w-6" />
-              Quarterly Growth Trends
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-8">
-            {loading ? (
-              <div className="flex items-center justify-center h-96">
-                <p>Loading {selectedCity} data...</p>
-              </div>
-            ) : timeSeriesData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={450}>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold">{stats.avg.toFixed(1)}%</div>
+            <div className="text-sm">Average Growth</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-700">
+              {stats.max.toFixed(1)}%
+            </div>
+            <div className="text-sm">Highest Quarter</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-red-600">
+              {stats.min.toFixed(1)}%
+            </div>
+            <div className="text-sm">Lowest Quarter</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div
+              className={`text-2xl font-bold ${
+                stats.trend > 0 ? "text-green-700" : "text-red-600"
+              }`}
+            >
+              {stats.trend > 0 ? "+" : ""}
+              {stats.trend.toFixed(1)}%
+            </div>
+            <div className="text-sm">Recent Trend</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Chart */}
+      <Card className="border">
+        <CardHeader>
+          <CardTitle className="flex gap-2 items-center">
+            <TrendingUp className="h-6 w-6" />
+            Quarterly Growth Trends
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          {loading ? (
+            <div className="flex items-center justify-center h-[350px]">
+              <p>Loading {selectedCity} data...</p>
+            </div>
+          ) : timeSeriesData.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={380}>
                 <BarChart data={timeSeriesData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="quarter" />
-                  <YAxis domain={['auto', 'auto']} />
+                  <XAxis dataKey="quarter" label={{ value: 'Quarter', position: 'insideBottom', offset: -5 }} />
+                  <YAxis domain={['auto', 'auto']} tickFormatter={(v)=>`${v}%`} label={{ value: 'Growth %', angle: -90, position: 'insideLeft' }} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="growth" radius={[6, 6, 0, 0]} barSize={40}>
                     {timeSeriesData.map((entry, i) => (
@@ -295,14 +284,20 @@ export default function PriceIncomeIndex() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-96">
-                <p>No data available for {selectedCity}</p>
+              <div className="mt-4 text-sm text-gray-600 flex items-center gap-6">
+                <div className="flex items-center gap-2"><span className="inline-block w-4 h-3 bg-[#1e3a8a]"></span> Growth &gt; 5%</div>
+                <div className="flex items-center gap-2"><span className="inline-block w-4 h-3 bg-[#1e40af]"></span> 3% - 5%</div>
+                <div className="flex items-center gap-2"><span className="inline-block w-4 h-3 bg-[#3b82f6]"></span> 1% - 3%</div>
+                <div className="flex items-center gap-2"><span className="inline-block w-4 h-3 bg-[#60a5fa]"></span> &lt; 1%</div>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-[350px]">
+              <p>No data available for {selectedCity}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

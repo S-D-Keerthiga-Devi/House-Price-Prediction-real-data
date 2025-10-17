@@ -12,7 +12,7 @@ import store from './store/store'
 import { Provider } from 'react-redux'
 import { ToastContainer, toast } from 'react-toastify'
 import Dashboard from './pages/Dashboard'
-import PropertyValuation from './pages/PropertyValuation'
+import PropertyValuation from './pages/buyers/PropertyValuation'
 import RentAgreement from './pages/buyers/RentAgreement'
 import AuctionedProperty from './pages/AuctionedProperty'
 import EscrowServices from './pages/buyers/EscrowServices'
@@ -45,6 +45,9 @@ import MarketTrends from './pages/MarketTrends'
 import PostProperty from './pages/PostProperty'
 import EMICalculator from './pages/buyers/EMICalculator'
 import InteriorDesign from './pages/buyers/InteriorDesign'
+import EmergingLocalitiesPage from './pages/smart_insights/EmergingLocalitiesPage'
+import PriceIncomeIndexPage from './pages/smart_insights/PriceIncomeIndexPage'
+import HeatmapsPage from './pages/smart_insights/HeatmapsPage'
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -61,6 +64,7 @@ const router = createBrowserRouter(
       <Route path="escow-services" element={<EscrowServices />} />
       <Route path="advertise-with-us" element={<AdvertiseWithUs />} />
       <Route path="emerging-localities" element={<EmergingLocalities />} />
+      <Route path="emerging-localities-page" element={<EmergingLocalitiesPage />} />
       <Route path="affordable-projects" element={<AffordableProjects />} />
       <Route path="channel-partners" element={<ChannelPartners />} />
       <Route path="comparator" element={<Comparator />} />
@@ -73,10 +77,12 @@ const router = createBrowserRouter(
       <Route path="home-interior" element={<HomeInterior />} />
       <Route path="special-auction-deals" element={<SpecialAuctionDeals />} />
       <Route path="price-income-index" element={<PriceIncomeIndex />} />
+      <Route path="price-income-index-page" element={<PriceIncomeIndexPage />} />
       <Route path="know-property" element={<KnowYourProperty />} />
       <Route path="listings" element={<Listings />} />
       <Route path="trending-dealers" element={<TrendingDealers />} />
       <Route path="heatmaps" element={<Heatmaps />} />
+      <Route path="heatmaps-page" element={<HeatmapsPage />} />
       <Route path="interior" element={<InteriorDesign />} />
       <Route path="market-trends" element={<MarketTrends />} />
       <Route path="hot-selling-projects" element={<HotSellingProjects />} />

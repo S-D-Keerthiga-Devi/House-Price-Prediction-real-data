@@ -13,6 +13,8 @@ function InteriorDesign() {
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [resultUrl, setResultUrl] = useState('');
+  const [resolvedResultUrl, setResolvedResultUrl] = useState('');
+  const objectUrlRef = useRef('');
   const [showModal, setShowModal] = useState(false);
   const containerRef = useRef(null);
   const isDraggingRef = useRef(false);
@@ -46,8 +48,23 @@ function InteriorDesign() {
       });
 
       if (resp.status === 'completed' && resp.resultImageUrl) {
-        setResultUrl(resp.resultImageUrl);
+        const url = resp.resultImageUrl;
+        const cacheBusted = `${url}${url.includes('?') ? '&' : '?'}_ts=${Date.now()}`;
+        setResultUrl(url);
+        setResolvedResultUrl('');
         setShowModal(true);
+        // Fetch as blob to avoid cross-origin preview issues
+        try {
+          const res = await fetch(cacheBusted, { cache: 'no-store' });
+          const blob = await res.blob();
+          if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+          const objUrl = URL.createObjectURL(blob);
+          objectUrlRef.current = objUrl;
+          setResolvedResultUrl(objUrl);
+        } catch (e) {
+          // Fallback to direct URL
+          setResolvedResultUrl(cacheBusted);
+        }
         toast.success('Design generated successfully!');
       } else {
         toast.error('Generation failed, try again.');
@@ -146,7 +163,7 @@ function InteriorDesign() {
       </div>
 
       {/* Before/After Slider */}
-      {showModal && resultUrl && (
+      {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-[90vw] max-w-4xl">
             <div className="text-lg font-semibold mb-3">Result:</div>
@@ -162,12 +179,18 @@ function InteriorDesign() {
             >
               {/* Before */}
               <div className="absolute inset-0" style={{ right: `${100 - slider}%`, width: `${slider}%`, overflow: 'hidden' }}>
-                <img src={imagePreview} alt="before" className="absolute inset-0 w-full h-full object-contain" />
+                <img src={imagePreview} alt="before" className="absolute inset-0 w-full h-full object-cover" />
               </div>
 
               {/* After */}
               <div className="absolute inset-0" style={{ left: `${slider}%`, width: `${100 - slider}%`, overflow: 'hidden' }}>
-                <img src={resultUrl} alt="after" className="absolute inset-0 w-full h-full object-contain" />
+                {resolvedResultUrl ? (
+                  <img src={resolvedResultUrl} alt="after" className="absolute inset-0 w-full h-full object-cover bg-black" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-white/70">
+                    Loading preview...
+                  </div>
+                )}
               </div>
 
               {/* Divider handle */}
@@ -180,7 +203,7 @@ function InteriorDesign() {
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg border">Close</button>
+              <button onClick={() => { setShowModal(false); if (objectUrlRef.current) { URL.revokeObjectURL(objectUrlRef.current); objectUrlRef.current=''; } }} className="px-4 py-2 rounded-lg border">Close</button>
               <button onClick={onDownload} className="px-4 py-2 rounded-lg bg-purple-600 text-white">Download</button>
             </div>
           </div>

@@ -72,12 +72,31 @@ const Header = () => {
     setBudget(newValue);
   };
 
-  // Handle city selection (no redirect, just store the city)
+  // Handle city selection and navigate if a Smart Insights prompt is active
   const handleCitySelect = (city) => {
     setSelectedCity(city);
-    setSearchQuery(city); // optional
-    setShowPriceTrendsMessage(false); // hide price trends popup
-    setShowEmergingLocalitiesMessage(false); // hide emerging localities popup
+    setSearchQuery(city);
+
+    // Determine which feature requested a city
+    const shouldGoToPriceTrends = showPriceTrendsMessage;
+    const shouldGoToEmergingLocalities = showEmergingLocalitiesMessage;
+    const shouldGoToHeatmaps = showHeatmapsMessage;
+    const shouldGoToPriceToIncome = showPriceToIncomeMessage;
+
+    // Navigate to the appropriate Page route with city in query
+    if (shouldGoToHeatmaps) {
+      navigate(`/heatmaps-page?city=${encodeURIComponent(city)}`);
+    } else if (shouldGoToPriceToIncome) {
+      navigate(`/price-income-index-page?city=${encodeURIComponent(city)}`);
+    } else if (shouldGoToEmergingLocalities) {
+      navigate(`/emerging-localities-page?city=${encodeURIComponent(city)}`);
+    } else if (shouldGoToPriceTrends) {
+      navigate(`/price-trends?city=${encodeURIComponent(city)}`);
+    }
+
+    // Then clear prompts
+    setShowPriceTrendsMessage(false);
+    setShowEmergingLocalitiesMessage(false);
     setShowHeatmapsMessage(false);
     setShowPriceToIncomeMessage(false);
     setShowComparatorMessage(false);
@@ -382,9 +401,9 @@ const Header = () => {
 
   return (
     <header className="w-full fixed top-0 left-0 z-50 bg-white shadow-md">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-6">
+      <div className="max-w-7xl mx-auto px-3 md:px-4 py-3 flex flex-wrap md:flex-nowrap items-center justify-between gap-3 md:gap-6">
         {/* LEFT: Logo + Location */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-shrink-0">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <div className="w-9 h-9 bg-gradient-to-br from-blue-700 to-blue-900 rounded-md flex items-center justify-center text-white font-bold text-lg shadow">
@@ -400,7 +419,7 @@ const Header = () => {
 
 
           {/* Location Component - priceMode=false for header */}
-          <div className="flex items-center gap-2 w-full relative">
+          <div className="flex items-center gap-2 w-full relative min-w-0">
             <Location onCitySelect={handleCitySelect} priceMode={false} />
 
             {/* Message box for Price Trends */}
@@ -498,7 +517,7 @@ const Header = () => {
 
 
         {/* CENTER: Search bar (keep your existing code here) */}
-        <div className="flex-1 max-w-3xl relative" ref={advFiltersRef}>
+        <div className="flex-1 basis-full md:basis-auto order-3 md:order-none min-w-0 max-w-full md:max-w-3xl relative mt-2 md:mt-0" ref={advFiltersRef}>
           <div
             className="flex items-center border border-blue-200 px-2 py-1 rounded-md shadow-sm w-full cursor-pointer"
             onClick={() => setShowAdvancedFilters(true)}
@@ -548,7 +567,7 @@ const Header = () => {
             </div>
 
             {/* Input Box */}
-            <div className="relative flex-1" onClick={(e) => e.stopPropagation()}>
+            <div className="relative flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
               <input
                 type="text"
                 placeholder={selectedCity ? `Search localities in ${selectedCity}` : "Search properties..."}
@@ -820,7 +839,7 @@ const Header = () => {
 
 
         {/* RIGHT: Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3 order-2 md:order-none ml-auto flex-shrink-0">
           <button className="relative p-2 hover:bg-gray-100 rounded-full">
             <Bell size={18} className="text-gray-600" />
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full font-bold">

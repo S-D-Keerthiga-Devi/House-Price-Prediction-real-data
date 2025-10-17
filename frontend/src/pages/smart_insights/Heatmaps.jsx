@@ -110,10 +110,10 @@ const Heatmaps = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
+      <div className="flex items-center justify-center h-[450px] bg-gray-50 rounded-xl border">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading heatmap data...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-3 text-gray-600">Loading heatmap data...</p>
         </div>
       </div>
     );
@@ -121,10 +121,10 @@ const Heatmaps = () => {
 
   if (heatmapData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
+      <div className="flex items-center justify-center h-[450px] bg-gray-50 rounded-xl border">
         <div className="text-center">
-          <p className="text-xl text-gray-600">No data available for {selectedCity}</p>
-          <p className="text-gray-500">Please try a different city</p>
+          <p className="text-base text-gray-700">No data available for {selectedCity}</p>
+          <p className="text-sm text-gray-500">Please try a different city</p>
         </div>
       </div>
     );
@@ -140,7 +140,7 @@ const Heatmaps = () => {
   }));
 
   return (
-    <div className="relative w-full" style={{ height: 'calc(100vh - 80px)', marginTop: '80px' }}>
+    <div className="relative w-full rounded-xl overflow-hidden border h-[360px] sm:h-[420px] md:h-[500px]">
       {/* Legend */}
       <div className="absolute top-4 right-4 z-[1000] bg-white p-4 rounded-lg shadow-lg border max-w-xs">
         <h3 className="font-semibold text-sm mb-2">Price per sqft (₹)</h3>
@@ -172,12 +172,7 @@ const Heatmaps = () => {
         </div>
       </div>
 
-      <MapContainer 
-        center={mapCenter} 
-        zoom={11} 
-        style={{ height: "100%", width: "100%" }}
-        className="z-0"
-      >
+      <MapContainer center={mapCenter} zoom={11} style={{ height: "100%", width: "100%" }} className="z-0">
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="© OpenStreetMap contributors"

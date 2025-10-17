@@ -63,8 +63,8 @@ export const generateDesign = async (req, res) => {
     if (additionalRequirements) prompt += `, ${additionalRequirements}`;
 
     const replicate = new Replicate({ auth: replicateToken });
-    // Force the specified model from Replicate page
-    const model = process.env.REPLICATE_MODEL;
+    // Use the stability-ai/stable-diffusion-img2img model
+    const model = "stability-ai/stable-diffusion-img2img:15a3689ee13b0d2616e98820eca31d4c3abcd36672df6afce5cb6feb1d66087d";
 
     let resultUrl = null;
     let providerResponse = null;
@@ -75,15 +75,21 @@ export const generateDesign = async (req, res) => {
           image: inputImageUrl,
           prompt,
           negative_prompt: 'blurry, deformed, extra objects, low quality, watermark',
-          num_inference_steps: 30,
+          num_inference_steps: 25,  // Reduced for faster processing
           guidance_scale: 7.5,
-          prompt_strength: 0.85
+          prompt_strength: 0.8,
+          // Additional parameters for this specific model
+          image_resolution: 512,
+          denoising_strength: 0.75
         }
       });
 
-      // The model can return an array or string
-      if (Array.isArray(output)) {
-        resultUrl = output[0]?.url?.() || output[0];
+      // Handle the output - stability-ai model returns an array of images
+      if (Array.isArray(output) && output.length > 0) {
+        // The first image in the array
+        const firstImage = output[0];
+        // Get the URL using the url() method if available, otherwise use the direct value
+        resultUrl = typeof firstImage.url === 'function' ? firstImage.url() : firstImage;
       } else if (typeof output === 'string') {
         resultUrl = output;
       } else if (output?.url) {
@@ -96,7 +102,7 @@ export const generateDesign = async (req, res) => {
       const detail = err.response?.data || err.message;
       const status = err.response?.status;
       if (status === 402) {
-        const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
+        const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=768&nologo=1&random=${Date.now()}`;
         resultUrl = pollinationsUrl;
         providerResponse = { model: 'pollinations.ai', note: 'fallback due to insufficient Replicate credit', originalError: detail };
       } else {

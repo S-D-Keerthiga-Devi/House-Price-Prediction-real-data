@@ -9,6 +9,7 @@ import localitiesRouter from "./routes/localitiesRoutes.js";
 import emiResultRouter from "./routes/emiResultRoutes.js";
 import rentAgreementRouter from "./routes/rentAgreementRoutes.js";
 import interiorDesignRouter from "./routes/interiorDesignRoutes.js";
+import valuationRouter from "./routes/valuationRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 4000
@@ -38,5 +39,6 @@ app.use('/api/house', localitiesRouter);
 app.use('/api/emi', emiResultRouter);
 app.use('/api/rent-agreement', rentAgreementRouter);
 app.use('/api/interior', interiorDesignRouter);
+app.use('/api/valuation', valuationRouter);
 
 app.listen(port, () => console.log(`server started on PORT ${port}`))

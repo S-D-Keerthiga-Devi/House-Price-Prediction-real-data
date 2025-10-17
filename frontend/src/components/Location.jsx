@@ -290,13 +290,13 @@ export default function Location({ onCitySelect, priceMode = false }) {
       navigate(`/price-trends?city=${encodeURIComponent(cityToUse)}`);
       setIsPriceTrendsMode(false); // Reset the mode
     } else if (isEmergingLocalitiesMode) {
-      navigate(`/emerging-localities?city=${encodeURIComponent(cityToUse)}`);
+      navigate(`/emerging-localities-page?city=${encodeURIComponent(cityToUse)}`);
       setIsEmergingLocalitiesMode(false); // Reset the mode
     } else if (isHeatmapsMode) {
-      navigate(`/heatmaps?city=${encodeURIComponent(cityToUse)}`);
+      navigate(`/heatmaps-page?city=${encodeURIComponent(cityToUse)}`);
       setIsHeatmapsMode(false); // Reset the mode
     } else if (isPriceToIncomeMode) {
-      navigate(`/price-income-index?city=${encodeURIComponent(cityToUse)}`);
+      navigate(`/price-income-index-page?city=${encodeURIComponent(cityToUse)}`);
       setIsPriceToIncomeMode(false); // Reset the mode
     } else if (isComparatorMode) {
       navigate(`/comparator?city=${encodeURIComponent(cityToUse)}`);

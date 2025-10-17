@@ -44,7 +44,7 @@ const Comparator = ({ initialProperties = [] }) => {
         limit: 1,
         city: city
       });
-      
+
       if (response && response.success) {
         setNoPropertiesFound(response.properties.length === 0);
       }
@@ -64,7 +64,7 @@ const Comparator = ({ initialProperties = [] }) => {
       setCurrentPage(1);
       setSearchQuery("");
       setAllProperties([]);
-      
+
       // Immediately check if properties exist for this city
       checkPropertiesExist(selectedCity);
     }
@@ -836,7 +836,7 @@ const Comparator = ({ initialProperties = [] }) => {
                   Show All Properties
                 </button>
               </div>
-              
+
               {/* Message box for when city data is unavailable - Only show when no data is available */}
               {noPropertiesFound && !loading && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center mb-6">
@@ -851,7 +851,7 @@ const Comparator = ({ initialProperties = [] }) => {
                   </button>
                 </div>
               )}
-              
+
               {/* No Properties Found Card - Show immediately when no properties are found */}
               {shouldShowNoPropertiesCard && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center mb-6">
@@ -876,7 +876,7 @@ const Comparator = ({ initialProperties = [] }) => {
                       const propertyIndex = propertiesForDisplay.indexOf(property);
 
                       return (
-                        <div key={property.id} className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-4">
+                        <div key={property.id} className="group relative bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-4">
                           {/* Property Header */}
                           <div className="flex justify-between items-start mb-3">
                             <div>
@@ -887,7 +887,7 @@ const Comparator = ({ initialProperties = [] }) => {
                               </div>
                             </div>
                             <button
-                              onClick={() => handleAddToCompare(property)}
+                              onClick={() => isSelected ? handleRemoveFromCompare(property.id) : handleAddToCompare(property)}
                               disabled={selectedProperties.length >= 3 && !isSelected}
                               className={`p-2 rounded-lg transition-colors ${isSelected
                                 ? "bg-red-100 text-red-600 hover:bg-red-200"
@@ -901,6 +901,14 @@ const Comparator = ({ initialProperties = [] }) => {
                               ) : (
                                 <Plus className="w-5 h-5" />
                               )}
+                              {/* Tooltip to the right */}
+                              {!isSelected && selectedProperties.length < 3 && (
+                                <span className="absolute -right-2 top-[15%] -translate-y-1/2 translate-x-full whitespace-nowrap bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-outtransform scale-95 group-hover:scale-100pointer-events-none">
+                                  Add to Compare
+                                </span>
+                              )}
+
+
                             </button>
                           </div>
 
@@ -928,6 +936,16 @@ const Comparator = ({ initialProperties = [] }) => {
                                 {property.marketTrend === "Declining" && <TrendingDown className="w-3 h-3 ml-1 text-red-600" />}
                               </div>
                             </div>
+                          </div>
+
+                          {/* Hover CTA */}
+                          <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute inset-0 rounded-xl flex items-end justify-end p-3">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); isSelected ? handleRemoveFromCompare(property.id) : handleAddToCompare(property); }}
+                              className={`pointer-events-auto text-sm font-semibold px-4 py-2 rounded-lg shadow `}
+                            >
+
+                            </button>
                           </div>
                         </div>
                       );
