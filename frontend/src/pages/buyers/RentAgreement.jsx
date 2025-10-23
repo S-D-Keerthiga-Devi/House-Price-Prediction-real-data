@@ -41,7 +41,7 @@ const RentAgreement = () => {
       setViewMode(true);
     }
   }, [isAuthenticated, navigate, location.pathname, authChecked, id]);
-  
+
   // Fetch agreement data by ID
   const fetchAgreementData = async (agreementId) => {
     try {
@@ -124,9 +124,9 @@ const RentAgreement = () => {
           witnesses: (agreementData.witnesses && agreementData.witnesses.length > 0)
             ? agreementData.witnesses
             : [
-                { name: '', address: '', contactNumber: '' },
-                { name: '', address: '', contactNumber: '' }
-              ]
+              { name: '', address: '', contactNumber: '' },
+              { name: '', address: '', contactNumber: '' }
+            ]
         };
 
         console.log('Updated form data:', updatedFormData);
@@ -769,7 +769,7 @@ const RentAgreement = () => {
               {formData.witnesses.map((w, i) => (
                 <div key={i} className="text-center">
                   <div className="border-t-2 border-gray-400 pt-2 mt-16">
-                    <p className="font-bold text-gray-700">WITNESS {i+1}</p>
+                    <p className="font-bold text-gray-700">WITNESS {i + 1}</p>
                     <p className="text-sm text-gray-600">{w.name}</p>
                     <p className="text-xs text-gray-500">{w.address}</p>
                     <p className="text-xs text-gray-500">+91-{w.contactNumber}</p>
@@ -1043,38 +1043,58 @@ const RentAgreement = () => {
                   disabled={viewMode}
                   className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
-                <input
-                  type="text"
-                  placeholder="Contact Number*"
-                  value={landlord.contactNumber}
-                  onChange={(e) => updateLandlord(idx, 'contactNumber', e.target.value)}
-                  disabled={viewMode}
-                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
-                />
-                <input
-                  type="email"
-                  placeholder="Email ID*"
-                  value={landlord.email}
-                  onChange={(e) => updateLandlord(idx, 'email', e.target.value)}
-                  disabled={viewMode}
-                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
-                />
-                <input
-                  type="text"
-                  placeholder="PAN Number*"
-                  value={landlord.pan}
-                  onChange={(e) => updateLandlord(idx, 'pan', e.target.value)}
-                  disabled={viewMode}
-                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
-                />
-                <input
-                  type="text"
-                  placeholder="Aadhaar Number*"
-                  value={landlord.aadhaar}
-                  onChange={(e) => updateLandlord(idx, 'aadhaar', e.target.value)}
-                  disabled={viewMode}
-                  className={`border rounded px-3 py-2 col-span-3 ${viewMode ? 'bg-gray-100' : ''}`}
-                />
+                <div className="flex flex-col">
+                  <input
+                    type="text"
+                    placeholder="Contact Number*"
+                    value={landlord.contactNumber}
+                    onChange={(e) => updateLandlord(idx, 'contactNumber', e.target.value)}
+                    disabled={viewMode}
+                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                  />
+                  {!phoneRegex.test(landlord.contactNumber) && landlord.contactNumber && (
+                    <p className="text-red-600 text-xs mt-1">Enter 10-digit contact number</p>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <input
+                    type="email"
+                    placeholder="Email ID*"
+                    value={landlord.email}
+                    onChange={(e) => updateLandlord(idx, 'email', e.target.value)}
+                    disabled={viewMode}
+                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                  />
+                  {!(landlord.email || '').includes('@') && landlord.email && (
+                    <p className="text-red-600 text-xs mt-1">Enter valid email address</p>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <input
+                    type="text"
+                    placeholder="PAN Number*"
+                    value={landlord.pan}
+                    onChange={(e) => updateLandlord(idx, 'pan', e.target.value)}
+                    disabled={viewMode}
+                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                  />
+                  {!panRegex.test(landlord.pan) && landlord.pan && (
+                    <p className="text-red-600 text-xs mt-1">Enter valid PAN (e.g., ABCDE1234F)</p>
+                  )}
+                </div>
+                <div className="flex flex-col col-span-3">
+                  <input
+                    type="text"
+                    placeholder="Aadhaar Number*"
+                    value={landlord.aadhaar}
+                    onChange={(e) => updateLandlord(idx, 'aadhaar', e.target.value)}
+                    disabled={viewMode}
+                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                  />
+                  {!aadhaarRegex.test(landlord.aadhaar) && landlord.aadhaar && (
+                    <p className="text-red-600 text-xs mt-1">Enter 12-digit Aadhaar number</p>
+                  )}
+                </div>
                 <input
                   type="text"
                   placeholder="Address Line 1*"
@@ -1107,14 +1127,19 @@ const RentAgreement = () => {
                   disabled={viewMode}
                   className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
-                <input
-                  type="text"
-                  placeholder="Pincode*"
-                  value={landlord.pincode}
-                  onChange={(e) => updateLandlord(idx, 'pincode', e.target.value)}
-                  disabled={viewMode}
-                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
-                />
+                <div className="flex flex-col">
+                  <input
+                    type="text"
+                    placeholder="Pincode*"
+                    value={landlord.pincode}
+                    onChange={(e) => updateLandlord(idx, 'pincode', e.target.value)}
+                    disabled={viewMode}
+                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                  />
+                  {!pinRegex.test(landlord.pincode) && landlord.pincode && (
+                    <p className="text-red-600 text-xs mt-1">Enter 6-digit pincode</p>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -1198,38 +1223,58 @@ const RentAgreement = () => {
                   disabled={viewMode}
                   className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
-                <input
-                  type="text"
-                  placeholder="Contact Number*"
-                  value={tenant.contactNumber}
-                  onChange={(e) => updateTenant(idx, 'contactNumber', e.target.value)}
-                  disabled={viewMode}
-                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
-                />
-                <input
-                  type="email"
-                  placeholder="Email ID*"
-                  value={tenant.email}
-                  onChange={(e) => updateTenant(idx, 'email', e.target.value)}
-                  disabled={viewMode}
-                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
-                />
-                <input
-                  type="text"
-                  placeholder="PAN Number*"
-                  value={tenant.pan}
-                  onChange={(e) => updateTenant(idx, 'pan', e.target.value)}
-                  disabled={viewMode}
-                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
-                />
-                <input
-                  type="text"
-                  placeholder="Aadhaar Number*"
-                  value={tenant.aadhaar}
-                  onChange={(e) => updateTenant(idx, 'aadhaar', e.target.value)}
-                  disabled={viewMode}
-                  className={`border rounded px-3 py-2 col-span-3 ${viewMode ? 'bg-gray-100' : ''}`}
-                />
+                <div className="flex flex-col">
+                  <input
+                    type="text"
+                    placeholder="Contact Number*"
+                    value={tenant.contactNumber}
+                    onChange={(e) => updateTenant(idx, 'contactNumber', e.target.value)}
+                    disabled={viewMode}
+                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                  />
+                  {!phoneRegex.test(tenant.contactNumber) && tenant.contactNumber && (
+                    <p className="text-red-600 text-xs mt-1">Enter 10-digit contact number</p>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <input
+                    type="email"
+                    placeholder="Email ID*"
+                    value={tenant.email}
+                    onChange={(e) => updateTenant(idx, 'email', e.target.value)}
+                    disabled={viewMode}
+                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                  />
+                  {!(tenant.email || '').includes('@') && tenant.email && (
+                    <p className="text-red-600 text-xs mt-1">Enter valid email address</p>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <input
+                    type="text"
+                    placeholder="PAN Number*"
+                    value={tenant.pan}
+                    onChange={(e) => updateTenant(idx, 'pan', e.target.value)}
+                    disabled={viewMode}
+                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                  />
+                  {!panRegex.test(tenant.pan) && tenant.pan && (
+                    <p className="text-red-600 text-xs mt-1">Enter valid PAN (e.g., ABCDE1234F)</p>
+                  )}
+                </div>
+                <div className="flex flex-col col-span-3">
+                  <input
+                    type="text"
+                    placeholder="Aadhaar Number*"
+                    value={tenant.aadhaar}
+                    onChange={(e) => updateTenant(idx, 'aadhaar', e.target.value)}
+                    disabled={viewMode}
+                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                  />
+                  {!aadhaarRegex.test(tenant.aadhaar) && tenant.aadhaar && (
+                    <p className="text-red-600 text-xs mt-1">Enter 12-digit Aadhaar number</p>
+                  )}
+                </div>
                 <input
                   type="text"
                   placeholder="Address Line 1*"
@@ -1262,14 +1307,19 @@ const RentAgreement = () => {
                   disabled={viewMode}
                   className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
                 />
-                <input
-                  type="text"
-                  placeholder="Pincode*"
-                  value={tenant.pincode}
-                  onChange={(e) => updateTenant(idx, 'pincode', e.target.value)}
-                  disabled={viewMode}
-                  className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
-                />
+                <div className="flex flex-col">
+                  <input
+                    type="text"
+                    placeholder="Pincode*"
+                    value={tenant.pincode}
+                    onChange={(e) => updateTenant(idx, 'pincode', e.target.value)}
+                    disabled={viewMode}
+                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                  />
+                  {!pinRegex.test(tenant.pincode) && tenant.pincode && (
+                    <p className="text-red-600 text-xs mt-1">Enter 6-digit pincode</p>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -1311,9 +1361,11 @@ const RentAgreement = () => {
                     placeholder="Witness Contact Number*"
                     value={w.contactNumber}
                     onChange={(e) => updateWitness(idx, 'contactNumber', e.target.value)}
-                    disabled={viewMode}
-                    className={`border rounded px-3 py-2 ${viewMode ? 'bg-gray-100' : ''}`}
+                    className="border rounded px-3 py-2"
                   />
+                  {!phoneRegex.test(w.contactNumber) && w.contactNumber && (
+                    <p className="text-red-600 text-xs mt-1">Enter 10-digit contact number</p>
+                  )}
                 </div>
               </div>
             ))}

@@ -1,12 +1,16 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
+import { houseRates } from '../../api/house.js'
+import axiosInstance from '../../utlis/axiosInstance.js'
 
-// Mock API function since we don't have the actual implementation
+// API function to get valuation from backend
 const estimateValuation = async (form) => {
-  await new Promise(resolve => setTimeout(resolve, 1500))
-  return {
-    estimatedPrice: 8500000,
-    ratePerSqft: 8500,
-    breakdown: { areaSqft: form.area }
+  try {
+    const response = await axiosInstance.post('/api/valuation/estimate', form);
+    return response.data;
+  } catch (error) {
+    console.error('Error estimating valuation:', error);
+    throw error;
   }
 }
 
@@ -33,37 +37,231 @@ function PropertyValuation() {
   })
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
+  const [currentStep, setCurrentStep] = useState(1)
+  const [locationSuggestions, setLocationSuggestions] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [localities, setLocalities] = useState([])
+  const [loadingLocalities, setLoadingLocalities] = useState(false)
 
   const setField = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
-
-  const handleSubmit = async (e) => {
-    if (e && e.preventDefault) e.preventDefault()
-    setLoading(true)
-    const res = await estimateValuation(form)
-    setResult(res)
-    setLoading(false)
+  
+  // Fetch localities data from the database
+  const fetchLocalities = async (city) => {
+    if (!city) return;
+    
+    setLoadingLocalities(true);
+    try {
+      const response = await houseRates(city);
+      if (Array.isArray(response)) {
+        // Extract unique locations
+        const uniqueLocations = [...new Set(response.map(item => item.location))];
+        setLocalities(uniqueLocations);
+      }
+    } catch (error) {
+      console.error('Error fetching localities:', error);
+    } finally {
+      setLoadingLocalities(false);
+    }
+  }
+  
+  // Load localities when city changes
+  useEffect(() => {
+    fetchLocalities(form.city);
+  }, [form.city])
+  
+  // Handle search query change
+  useEffect(() => {
+    if (searchQuery.length > 2) {
+      const filteredLocations = localities.filter(location => 
+        location.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      
+      const suggestions = filteredLocations.map(location => ({
+        display_name: location,
+        location: location,
+        isLocal: true // Flag to identify local suggestions
+      }));
+      
+      setLocationSuggestions(suggestions);
+    } else {
+      setLocationSuggestions([]);
+    }
+  }, [searchQuery, localities])
+  
+  // Handle location selection - consolidated function
+  const handleLocationSelect = (suggestion) => {
+    if (suggestion.isLocal) {
+      // Handle local suggestion
+      setSearchQuery(suggestion.display_name);
+      setField('location', suggestion.location);
+    } else {
+      // Handle OpenStreetMap API suggestion
+      // Extract city and location from suggestion
+      const city = suggestion.address?.city || 
+                  suggestion.address?.town || 
+                  suggestion.address?.state || 
+                  'Unknown';
+      
+      const location = suggestion.address?.suburb || 
+                      suggestion.address?.neighbourhood || 
+                      suggestion.address?.road || 
+                      suggestion.display_name.split(',')[0];
+      
+      // Auto-fill city and location fields
+      setField('city', city);
+      setField('location', location);
+      setSearchQuery(suggestion.display_name);
+    }
+    
+    // Close suggestions dropdown
+    setLocationSuggestions([]);
   }
 
+  // Handle next step with validation
+  const handleNextStep = () => {
+    // Validate required fields for step 1
+    if (currentStep === 1) {
+      const step1RequiredFields = ['propertyType', 'area', 'city', 'location', 'bedrooms'];
+      const missingFields = step1RequiredFields.filter(field => !form[field]);
+      
+      if (missingFields.length > 0) {
+        alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+        return;
+      }
+    }
+    
+    setCurrentStep(currentStep + 1);
+  }
+
+  // Handle previous step
+  const handlePrevStep = () => {
+    setCurrentStep(currentStep - 1)
+  }
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault()
+    
+    // Validate required fields
+    const requiredFields = ['propertyType', 'area', 'city', 'location', 'bedrooms'];
+    const missingFields = requiredFields.filter(field => !form[field]);
+    
+    if (missingFields.length > 0) {
+      alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      return;
+    }
+    
+    setLoading(true)
+    try {
+      // Ensure we're sending the correct location value
+      const formData = {
+        ...form,
+        location: form.location || searchQuery // Use searchQuery as fallback
+      };
+      
+      const res = await estimateValuation(formData)
+      
+      if (res && res.success) {
+        setResult(res)
+        setCurrentStep(3) // Move to result step
+      } else {
+        throw new Error(res?.message || 'Failed to get property valuation');
+      }
+    } catch (error) {
+      console.error('Error during valuation:', error);
+      
+      // Enhanced error handling with more specific messages
+      let errorMessage = 'Failed to get property valuation. Please try again.';
+      
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        if (error.response.status === 404) {
+          errorMessage = 'The valuation service is currently unavailable. Please try again later.';
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data?.message || 'Please check your input data and try again.';
+        } else if (error.response.status === 500) {
+          errorMessage = 'Our servers are experiencing issues. Please try again later.';
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        errorMessage = 'Unable to connect to the valuation service. Please check your internet connection.';
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Search for location suggestions using OpenStreetMap API
+  const searchLocations = async (query) => {
+    if (!query || query.length < 3) {
+      setLocationSuggestions([])
+      return
+    }
+    
+    try {
+      // Use OpenStreetMap API for location suggestions
+      const response = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1&countrycodes=in`);
+      setLocationSuggestions(response.data);
+    } catch (error) {
+      console.error('Error fetching location suggestions:', error);
+      setLocationSuggestions([]);
+    }
+  }
+
+  // Debounce search to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchLocations(searchQuery);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 px-4 md:px-6 py-8 md:py-12 mt-12">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-navy-900 mb-2" style={{color: '#1e3a8a'}}>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 mt-20 mb-10">
+      <div className="max-w-xl w-full bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="text-center p-6 border-b border-gray-100">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{color: '#1e3a8a'}}>
             Property Valuation
           </h1>
-          <p className="text-gray-600">Get an accurate estimate of your property's market value</p>
+          <p className="text-gray-600 text-sm">Get an accurate estimate of your property's market value</p>
+          
+          {/* Progress indicator */}
+          <div className="flex justify-center items-center mt-4 px-4">
+            <div className="flex items-center w-full max-w-xs">
+              {[1, 2, 3].map((step) => (
+                <React.Fragment key={step}>
+                  <div 
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      currentStep >= step ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+                    }`}
+                  >
+                    {step}
+                  </div>
+                  {step < 3 && (
+                    <div 
+                      className={`flex-1 h-1 mx-2 ${
+                        currentStep > step ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                    ></div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="p-6">
           {/* Step 1 Card */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-gray-100">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl md:text-2xl font-bold" style={{color: '#1e3a8a'}}>
+          {currentStep === 1 && (
+          <div className="w-full">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold" style={{color: '#1e3a8a'}}>
                 Basic Details
               </h2>
-              <span className="px-4 py-1.5 rounded-full text-sm font-semibold" style={{backgroundColor: '#dbeafe', color: '#1e40af'}}>
-                Step 1/3
-              </span>
             </div>
 
             <div className="space-y-5">
@@ -87,13 +285,28 @@ function PropertyValuation() {
                 <label className="block text-sm font-semibold mb-2" style={{color: '#1e3a8a'}}>
                   Project/Locality<span className="text-red-500"> *</span>
                 </label>
-                <input 
-                  value={`${form.location}, ${form.city}`} 
-                  onChange={()=>{}} 
-                  className="w-full border-2 rounded-lg px-4 py-2.5 bg-gray-50" 
-                  style={{borderColor: '#e5e7eb'}}
-                  readOnly 
-                />
+                <div className="relative">
+                  <input 
+                    value={searchQuery} 
+                    onChange={(e) => setSearchQuery(e.target.value)} 
+                    placeholder="Please start typing Project/Locality Name for suggestions"
+                    className="w-full border-2 rounded-lg px-4 py-2.5 focus:outline-none focus:border-blue-500 transition-colors" 
+                    style={{borderColor: '#e5e7eb'}}
+                  />
+                  {locationSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {locationSuggestions.map((suggestion, index) => (
+                        <div 
+                          key={index} 
+                          className="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100"
+                          onClick={() => handleLocationSelect(suggestion)}
+                        >
+                          {suggestion.display_name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -162,8 +375,8 @@ function PropertyValuation() {
                   </label>
                   <input 
                     value={form.city} 
-                    onChange={e=>setField('city', e.target.value)} 
-                    className="w-full border-2 rounded-lg px-4 py-2.5 focus:outline-none focus:border-blue-500 transition-colors"
+                    readOnly
+                    className="w-full border-2 rounded-lg px-4 py-2.5 bg-gray-50"
                     style={{borderColor: '#e5e7eb'}}
                   />
                 </div>
@@ -173,42 +386,33 @@ function PropertyValuation() {
                   </label>
                   <input 
                     value={form.location} 
-                    onChange={e=>setField('location', e.target.value)} 
-                    className="w-full border-2 rounded-lg px-4 py-2.5 focus:outline-none focus:border-blue-500 transition-colors"
+                    readOnly
+                    className="w-full border-2 rounded-lg px-4 py-2.5 bg-gray-50"
                     style={{borderColor: '#e5e7eb'}}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+              <div className="flex justify-end pt-6">
                 <button 
-                  type="button" 
-                  className="px-6 py-3 rounded-lg border-2 font-semibold transition-all hover:shadow-md"
-                  style={{borderColor: '#1e3a8a', color: '#1e3a8a'}}
-                >
-                  Back
-                </button>
-                <button 
-                  onClick={handleSubmit} 
-                  disabled={loading} 
-                  className="px-6 py-3 rounded-lg font-semibold text-white transition-all hover:shadow-lg disabled:opacity-70"
+                  onClick={handleNextStep} 
+                  className="px-6 py-3 rounded-lg font-semibold text-white transition-all hover:shadow-lg w-full"
                   style={{backgroundColor: '#1e3a8a'}}
                 >
-                  {loading ? 'Calculating...' : 'Next'}
+                  Next
                 </button>
               </div>
             </div>
           </div>
+          )}
 
           {/* Step 2 Card */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border border-gray-100">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl md:text-2xl font-bold" style={{color: '#1e3a8a'}}>
+          {currentStep === 2 && (
+          <div className="w-full">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold" style={{color: '#1e3a8a'}}>
                 Additional Details
               </h2>
-              <span className="px-4 py-1.5 rounded-full text-sm font-semibold" style={{backgroundColor: '#dbeafe', color: '#1e40af'}}>
-                Step 2/3
-              </span>
             </div>
 
             <div className="space-y-5">
@@ -265,54 +469,48 @@ function PropertyValuation() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-2" style={{color: '#1e3a8a'}}>
-                    Tower / Block
-                  </label>
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{color: '#1e3a8a'}}>
+                  Tower or Block / Unit No
+                </label>
+                <div className="flex items-center w-full border-2 rounded-lg px-4 py-2.5" style={{borderColor: '#e5e7eb'}}>
                   <input 
+                    type="text" 
                     value={form.tower} 
                     onChange={e=>setField('tower', e.target.value)} 
-                    className="w-full border-2 rounded-lg px-4 py-2.5 focus:outline-none focus:border-blue-500 transition-colors"
-                    style={{borderColor: '#e5e7eb'}}
+                    className="w-1/2 focus:outline-none"
+                    placeholder="1"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2" style={{color: '#1e3a8a'}}>
-                    Total Towers
-                  </label>
+                  <span className="mx-2 text-gray-500">/</span>
                   <input 
+                    type="text" 
                     value={form.totalTowers} 
                     onChange={e=>setField('totalTowers', e.target.value)} 
-                    className="w-full border-2 rounded-lg px-4 py-2.5 focus:outline-none focus:border-blue-500 transition-colors"
-                    style={{borderColor: '#e5e7eb'}}
+                    className="w-1/2 focus:outline-none"
+                    placeholder="12"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-2" style={{color: '#1e3a8a'}}>
-                    Floor Number
-                  </label>
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{color: '#1e3a8a'}}>
+                  Floor Number / Total Floors in the Building
+                </label>
+                <div className="flex items-center w-full border-2 rounded-lg px-4 py-2.5" style={{borderColor: '#e5e7eb'}}>
                   <input 
                     type="number" 
                     value={form.floor} 
                     onChange={e=>setField('floor', Number(e.target.value))} 
-                    className="w-full border-2 rounded-lg px-4 py-2.5 focus:outline-none focus:border-blue-500 transition-colors"
-                    style={{borderColor: '#e5e7eb'}}
+                    className="w-1/2 focus:outline-none"
+                    placeholder="1"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2" style={{color: '#1e3a8a'}}>
-                    Total Floors
-                  </label>
+                  <span className="mx-2 text-gray-500">/</span>
                   <input 
                     type="number" 
                     value={form.totalFloors} 
                     onChange={e=>setField('totalFloors', Number(e.target.value))} 
-                    className="w-full border-2 rounded-lg px-4 py-2.5 focus:outline-none focus:border-blue-500 transition-colors"
-                    style={{borderColor: '#e5e7eb'}}
+                    className="w-1/2 focus:outline-none"
+                    placeholder="12"
                   />
                 </div>
               </div>
@@ -346,10 +544,10 @@ function PropertyValuation() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+              <div className="flex justify-between gap-4 pt-6">
                 <button 
-                  type="button" 
-                  className="px-6 py-3 rounded-lg border-2 font-semibold transition-all hover:shadow-md"
+                  onClick={handlePrevStep}
+                  className="px-6 py-3 rounded-lg border-2 font-semibold transition-all hover:shadow-md w-1/3"
                   style={{borderColor: '#1e3a8a', color: '#1e3a8a'}}
                 >
                   Back
@@ -357,18 +555,19 @@ function PropertyValuation() {
                 <button 
                   onClick={handleSubmit} 
                   disabled={loading} 
-                  className="px-6 py-3 rounded-lg font-semibold text-white transition-all hover:shadow-lg disabled:opacity-70"
+                  className="px-6 py-3 rounded-lg font-semibold text-white transition-all hover:shadow-lg disabled:opacity-70 w-2/3"
                   style={{backgroundColor: '#1e3a8a'}}
                 >
-                  {loading ? 'Calculating...' : 'Get Valuation'}
+                  {loading ? 'Calculating...' : 'Submit'}
                 </button>
               </div>
             </div>
           </div>
+          )}
 
           {/* Results Card */}
-          {result && (
-            <div className="lg:col-span-2 bg-white rounded-2xl shadow-xl p-6 md:p-8 border-2" style={{borderColor: '#1e3a8a'}}>
+          {currentStep === 3 && result && (
+            <div className="lg:col-span-2 bg-white rounded-2xl shadow-xl p-6 md:p-8 border-2 w-full" style={{borderColor: '#1e3a8a'}}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-2xl font-bold" style={{color: '#1e3a8a'}}>
                   Estimated Property Value
@@ -380,7 +579,7 @@ function PropertyValuation() {
               <div className="text-4xl md:text-5xl font-bold mb-3" style={{color: '#1e3a8a'}}>
                 ₹ {result.estimatedPrice?.toLocaleString('en-IN')}
               </div>
-              <div className="flex flex-wrap gap-6 text-gray-600">
+              <div className="flex flex-wrap gap-6 text-gray-600 mb-6">
                 <div>
                   <span className="text-sm font-medium">Rate per sq.ft:</span>
                   <span className="ml-2 font-semibold" style={{color: '#1e3a8a'}}>
@@ -393,6 +592,16 @@ function PropertyValuation() {
                     {result.breakdown?.areaSqft} sq.ft
                   </span>
                 </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                <button 
+                  onClick={() => setCurrentStep(1)}
+                  className="px-6 py-3 rounded-lg border-2 font-semibold transition-all hover:shadow-md"
+                  style={{borderColor: '#1e3a8a', color: '#1e3a8a'}}
+                >
+                  Start New Valuation
+                </button>
               </div>
             </div>
           )}
