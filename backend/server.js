@@ -10,6 +10,7 @@ import emiResultRouter from "./routes/emiResultRoutes.js";
 import rentAgreementRouter from "./routes/rentAgreementRoutes.js";
 import interiorDesignRouter from "./routes/interiorDesignRoutes.js";
 import valuationRouter from "./routes/valuationRoutes.js";
+import escrowRouter from "./routes/escrowRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 4000
@@ -40,5 +41,6 @@ app.use('/api/emi', emiResultRouter);
 app.use('/api/rent-agreement', rentAgreementRouter);
 app.use('/api/interior', interiorDesignRouter);
 app.use('/api/valuation', valuationRouter);
+app.use('/api/escrow', escrowRouter);
 
 app.listen(port, () => console.log(`server started on PORT ${port}`))

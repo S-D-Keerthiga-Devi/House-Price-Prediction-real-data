@@ -26,7 +26,7 @@ import TrendingLocalities from './pages/TrendingLocalities'
 import DataInsights from './pages/DataInsights'
 import DealerConnect from './pages/DealerConnect'
 import ExtraSpaceComfort from './pages/ExtraSpaceComfort'
-import HomeInterior from './pages/HomeInterior'
+import HomeInterior from './pages/owners/HomeInterior'
 import SpecialAuctionDeals from './pages/SpecialAuctionDeals'
 import PriceIncomeIndex from './pages/smart_insights/PriceIncomeIndex'
 import KnowYourProperty from './pages/KnowYourProperty'
@@ -34,7 +34,7 @@ import Listings from './pages/Listings'
 import TrendingDealers from './pages/TrendingDealers'
 import Heatmaps from './pages/smart_insights/Heatmaps'
 import HotSellingProjects from './pages/HotSellingProjects'
-import PropertyLegalServices from './pages/PropertyLegalServices'
+import PropertyLegalServices from './pages/owners/PropertyLegalServices'
 import PropertyManagement from './pages/PropertyManagement'
 import PropertyValidation from './pages/PropertyValidation'
 import RegistrationDocs from './pages/RegistrationDocs'
@@ -61,7 +61,7 @@ const router = createBrowserRouter(
       <Route path="rent-agreement" element={<RentAgreement />} />
       <Route path="rent-agreement/:id" element={<RentAgreement />} />
       <Route path="auctioned-property" element={<AuctionedProperty />} />
-      <Route path="escow-services" element={<EscrowServices />} />
+      <Route path="escrow-services" element={<EscrowServices />} />
       <Route path="advertise-with-us" element={<AdvertiseWithUs />} />
       <Route path="emerging-localities" element={<EmergingLocalities />} />
       <Route path="emerging-localities-page" element={<EmergingLocalitiesPage />} />

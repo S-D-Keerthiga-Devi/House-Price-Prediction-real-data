@@ -31,7 +31,7 @@ const smartServicesTabs = {
     { name: "EMI Calculator", icon: <Calculator className="w-10 h-10 text-yellow-500" />, link: "/emi-calculator" },
     { name: "Rent Agreement", icon: <FileText className="w-10 h-10 text-green-600" />, link: "/rent-agreement" },
     { name: "Auctioned Property", icon: <Gavel className="w-10 h-10 text-orange-600" />, link: "/auctioned-property" },
-    { name: "Escrow Services", icon: <Scale className="w-10 h-10 text-purple-600" />, link: "/escow-services" },
+    { name: "Escrow Services", icon: <Scale className="w-10 h-10 text-purple-600" />, link: "/escrow-services" },
     { name: "Comparator", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/comparator", isComparator: true },
     { name: "AI Interior Design", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/interior"},
   ],

@@ -32,6 +32,13 @@ export default function Banner({ onScrollToForm }) {
       return;
     }
 
+    if (service.isPriceTrends) {
+      // Dispatch custom event to trigger message box in header for Comparators
+      const event = new CustomEvent('showPriceTrendsMessage');
+      window.dispatchEvent(event);
+      return;
+    }
+
     // Handle navigation for all services that have a link
     if (service.link) {
       navigate(service.link);
@@ -241,7 +248,7 @@ export default function Banner({ onScrollToForm }) {
             <div className="lg:col-span-1 space-y-6">
               <h2 className="text-2xl font-bold text-gray-900">Services</h2>
               <div className="space-y-3">
-                <button className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
+                <button onClick={() => navigate('/property-valuation')} className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                     <Building2 className="w-5 h-5 text-blue-800" />
                   </div>
@@ -257,7 +264,7 @@ export default function Banner({ onScrollToForm }) {
                   </div>
                   <span className="font-medium text-gray-800">Property Comparator</span>
                 </button>
-                <button className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
+                <button onClick={() => handleServiceClick({ isPriceTrends: true })} className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                     <Lightbulb className="w-5 h-5 text-blue-800" />
                   </div>
