@@ -1,0 +1,543 @@
+import React, { useState } from 'react'
+
+function Reit() {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    mobileNumber: '',
+    email: '',
+    reitType: '',
+    investmentAmount: '',
+    investmentExperience: '',
+    investmentGoal: '',
+    riskProfile: '',
+    investmentHorizon: '',
+    city: '',
+    additionalInfo: ''
+  })
+  
+  const [errors, setErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState(null)
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setFormData({
+      ...formData,
+      [name]: value
+    })
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: ''
+      })
+    }
+  }
+
+  const validateForm = () => {
+    const newErrors = {}
+    
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required'
+    }
+    
+    if (!formData.mobileNumber.trim()) {
+      newErrors.mobileNumber = 'Mobile number is required'
+    } else if (!/^\d{10}$/.test(formData.mobileNumber.trim())) {
+      newErrors.mobileNumber = 'Please enter a valid 10-digit mobile number'
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required'
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address'
+    }
+
+    if (!formData.reitType) {
+      newErrors.reitType = 'Please select a REIT investment type'
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    
+    if (!validateForm()) {
+      return
+    }
+    
+    setIsSubmitting(true)
+    
+    try {
+      // Replace with your actual API endpoint
+      // const response = await axios.post('/api/reit-investment', formData)
+      
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      setSubmitStatus({
+        type: 'success',
+        message: 'Thank you for your interest in REIT/SM REIT investments! Our investment advisory team will review your profile and contact you within 24 hours to discuss available REIT opportunities and help you get started. For immediate assistance, please call us at +91 98765 43210.'
+      })
+      
+      setFormData({
+        firstName: '',
+        lastName: '',
+        mobileNumber: '',
+        email: '',
+        reitType: '',
+        investmentAmount: '',
+        investmentExperience: '',
+        investmentGoal: '',
+        riskProfile: '',
+        investmentHorizon: '',
+        city: '',
+        additionalInfo: ''
+      })
+      
+      setTimeout(() => {
+        setSubmitStatus(null)
+      }, 10000)
+      
+    } catch (error) {
+      setSubmitStatus({
+        type: 'error',
+        message: 'Something went wrong. Please try again or contact us directly at +91 98765 43210.'
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-white px-4 sm:px-6 lg:px-8 py-12 mt-20">
+      <div className="max-w-5xl mx-auto">
+        {/* Header Section */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-900 rounded-full mb-6 shadow-lg">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <h1 className="text-5xl font-bold text-blue-900 mb-4 tracking-tight">
+            REIT / SM REIT Investment
+          </h1>
+          <p className="text-xl text-gray-700 max-w-2xl mx-auto">
+            Invest in Real Estate Investment Trusts - Earn Rental Income Without Property Ownership
+          </p>
+          <div className="mt-4 h-1 w-24 bg-blue-900 mx-auto rounded-full"></div>
+        </div>
+        
+        {/* Form Card */}
+        <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-900 overflow-hidden">
+          {/* Card Header */}
+          <div className="bg-blue-900 px-8 py-6">
+            <h2 className="text-2xl font-semibold text-white text-center">
+              Start Your REIT Investment Journey
+            </h2>
+            <p className="text-blue-100 text-center mt-2">
+              Share your investment preferences and our SEBI-registered advisors will guide you through REIT opportunities
+            </p>
+          </div>
+          
+          {/* Form Content */}
+          <div className="p-8 sm:p-10 bg-white">
+            {submitStatus && (
+              <div className={`mb-8 p-5 rounded-xl border-2 ${
+                submitStatus.type === 'success' 
+                  ? 'bg-green-50 border-green-600' 
+                  : 'bg-red-50 border-red-600'
+              }`}>
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    {submitStatus.type === 'success' ? (
+                      <svg className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    ) : (
+                      <svg className="h-7 w-7 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="ml-4">
+                    <p className={`text-sm font-medium leading-relaxed ${
+                      submitStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
+                    }`}>
+                      {submitStatus.message}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-7">
+              {/* Name Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-semibold text-blue-900 mb-2">
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
+                      errors.firstName ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
+                    }`}
+                    placeholder="Enter your first name"
+                  />
+                  {errors.firstName && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {errors.firstName}
+                    </p>
+                  )}
+                </div>
+                
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-semibold text-blue-900 mb-2">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border-2 border-blue-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent hover:border-blue-700 transition-all"
+                    placeholder="Enter your last name"
+                  />
+                </div>
+              </div>
+              
+              {/* Contact Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="mobileNumber" className="block text-sm font-semibold text-blue-900 mb-2">
+                    Mobile Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    id="mobileNumber"
+                    name="mobileNumber"
+                    value={formData.mobileNumber}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
+                      errors.mobileNumber ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
+                    }`}
+                    placeholder="10-digit mobile number"
+                  />
+                  {errors.mobileNumber && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {errors.mobileNumber}
+                    </p>
+                  )}
+                </div>
+                
+                <div>
+                  <label htmlFor="email" className="block text-sm font-semibold text-blue-900 mb-2">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
+                      errors.email ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
+                    }`}
+                    placeholder="your.email@example.com"
+                  />
+                  {errors.email && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {errors.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* REIT Type */}
+              <div>
+                <label htmlFor="reitType" className="block text-sm font-semibold text-blue-900 mb-2">
+                  REIT Investment Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="reitType"
+                  name="reitType"
+                  value={formData.reitType}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
+                    errors.reitType ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
+                  }`}
+                >
+                  <option value="">Select REIT type</option>
+                  <option value="listed-reit">Listed REIT (Stock Exchange)</option>
+                  <option value="sm-reit">SM REIT (Small & Medium REIT)</option>
+                  <option value="commercial-reit">Commercial REITs</option>
+                  <option value="retail-reit">Retail REITs</option>
+                  <option value="office-reit">Office Space REITs</option>
+                  <option value="industrial-reit">Industrial/Warehouse REITs</option>
+                  <option value="residential-reit">Residential REITs</option>
+                  <option value="hospitality-reit">Hospitality REITs</option>
+                  <option value="healthcare-reit">Healthcare REITs</option>
+                  <option value="data-center-reit">Data Center REITs</option>
+                  <option value="diversified-reit">Diversified REITs Portfolio</option>
+                  <option value="not-sure">Not Sure - Need Guidance</option>
+                </select>
+                {errors.reitType && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {errors.reitType}
+                  </p>
+                )}
+              </div>
+
+              {/* Investment Amount and Experience */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="investmentAmount" className="block text-sm font-semibold text-blue-900 mb-2">
+                    Investment Amount
+                  </label>
+                  <select
+                    id="investmentAmount"
+                    name="investmentAmount"
+                    value={formData.investmentAmount}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border-2 border-blue-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent hover:border-blue-700 transition-all"
+                  >
+                    <option value="">Select investment amount</option>
+                    <option value="under-1lakh">Under ₹1 Lakh</option>
+                    <option value="1-5lakh">₹1 - 5 Lakhs</option>
+                    <option value="5-10lakh">₹5 - 10 Lakhs</option>
+                    <option value="10-25lakh">₹10 - 25 Lakhs</option>
+                    <option value="25-50lakh">₹25 - 50 Lakhs</option>
+                    <option value="50lakh-1cr">₹50 Lakhs - 1 Crore</option>
+                    <option value="above-1cr">Above ₹1 Crore</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="investmentExperience" className="block text-sm font-semibold text-blue-900 mb-2">
+                    Investment Experience
+                  </label>
+                  <select
+                    id="investmentExperience"
+                    name="investmentExperience"
+                    value={formData.investmentExperience}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border-2 border-blue-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent hover:border-blue-700 transition-all"
+                  >
+                    <option value="">Select your experience</option>
+                    <option value="beginner">Beginner (New to REITs)</option>
+                    <option value="intermediate">Intermediate (Some REIT experience)</option>
+                    <option value="experienced">Experienced (Active REIT investor)</option>
+                    <option value="expert">Expert (Portfolio includes multiple REITs)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Investment Goal and Risk Profile */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="investmentGoal" className="block text-sm font-semibold text-blue-900 mb-2">
+                    Primary Investment Goal
+                  </label>
+                  <select
+                    id="investmentGoal"
+                    name="investmentGoal"
+                    value={formData.investmentGoal}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border-2 border-blue-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent hover:border-blue-700 transition-all"
+                  >
+                    <option value="">Select your goal</option>
+                    <option value="regular-income">Regular Dividend Income</option>
+                    <option value="capital-appreciation">Capital Appreciation</option>
+                    <option value="portfolio-diversification">Portfolio Diversification</option>
+                    <option value="real-estate-exposure">Real Estate Market Exposure</option>
+                    <option value="tax-efficiency">Tax Efficient Investment</option>
+                    <option value="inflation-hedge">Inflation Hedge</option>
+                    <option value="balanced">Balanced (Income + Growth)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="riskProfile" className="block text-sm font-semibold text-blue-900 mb-2">
+                    Risk Profile
+                  </label>
+                  <select
+                    id="riskProfile"
+                    name="riskProfile"
+                    value={formData.riskProfile}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border-2 border-blue-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent hover:border-blue-700 transition-all"
+                  >
+                    <option value="">Select risk profile</option>
+                    <option value="conservative">Conservative (Low Risk)</option>
+                    <option value="moderate">Moderate (Medium Risk)</option>
+                    <option value="aggressive">Aggressive (High Risk)</option>
+                    <option value="very-aggressive">Very Aggressive (Very High Risk)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Investment Horizon and City */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="investmentHorizon" className="block text-sm font-semibold text-blue-900 mb-2">
+                    Investment Horizon
+                  </label>
+                  <select
+                    id="investmentHorizon"
+                    name="investmentHorizon"
+                    value={formData.investmentHorizon}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border-2 border-blue-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent hover:border-blue-700 transition-all"
+                  >
+                    <option value="">Select time horizon</option>
+                    <option value="short-term">Short-term (1-3 years)</option>
+                    <option value="medium-term">Medium-term (3-5 years)</option>
+                    <option value="long-term">Long-term (5-10 years)</option>
+                    <option value="very-long-term">Very Long-term (10+ years)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="city" className="block text-sm font-semibold text-blue-900 mb-2">
+                    City/Location
+                  </label>
+                  <input
+                    type="text"
+                    id="city"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border-2 border-blue-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent hover:border-blue-700 transition-all"
+                    placeholder="Enter your city"
+                  />
+                </div>
+              </div>
+              
+              {/* Additional Information */}
+              <div>
+                <label htmlFor="additionalInfo" className="block text-sm font-semibold text-blue-900 mb-2">
+                  Additional Information & Questions
+                </label>
+                <textarea
+                  id="additionalInfo"
+                  name="additionalInfo"
+                  value={formData.additionalInfo}
+                  onChange={handleChange}
+                  rows="5"
+                  className="w-full px-4 py-3 border-2 border-blue-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent hover:border-blue-700 transition-all resize-none"
+                  placeholder="Tell us about your investment preferences, current portfolio, specific REITs you're interested in, or any questions you have about REIT investments..."
+                ></textarea>
+              </div>
+              
+              {/* Submit Button */}
+              <div className="pt-4">
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto px-8 py-4 bg-blue-900 text-white font-semibold rounded-lg hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 transform transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg hover:shadow-xl"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Submitting...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center">
+                      Start REIT Investment
+                      <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Disclaimer */}
+              <div className="pt-4 border-t border-gray-200">
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  <strong>REIT Investment Disclaimer:</strong> REITs are subject to market risks including real estate market fluctuations, interest rate changes, and economic conditions. Past performance is not indicative of future returns. Dividend yields may vary. Please read all REIT scheme documents and offering circulars carefully before investing. Investments in REITs should align with your financial goals and risk tolerance.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Info Cards */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="flex items-center mb-2">
+              <svg className="w-5 h-5 mr-2 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 className="font-semibold text-blue-900">Regular Income</h3>
+            </div>
+            <p className="text-sm text-gray-700">Earn quarterly dividends from rental income</p>
+          </div>
+          
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="flex items-center mb-2">
+              <svg className="w-5 h-5 mr-2 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <h3 className="font-semibold text-blue-900">SEBI Regulated</h3>
+            </div>
+            <p className="text-sm text-gray-700">Transparent and regulated investment structure</p>
+          </div>
+          
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="flex items-center mb-2">
+              <svg className="w-5 h-5 mr-2 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              <h3 className="font-semibold text-blue-900">Liquidity</h3>
+            </div>
+            <p className="text-sm text-gray-700">Trade units on stock exchange like shares</p>
+          </div>
+        </div>
+
+        {/* Footer Info */}
+        <div className="mt-8 text-center space-y-2">
+          <p className="text-sm text-gray-700">
+            Need immediate assistance? Call us at{' '}
+            <a href="tel:+919876543210" className="text-blue-900 font-semibold hover:text-blue-700 transition-colors">
+              +91 98765 43210
+            </a>
+          </p>
+          <p className="text-xs text-gray-600">
+            Our REIT investment advisors are available Monday to Friday, 9:00 AM - 6:00 PM
+          </p>
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500">
+              Investment in securities market are subject to market risks. Read all related documents carefully before investing.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Reit

@@ -16,15 +16,15 @@ import PropertyValuation from './pages/buyers/PropertyValuation'
 import RentAgreement from './pages/buyers/RentAgreement'
 import AuctionedProperty from './pages/AuctionedProperty'
 import EscrowServices from './pages/buyers/EscrowServices'
-import AdvertiseWithUs from './pages/AdvertiseWithUs'
+import AdvertiseWithUs from './pages/developers/AdvertiseWithUs'
 import EmergingLocalities from './pages/smart_insights/EmergingLocalities'
 import AffordableProjects from './pages/AffordableProjects'
-import ChannelPartners from './pages/ChannelPartners'
+import ChannelPartners from './pages/dealers/ChannelPartners'
 import Comparator from './pages/buyers/Comparator'
-import ContactDevelopers from './pages/ContactDevelopers'
+import ContactDevelopers from './pages/dealers/ContactDevelopers'
 import TrendingLocalities from './pages/TrendingLocalities'
 import DataInsights from './pages/DataInsights'
-import DealerConnect from './pages/DealerConnect'
+import DealerConnect from './pages/dealers/DealerConnect'
 import ExtraSpaceComfort from './pages/ExtraSpaceComfort'
 import HomeInterior from './pages/owners/HomeInterior'
 import SpecialAuctionDeals from './pages/SpecialAuctionDeals'
@@ -35,12 +35,12 @@ import TrendingDealers from './pages/TrendingDealers'
 import Heatmaps from './pages/smart_insights/Heatmaps'
 import HotSellingProjects from './pages/HotSellingProjects'
 import PropertyLegalServices from './pages/owners/PropertyLegalServices'
-import PropertyManagement from './pages/PropertyManagement'
+import PropertyManagement from './pages/FacilityManagement'
 import PropertyValidation from './pages/PropertyValidation'
-import RegistrationDocs from './pages/RegistrationDocs'
+import RegistrationDocs from './pages/dealers/RegistrationDocs'
 import TrendingProjects from './pages/TrendingProjects'
 import TrendingDevelopers from './pages/TrendingDevelopers'
-import VentureInvestment from './pages/VentureInvestment'
+import VentureInvestment from './pages/developers/VentureInvestment'
 import MarketTrends from './pages/MarketTrends'
 import PostProperty from './pages/PostProperty'
 import EMICalculator from './pages/buyers/EMICalculator'
@@ -48,6 +48,9 @@ import InteriorDesign from './pages/buyers/InteriorDesign'
 import EmergingLocalitiesPage from './pages/smart_insights/EmergingLocalitiesPage'
 import PriceIncomeIndexPage from './pages/smart_insights/PriceIncomeIndexPage'
 import HeatmapsPage from './pages/smart_insights/HeatmapsPage'
+import FractionalInvestment from './pages/investments/FractionalInvestment'
+import Reit from './pages/investments/Reit'
+import VentureInvestments from './pages/investments/VentureInvestments'
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -65,6 +68,7 @@ const router = createBrowserRouter(
       <Route path="advertise-with-us" element={<AdvertiseWithUs />} />
       <Route path="emerging-localities" element={<EmergingLocalities />} />
       <Route path="emerging-localities-page" element={<EmergingLocalitiesPage />} />
+      <Route path="fractional-investment" element={<FractionalInvestment />} />
       <Route path="affordable-projects" element={<AffordableProjects />} />
       <Route path="channel-partners" element={<ChannelPartners />} />
       <Route path="comparator" element={<Comparator />} />
@@ -91,9 +95,11 @@ const router = createBrowserRouter(
       <Route path="post-property" element={<PostProperty />} />
       <Route path="property-validation" element={<PropertyValidation />} />
       <Route path="registration-docs" element={<RegistrationDocs />} />
+      <Route path="reit" element={<Reit />} />
       <Route path="trending-projects" element={<TrendingProjects />} />
       <Route path="trending-developers" element={<TrendingDevelopers />} />
       <Route path="venture-invest" element={<VentureInvestment />} />
+      <Route path="venture-investments" element={<VentureInvestments />} />
     </Route>
   )
 )

@@ -282,7 +282,7 @@ export default function Banner({ onScrollToForm }) {
             <div className="lg:col-span-1 space-y-6">
               <h2 className="text-2xl font-bold text-gray-900">Investments</h2>
               <div className="space-y-3">
-                <button className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
+                <button onClick={()=> navigate('fractional-investment')} className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                     <PieChart className="w-5 h-5 text-blue-800" />
                   </div>
@@ -290,7 +290,7 @@ export default function Banner({ onScrollToForm }) {
                     Fractional Investment
                   </span>
                 </button>
-                <button className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
+                <button onClick={()=> navigate('reit')} className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                     <Building2 className="w-5 h-5 text-blue-800" />
                   </div>
@@ -298,7 +298,7 @@ export default function Banner({ onScrollToForm }) {
                     REIT / SM REIT
                   </span>
                 </button>
-                <button className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
+                <button onClick={()=> navigate('venture-investments')} className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
                   <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                     <Briefcase className="w-5 h-5 text-blue-800" />
                   </div>

@@ -1,20 +1,21 @@
 import React, { useState } from 'react'
 
-function PostProperty() {
+function AdvertiseWithUs() {
   const [formData, setFormData] = useState({
-    userType: '',
-    name: '',
+    companyName: '',
+    contactPerson: '',
+    designation: '',
     countryCode: '+91',
     mobile: '',
-    whatsappNumber: '',
     email: '',
-    transactionType: '',
-    propertyType: '',
-    city: '',
-    locality: '',
-    exclusivePosting: false,
-    agreeTerms: false,
-    whatsappResponses: false
+    website: '',
+    advertisementType: '',
+    budget: '',
+    duration: '',
+    targetAudience: '',
+    preferredPlacement: [],
+    message: '',
+    agreeTerms: false
   })
   
   const [errors, setErrors] = useState({})
@@ -43,39 +44,69 @@ function PostProperty() {
     { code: '+977', country: 'NPL' }
   ]
 
-  const propertyTypes = {
-    residential: [
-      'Flat/ Apartment',
-      'Residential House',
-      'Villa',
-      'Builder Floor Apartment',
-      'Residential Land/ Plot',
-      'Penthouse',
-      'Studio Apartment'
-    ],
-    commercial: [
-      'Commercial Office Space',
-      'Office in IT Park/ SEZ',
-      'Commercial Shop',
-      'Commercial Showroom',
-      'Commercial Land',
-      'Warehouse/ Godown',
-      'Industrial Land',
-      'Industrial Building',
-      'Industrial Shed'
-    ],
-    agricultural: [
-      'Agricultural Land',
-      'Farm House'
-    ]
-  }
+  const advertisementTypes = [
+    'Banner Ads',
+    'Featured Listings',
+    'Sponsored Content',
+    'Email Marketing',
+    'Social Media Campaign',
+    'Video Advertising',
+    'Mobile App Ads',
+    'Newsletter Sponsorship'
+  ]
+
+  const budgetRanges = [
+    'Under ₹50,000',
+    '₹50,000 - ₹1,00,000',
+    '₹1,00,000 - ₹2,50,000',
+    '₹2,50,000 - ₹5,00,000',
+    '₹5,00,000 - ₹10,00,000',
+    'Above ₹10,00,000'
+  ]
+
+  const durationOptions = [
+    '1 Week',
+    '2 Weeks',
+    '1 Month',
+    '3 Months',
+    '6 Months',
+    '1 Year',
+    'Custom Duration'
+  ]
+
+  const placementOptions = [
+    'Homepage',
+    'Search Results',
+    'Property Listings',
+    'Mobile App',
+    'Newsletter',
+    'Social Media'
+  ]
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    })
+    
+    if (name === 'preferredPlacement') {
+      const currentPlacements = [...formData.preferredPlacement]
+      if (checked) {
+        currentPlacements.push(value)
+      } else {
+        const index = currentPlacements.indexOf(value)
+        if (index > -1) {
+          currentPlacements.splice(index, 1)
+        }
+      }
+      setFormData({
+        ...formData,
+        preferredPlacement: currentPlacements
+      })
+    } else {
+      setFormData({
+        ...formData,
+        [name]: type === 'checkbox' ? checked : value
+      })
+    }
+    
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -87,12 +118,12 @@ function PostProperty() {
   const validateForm = () => {
     const newErrors = {}
     
-    if (!formData.userType) {
-      newErrors.userType = 'Please select who you are'
+    if (!formData.companyName.trim()) {
+      newErrors.companyName = 'Company name is required'
     }
     
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
+    if (!formData.contactPerson.trim()) {
+      newErrors.contactPerson = 'Contact person name is required'
     }
     
     if (!formData.mobile.trim()) {
@@ -107,20 +138,16 @@ function PostProperty() {
       newErrors.email = 'Please enter a valid email address'
     }
     
-    if (!formData.transactionType) {
-      newErrors.transactionType = 'Please select transaction type'
+    if (!formData.advertisementType) {
+      newErrors.advertisementType = 'Please select an advertisement type'
     }
     
-    if (!formData.propertyType) {
-      newErrors.propertyType = 'Please select a property type'
+    if (!formData.budget) {
+      newErrors.budget = 'Please select a budget range'
     }
     
-    if (!formData.city.trim()) {
-      newErrors.city = 'City is required'
-    }
-    
-    if (!formData.locality.trim()) {
-      newErrors.locality = 'Locality is required'
+    if (!formData.duration) {
+      newErrors.duration = 'Please select campaign duration'
     }
     
     if (!formData.agreeTerms) {
@@ -145,23 +172,24 @@ function PostProperty() {
       
       setSubmitStatus({
         type: 'success',
-        message: 'Congratulations! Your property has been posted successfully. Your listing will be reviewed by our team within 24 hours. Once approved, it will be visible to potential buyers/tenants. You will receive enquiries on your registered mobile number and email.'
+        message: 'Thank you for your interest! Your advertising request has been submitted successfully. Our advertising team will review your requirements and contact you within 24-48 hours with a customized proposal and pricing details.'
       })
       
       setFormData({
-        userType: '',
-        name: '',
+        companyName: '',
+        contactPerson: '',
+        designation: '',
         countryCode: '+91',
         mobile: '',
-        whatsappNumber: '',
         email: '',
-        transactionType: '',
-        propertyType: '',
-        city: '',
-        locality: '',
-        exclusivePosting: false,
-        agreeTerms: false,
-        whatsappResponses: false
+        website: '',
+        advertisementType: '',
+        budget: '',
+        duration: '',
+        targetAudience: '',
+        preferredPlacement: [],
+        message: '',
+        agreeTerms: false
       })
       
       setTimeout(() => {
@@ -171,7 +199,7 @@ function PostProperty() {
     } catch (error) {
       setSubmitStatus({
         type: 'error',
-        message: 'Something went wrong. Please try again or contact us directly at +91 98765 43210.'
+        message: 'Something went wrong. Please try again or contact us directly at advertising@housepredict.com or call +91 98765 43210.'
       })
     } finally {
       setIsSubmitting(false)
@@ -185,14 +213,14 @@ function PostProperty() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-900 rounded-full mb-4 shadow-lg">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
             </svg>
           </div>
           <h1 className="text-5xl font-bold text-blue-900 mb-2 tracking-tight">
-            Sell or Rent your Property
+            Advertise With Us
           </h1>
           <p className="text-base text-gray-700 max-w-2xl mx-auto">
-            You are posting this property for <span className="bg-yellow-400 text-gray-900 px-2 py-0.5 rounded font-bold">FREE!</span>
+            Reach millions of property seekers and <span className="bg-yellow-400 text-gray-900 px-2 py-0.5 rounded font-bold">Grow Your Business</span>
           </p>
           <div className="mt-2 h-1 w-16 bg-blue-900 mx-auto rounded-full"></div>
         </div>
@@ -202,10 +230,10 @@ function PostProperty() {
           {/* Card Header */}
           <div className="bg-blue-900 px-6 py-4">
             <h2 className="text-xl font-semibold text-white text-center">
-              List Your Property Today
+              Partner With HousePredict
             </h2>
             <p className="text-blue-100 text-center mt-1 text-sm">
-              Get genuine buyer/tenant enquiries instantly
+              Connect with your target audience through our platform
             </p>
           </div>
           
@@ -241,73 +269,78 @@ function PostProperty() {
             )}
             
             <div className="space-y-6">
-              {/* Personal Details Section */}
+              {/* Company Information Section */}
               <div>
                 <h3 className="text-lg font-bold text-blue-900 mb-3 pb-1 border-b-2 border-blue-200">
-                  Personal Details
+                  Company Information
                 </h3>
                 
-                {/* I am */}
+                {/* Company Name */}
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-blue-900 mb-2">
-                    I am <span className="text-red-500">*</span>
+                  <label htmlFor="companyName" className="block text-sm font-semibold text-blue-900 mb-1">
+                    Company Name <span className="text-red-500">*</span>
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {['Owner', 'Agent', 'Builder'].map((type) => (
-                      <label
-                        key={type}
-                        className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                          formData.userType === type
-                            ? 'border-blue-900 bg-blue-50'
-                            : 'border-gray-300 hover:border-blue-700'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="userType"
-                          value={type}
-                          checked={formData.userType === type}
-                          onChange={handleChange}
-                          className="w-4 h-4 text-blue-900 mr-2"
-                        />
-                        <span className="text-sm font-medium text-gray-700">{type}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors.userType && (
+                  <input
+                    type="text"
+                    id="companyName"
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
+                      errors.companyName ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
+                    }`}
+                    placeholder="Enter Company Name"
+                  />
+                  {errors.companyName && (
                     <p className="mt-1 text-xs text-red-600 flex items-center">
                       <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                       </svg>
-                      {errors.userType}
+                      {errors.companyName}
                     </p>
                   )}
                 </div>
 
-                {/* Name */}
+                {/* Contact Person */}
                 <div className="mb-4">
-                  <label htmlFor="name" className="block text-sm font-semibold text-blue-900 mb-1">
-                    Name <span className="text-red-500">*</span>
+                  <label htmlFor="contactPerson" className="block text-sm font-semibold text-blue-900 mb-1">
+                    Contact Person <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
+                    id="contactPerson"
+                    name="contactPerson"
+                    value={formData.contactPerson}
                     onChange={handleChange}
                     className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
-                      errors.name ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
+                      errors.contactPerson ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
                     }`}
-                    placeholder="Enter Your Name"
+                    placeholder="Enter Contact Person Name"
                   />
-                  {errors.name && (
+                  {errors.contactPerson && (
                     <p className="mt-1 text-xs text-red-600 flex items-center">
                       <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                       </svg>
-                      {errors.name}
+                      {errors.contactPerson}
                     </p>
                   )}
+                </div>
+
+                {/* Designation */}
+                <div className="mb-4">
+                  <label htmlFor="designation" className="block text-sm font-semibold text-blue-900 mb-1">
+                    Designation
+                  </label>
+                  <input
+                    type="text"
+                    id="designation"
+                    name="designation"
+                    value={formData.designation}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border-2 border-blue-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent hover:border-blue-700 transition-all"
+                    placeholder="e.g., Marketing Manager"
+                  />
                 </div>
 
                 {/* Mobile Number */}
@@ -350,25 +383,6 @@ function PostProperty() {
                   )}
                 </div>
 
-                {/* WhatsApp Number */}
-                <div className="mb-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3">
-                  <label htmlFor="whatsappNumber" className="flex items-center text-sm font-semibold text-gray-700 mb-1">
-                    <svg className="w-4 h-4 text-green-600 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                    </svg>
-                    Enter your WhatsApp No. to get enquiries from Buyer/Tenant
-                  </label>
-                  <input
-                    type="tel"
-                    id="whatsappNumber"
-                    name="whatsappNumber"
-                    value={formData.whatsappNumber}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border-2 border-yellow-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent hover:border-yellow-500 transition-all bg-white text-sm"
-                    placeholder="WhatsApp number"
-                  />
-                </div>
-
                 {/* Email */}
                 <div className="mb-4">
                   <label htmlFor="email" className="block text-sm font-semibold text-blue-900 mb-1">
@@ -394,167 +408,177 @@ function PostProperty() {
                     </p>
                   )}
                 </div>
+
+                {/* Website */}
+                <div className="mb-4">
+                  <label htmlFor="website" className="block text-sm font-semibold text-blue-900 mb-1">
+                    Website
+                  </label>
+                  <input
+                    type="url"
+                    id="website"
+                    name="website"
+                    value={formData.website}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border-2 border-blue-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent hover:border-blue-700 transition-all"
+                    placeholder="https://www.example.com"
+                  />
+                </div>
               </div>
 
-              {/* Property Details Section */}
+              {/* Advertisement Details Section */}
               <div>
                 <h3 className="text-lg font-bold text-blue-900 mb-3 pb-1 border-b-2 border-blue-200">
-                  Property Details
+                  Advertisement Details
                 </h3>
 
-                {/* For (Transaction Type) */}
+                {/* Advertisement Type */}
+                <div className="mb-4">
+                  <label htmlFor="advertisementType" className="block text-sm font-semibold text-blue-900 mb-1">
+                    Advertisement Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="advertisementType"
+                    name="advertisementType"
+                    value={formData.advertisementType}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
+                      errors.advertisementType ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
+                    }`}
+                  >
+                    <option value="">Select Advertisement Type</option>
+                    {advertisementTypes.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                  {errors.advertisementType && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {errors.advertisementType}
+                    </p>
+                  )}
+                </div>
+
+                {/* Budget Range */}
+                <div className="mb-4">
+                  <label htmlFor="budget" className="block text-sm font-semibold text-blue-900 mb-1">
+                    Budget Range <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="budget"
+                    name="budget"
+                    value={formData.budget}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
+                      errors.budget ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
+                    }`}
+                  >
+                    <option value="">Select Budget Range</option>
+                    {budgetRanges.map((range) => (
+                      <option key={range} value={range}>{range}</option>
+                    ))}
+                  </select>
+                  {errors.budget && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {errors.budget}
+                    </p>
+                  )}
+                </div>
+
+                {/* Campaign Duration */}
+                <div className="mb-4">
+                  <label htmlFor="duration" className="block text-sm font-semibold text-blue-900 mb-1">
+                    Campaign Duration <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="duration"
+                    name="duration"
+                    value={formData.duration}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
+                      errors.duration ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
+                    }`}
+                  >
+                    <option value="">Select Duration</option>
+                    {durationOptions.map((duration) => (
+                      <option key={duration} value={duration}>{duration}</option>
+                    ))}
+                  </select>
+                  {errors.duration && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center">
+                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {errors.duration}
+                    </p>
+                  )}
+                </div>
+
+                {/* Target Audience */}
+                <div className="mb-4">
+                  <label htmlFor="targetAudience" className="block text-sm font-semibold text-blue-900 mb-1">
+                    Target Audience
+                  </label>
+                  <input
+                    type="text"
+                    id="targetAudience"
+                    name="targetAudience"
+                    value={formData.targetAudience}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border-2 border-blue-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent hover:border-blue-700 transition-all"
+                    placeholder="e.g., First-time home buyers, Investors, Renters"
+                  />
+                </div>
+
+                {/* Preferred Placement */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold text-blue-900 mb-2">
-                    For <span className="text-red-500">*</span>
+                    Preferred Placement (Select multiple)
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {['Sale', 'Rent/ Lease', 'PG/Hostel'].map((type) => (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {placementOptions.map((placement) => (
                       <label
-                        key={type}
-                        className={`flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                          formData.transactionType === type
-                            ? 'border-blue-900 bg-blue-50'
-                            : 'border-gray-300 hover:border-blue-700'
-                        }`}
+                        key={placement}
+                        className="flex items-center p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-blue-700 transition-all"
                       >
                         <input
-                          type="radio"
-                          name="transactionType"
-                          value={type}
-                          checked={formData.transactionType === type}
+                          type="checkbox"
+                          name="preferredPlacement"
+                          value={placement}
+                          checked={formData.preferredPlacement.includes(placement)}
                           onChange={handleChange}
-                          className="w-4 h-4 text-blue-900 mr-2"
+                          className="w-4 h-4 text-blue-900 border-2 border-blue-900 rounded mr-2 focus:ring-2 focus:ring-blue-900"
                         />
-                        <span className="text-sm font-medium text-gray-700">{type}</span>
+                        <span className="text-sm font-medium text-gray-700">{placement}</span>
                       </label>
                     ))}
                   </div>
-                  {errors.transactionType && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      {errors.transactionType}
-                    </p>
-                  )}
                 </div>
 
-                {/* Property Type */}
+                {/* Additional Message */}
                 <div className="mb-4">
-                  <label htmlFor="propertyType" className="block text-sm font-semibold text-blue-900 mb-1">
-                    Property Type <span className="text-red-500">*</span>
+                  <label htmlFor="message" className="block text-sm font-semibold text-blue-900 mb-1">
+                    Additional Message / Requirements
                   </label>
-                  <select
-                    id="propertyType"
-                    name="propertyType"
-                    value={formData.propertyType}
+                  <textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
-                      errors.propertyType ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
-                    }`}
-                  >
-                    <option value="">Select Property Type</option>
-                    <optgroup label="Residential">
-                      {propertyTypes.residential.map((type) => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Commercial">
-                      {propertyTypes.commercial.map((type) => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Agricultural">
-                      {propertyTypes.agricultural.map((type) => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </optgroup>
-                  </select>
-                  {errors.propertyType && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      {errors.propertyType}
-                    </p>
-                  )}
+                    rows="4"
+                    className="w-full px-3 py-2 border-2 border-blue-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent hover:border-blue-700 transition-all resize-none"
+                    placeholder="Tell us about your advertising goals and any specific requirements..."
+                  />
                 </div>
               </div>
 
-              {/* Property Location Section */}
-              <div>
-                <h3 className="text-lg font-bold text-blue-900 mb-3 pb-1 border-b-2 border-blue-200">
-                  Property Location
-                </h3>
-
-                {/* City */}
-                <div className="mb-4">
-                  <label htmlFor="city" className="block text-sm font-semibold text-blue-900 mb-1">
-                    City <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
-                      errors.city ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
-                    }`}
-                    placeholder="Enter City"
-                  />
-                  {errors.city && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      {errors.city}
-                    </p>
-                  )}
-                </div>
-
-                {/* Locality */}
-                <div className="mb-4">
-                  <label htmlFor="locality" className="block text-sm font-semibold text-blue-900 mb-1">
-                    Locality <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="locality"
-                    name="locality"
-                    value={formData.locality}
-                    onChange={handleChange}
-                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
-                      errors.locality ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
-                    }`}
-                    placeholder="Enter Locality"
-                  />
-                  {errors.locality && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      {errors.locality}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Checkboxes */}
+              {/* Terms and Conditions */}
               <div className="space-y-3 bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <label className="flex items-start cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    name="exclusivePosting"
-                    checked={formData.exclusivePosting}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-blue-900 border-2 border-blue-900 rounded mt-0.5 mr-2 focus:ring-2 focus:ring-blue-900 cursor-pointer"
-                  />
-                  <span className="text-sm text-gray-700 group-hover:text-blue-900 transition-colors">
-                    I am posting this property 'exclusively' on HousePredict
-                  </span>
-                </label>
-
                 <label className="flex items-start cursor-pointer group">
                   <input
                     type="checkbox"
@@ -564,7 +588,7 @@ function PostProperty() {
                     className="w-4 h-4 text-blue-900 border-2 border-blue-900 rounded mt-0.5 mr-2 focus:ring-2 focus:ring-blue-900 cursor-pointer"
                   />
                   <span className="text-sm text-gray-700 group-hover:text-blue-900 transition-colors">
-                    I agree to HousePredict T&C, Privacy Policy, & Cookie Policy <span className="text-red-500">*</span>
+                    I agree to HousePredict Advertising T&C, Privacy Policy, & Cookie Policy <span className="text-red-500">*</span>
                   </span>
                 </label>
                 {errors.agreeTerms && (
@@ -575,23 +599,6 @@ function PostProperty() {
                     {errors.agreeTerms}
                   </p>
                 )}
-
-                <label className="flex items-start cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    name="whatsappResponses"
-                    checked={formData.whatsappResponses}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-blue-900 border-2 border-blue-900 rounded mt-0.5 mr-2 focus:ring-2 focus:ring-blue-900 cursor-pointer"
-                  />
-                  <span className="text-sm text-gray-700 group-hover:text-blue-900 transition-colors flex items-center">
-                    I want to receive responses on 
-                    <svg className="w-3 h-3 text-green-600 mx-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                    </svg>
-                    Whatsapp
-                  </span>
-                </label>
               </div>
               
               {/* Submit Button */}
@@ -612,7 +619,7 @@ function PostProperty() {
                     </span>
                   ) : (
                     <span className="flex items-center justify-center">
-                      Login & Post Property
+                      Submit Advertising Request
                       <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                       </svg>
@@ -624,7 +631,7 @@ function PostProperty() {
               {/* Disclaimer */}
               <div className="pt-3 border-t border-gray-200">
                 <p className="text-xs text-gray-600 leading-relaxed">
-                  <strong>Note:</strong> By posting your property, you agree to our terms and conditions. We verify all listings before they go live. All property details provided should be accurate and up-to-date. You will receive enquiries via email, phone, and WhatsApp (if opted in).
+                  <strong>Note:</strong> By submitting this form, you agree to our advertising terms and conditions. Our team will review your requirements and get back to you with a customized proposal within 24-48 hours. All information provided will be kept confidential and used only for preparing your advertising package.
                 </p>
               </div>
             </div>
@@ -636,25 +643,35 @@ function PostProperty() {
           <div className="flex justify-center space-x-6 text-sm text-gray-700">
             <div className="flex items-center">
               <svg className="w-4 h-4 mr-1 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              Verified Listings
+              High Visibility
             </div>
             <div className="flex items-center">
               <svg className="w-4 h-4 mr-1 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              Wide Reach
+              Targeted Reach
+            </div>
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-1 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Cost-Effective
             </div>
           </div>
           <p className="text-sm text-gray-700">
-            Need help posting your property? Call us at{' '}
+            Have questions about advertising? Contact our team at{' '}
             <a href="tel:+919876543210" className="text-blue-900 font-semibold hover:text-blue-700 transition-colors">
               +91 98765 43210
             </a>
+            {' '}or email{' '}
+            <a href="mailto:advertising@housepredict.com" className="text-blue-900 font-semibold hover:text-blue-700 transition-colors">
+              advertising@housepredict.com
+            </a>
           </p>
           <p className="text-xs text-gray-600">
-            Our property listing team is available Monday to Saturday, 9:00 AM - 7:00 PM
+            Our advertising team is available Monday to Friday, 9:00 AM - 6:00 PM
           </p>
         </div>
       </div>
@@ -662,4 +679,4 @@ function PostProperty() {
   )
 }
 
-export default PostProperty
+export default AdvertiseWithUs

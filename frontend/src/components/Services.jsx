@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Briefcase,
@@ -51,7 +51,7 @@ const smartServicesTabs = {
   ],
   Owners: [
     { name: "Know Your Property Value", icon: <Scale className="w-10 h-10 text-blue-600" />, link: "/know-property" },
-    { name: "Property Management", icon: <Briefcase className="w-10 h-10 text-green-600" />, link: "/property-manage" },
+    { name: "Facility Management", icon: <Briefcase className="w-10 h-10 text-green-600" />, link: "/property-manage" },
     { name: "Home Interior", icon: <Lightbulb className="w-10 h-10 text-orange-600" />, link: "/home-interior" },
     { name: "Post Property", icon: <Building2 className="w-10 h-10 text-purple-600" />, link: "/post-property" },
     { name: "Property Legal Services", icon: <Gavel className="w-10 h-10 text-red-600" />, link: "/property-legal" },
@@ -172,8 +172,16 @@ const ServiceSection = ({ title, description, services, bgColor, onServiceClick 
 );
 
 const Services = () => {
-  const [activeTab, setActiveTab] = useState("Buyers");
+  const [activeTab, setActiveTab] = useState(() => {
+    // Get the saved tab from localStorage or default to "Buyers"
+    return localStorage.getItem("activeServicesTab") || "Buyers";
+  });
   const navigate = useNavigate()
+  
+  // Save the active tab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("activeServicesTab", activeTab);
+  }, [activeTab]);
 
   const handleServiceClick = (service) => {
     if (service.isPriceTrends) {
