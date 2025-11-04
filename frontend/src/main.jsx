@@ -51,6 +51,7 @@ import HeatmapsPage from './pages/smart_insights/HeatmapsPage'
 import FractionalInvestment from './pages/investments/FractionalInvestment'
 import Reit from './pages/investments/Reit'
 import VentureInvestments from './pages/investments/VentureInvestments'
+import HomeLoan from './pages/buyers/HomeLoan'
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -79,6 +80,7 @@ const router = createBrowserRouter(
       <Route path="extra-space-comfort" element={<ExtraSpaceComfort />} />
       <Route path="emi-calculator" element={<EMICalculator />} />
       <Route path="home-interior" element={<HomeInterior />} />
+      <Route path="home-loan" element={<HomeLoan />} />
       <Route path="special-auction-deals" element={<SpecialAuctionDeals />} />
       <Route path="price-income-index" element={<PriceIncomeIndex />} />
       <Route path="price-income-index-page" element={<PriceIncomeIndexPage />} />

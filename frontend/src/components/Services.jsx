@@ -20,7 +20,9 @@ import {
   X,
   MapPin,
   ArrowUp,
-  Calculator
+  Calculator,
+  Paintbrush,
+  Banknote
 } from "lucide-react"; 
 import { useNavigate } from "react-router-dom";
 
@@ -33,7 +35,8 @@ const smartServicesTabs = {
     { name: "Auctioned Property", icon: <Gavel className="w-10 h-10 text-orange-600" />, link: "/auctioned-property" },
     { name: "Escrow Services", icon: <Scale className="w-10 h-10 text-purple-600" />, link: "/escrow-services" },
     { name: "Comparator", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/comparator", isComparator: true },
-    { name: "AI Interior Design", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/interior"},
+    { name: "AI Interior Design", icon: <Paintbrush className="w-10 h-10 text-blue-600" />, link: "/interior"},
+    { name: "Home Loan", icon: <Banknote className="w-10 h-10 text-amber-600" />, link: "/home-loan"},
   ],
   Developers: [
     { name: "Advertize With Us", icon: <Building2 className="w-10 h-10 text-orange-600" />, link: "/advertise-with-us" },
