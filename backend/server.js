@@ -14,7 +14,7 @@ import escrowRouter from "./routes/escrowRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 4000
-const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', 'https://keerthiga-house-price-prediction.vercel.app']
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'https://keerthiga-house-price-prediction.vercel.app']
 connectDB()
 
 app.use(express.json({ limit: '25mb' }));

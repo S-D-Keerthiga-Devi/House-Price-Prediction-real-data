@@ -1,5 +1,5 @@
 import express from "express";
-import { getCities, getLocalitiesByCity, getRatesByLocality, getRatesByCity, getCoordinatesByCity, getPropertiesForComparison, getAllPropertiesForComparison } from "../controllers/localitiesController.js";
+import { getCities, getLocalitiesByCity, getRatesByLocality, getRatesByCity, getCoordinatesByCity, getPropertiesForComparison, getAllPropertiesForComparison, getPropertyDetailsById } from "../controllers/localitiesController.js";
 
 const router = express.Router();
 
@@ -11,5 +11,6 @@ router.get("/coordinates/:city/rates", getCoordinatesByCity); // Add this new en
 // Add this to your existing routes
 router.post("/comparator", getPropertiesForComparison);
 router.get("/comparator/all", getAllPropertiesForComparison);
+router.get("/comparator/:id", getPropertyDetailsById); // Get property details by ID
 
 export default router;

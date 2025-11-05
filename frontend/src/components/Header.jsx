@@ -884,7 +884,7 @@ const Header = () => {
                   <button
                     onClick={() => {
                       setMenuOpen(false);
-                      navigate("/profile");
+                      navigate("/dashboard");
                     }}
                     className="flex items-center w-full px-4 py-2 text-gray-700 text-sm hover:bg-gray-100 rounded-md"
                   >

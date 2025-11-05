@@ -30,7 +30,8 @@ import HomeInterior from './pages/owners/HomeInterior'
 import SpecialAuctionDeals from './pages/SpecialAuctionDeals'
 import PriceIncomeIndex from './pages/smart_insights/PriceIncomeIndex'
 import KnowYourProperty from './pages/KnowYourProperty'
-import Listings from './pages/Listings'
+import Listings from './pages/dealers/Listings'
+import ViewDetails from './pages/dealers/ViewDetails'
 import TrendingDealers from './pages/TrendingDealers'
 import Heatmaps from './pages/smart_insights/Heatmaps'
 import HotSellingProjects from './pages/HotSellingProjects'
@@ -52,6 +53,7 @@ import FractionalInvestment from './pages/investments/FractionalInvestment'
 import Reit from './pages/investments/Reit'
 import VentureInvestments from './pages/investments/VentureInvestments'
 import HomeLoan from './pages/buyers/HomeLoan'
+import { CityProvider } from './context/CityContext'
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -67,14 +69,14 @@ const router = createBrowserRouter(
       <Route path="auctioned-property" element={<AuctionedProperty />} />
       <Route path="escrow-services" element={<EscrowServices />} />
       <Route path="advertise-with-us" element={<AdvertiseWithUs />} />
-      <Route path="emerging-localities" element={<EmergingLocalities />} />
-      <Route path="emerging-localities-page" element={<EmergingLocalitiesPage />} />
+      <Route path="emerging-localities" element={<CityProvider><EmergingLocalities /></CityProvider>} />
+      <Route path="emerging-localities-page" element={<CityProvider><EmergingLocalitiesPage /></CityProvider>} />
       <Route path="fractional-investment" element={<FractionalInvestment />} />
       <Route path="affordable-projects" element={<AffordableProjects />} />
       <Route path="channel-partners" element={<ChannelPartners />} />
       <Route path="comparator" element={<Comparator />} />
       <Route path="contact-developers" element={<ContactDevelopers />} />
-      <Route path="trending-localities" element={<TrendingLocalities />} />
+      <Route path="trending-localities" element={<CityProvider><TrendingLocalities /></CityProvider>} />
       <Route path="data-insights" element={<DataInsights />} />
       <Route path="dealer-connect" element={<DealerConnect />} />
       <Route path="extra-space-comfort" element={<ExtraSpaceComfort />} />
@@ -82,13 +84,14 @@ const router = createBrowserRouter(
       <Route path="home-interior" element={<HomeInterior />} />
       <Route path="home-loan" element={<HomeLoan />} />
       <Route path="special-auction-deals" element={<SpecialAuctionDeals />} />
-      <Route path="price-income-index" element={<PriceIncomeIndex />} />
-      <Route path="price-income-index-page" element={<PriceIncomeIndexPage />} />
+      <Route path="price-income-index" element={<CityProvider><PriceIncomeIndex /></CityProvider>} />
+      <Route path="price-income-index-page" element={<CityProvider><PriceIncomeIndexPage /></CityProvider>} />
       <Route path="know-property" element={<KnowYourProperty />} />
-      <Route path="listings" element={<Listings />} />
+      <Route path="listings" element={<CityProvider><Listings /></CityProvider>} />
+      <Route path="property-details/:id" element={<ViewDetails />} />
       <Route path="trending-dealers" element={<TrendingDealers />} />
-      <Route path="heatmaps" element={<Heatmaps />} />
-      <Route path="heatmaps-page" element={<HeatmapsPage />} />
+      <Route path="heatmaps" element={<CityProvider><Heatmaps /></CityProvider>} />
+      <Route path="heatmaps-page" element={<CityProvider><HeatmapsPage /></CityProvider>} />
       <Route path="interior" element={<InteriorDesign />} />
       <Route path="market-trends" element={<MarketTrends />} />
       <Route path="hot-selling-projects" element={<HotSellingProjects />} />

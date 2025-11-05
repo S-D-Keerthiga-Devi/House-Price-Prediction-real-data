@@ -98,3 +98,18 @@ export const getAllPropertiesForComparison = async (params = {}) => {
     return { success: false, message: error.message };
   }
 };
+
+// Function to get property details by ID
+export const getPropertyDetailsById = async (id) => {
+  if (!id) {
+    return { success: false, message: "Property ID is required" };
+  }
+
+  try {
+    const res = await axiosInstance.get(`/api/house/comparator/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching property details:", error);
+    return { success: false, message: error.message };
+  }
+};

@@ -1,14 +1,46 @@
+import mongoose from "mongoose";
 import houseModel from "../models/houseModel.js";
 import comparatorPropertyModel from "../models/comparatorModel.js";
 
-// ✅ Get distinct cities
+// ✅ Get all major Indian cities
 export const getCities = async (req, res) => {
   try {
-    const cities = await houseModel.distinct("city");
+    // Complete list of major Indian cities A-Z (including NCR cities and more comprehensive coverage)
+    const allIndianCities = [
+      'Agartala', 'Agra', 'Ahmedabad', 'Aizawl', 'Ajmer', 'Akola', 'Aligarh', 'Allahabad', 'Alwar', 'Ambala', 'Amravati', 'Amritsar', 'Asansol', 'Aurangabad',
+      'Bangalore', 'Bareilly', 'Bathinda', 'Belgaum', 'Bellary', 'Bhagalpur', 'Bharatpur', 'Bhavnagar', 'Bhilai', 'Bhiwandi', 'Bhopal', 'Bhubaneswar', 'Bikaner', 'Bilaspur', 'Bokaro', 'Brahmapur',
+      'Chandigarh', 'Chennai', 'Coimbatore', 'Cuttack',
+      'Darbhanga', 'Dehradun', 'Delhi', 'Dhanbad', 'Dibrugarh', 'Dimapur', 'Durgapur',
+      'Erode', 'Faridabad', 'Firozabad', 'Gandhinagar', 'Gangtok', 'Gaya', 'Ghaziabad', 'Gorakhpur', 'Gulbarga', 'Guntur', 'Gurgaon', 'Gurugram', 'Guwahati', 'Gwalior',
+      'Haldwani', 'Haridwar', 'Hisar', 'Howrah', 'Hubballi-Dharwad', 'Hyderabad',
+      'Imphal', 'Indore', 'Itanagar', 'Jabalpur', 'Jaipur', 'Jalandhar', 'Jammu', 'Jamnagar', 'Jamshedpur', 'Jhansi', 'Jodhpur', 'Jorhat',
+      'Kadapa', 'Kakinada', 'Kalyan-Dombivli', 'Kanpur', 'Karnal', 'Kavaratti', 'Kochi', 'Kohima', 'Kolhapur', 'Kolkata', 'Kollam', 'Kota', 'Kozhikode',
+      'Kurnool', 'Kurukshetra',
+      'Latur', 'Lucknow', 'Ludhiana',
+      'Madurai', 'Mangalore', 'Mathura', 'Meerut', 'Mirzapur', 'Moradabad', 'Mumbai', 'Muzaffarnagar', 'Muzaffarpur', 'Mysore',
+      'Nagpur', 'Nanded', 'Nashik', 'Navi Mumbai', 'Nellore', 'New Delhi',
+      'Noida', 'Greater Noida', 'Noida Extension', 'Greater Noida West', // Added NCR cities
+      'Panaji', 'Panchkula', 'Panipat', 'Parbhani', 'Patna', 'Pimpri-Chinchwad', 'Pondicherry', 'Pune',
+      'Raipur', 'Rajahmundry', 'Rajkot', 'Ranchi', 'Rourkela',
+      'Saharanpur', 'Salem', 'Sangli', 'Satara', 'Shillong', 'Shimla', 'Siliguri', 'Solapur', 'Srinagar', 'Surat',
+      'Thane', 'Thiruvananthapuram', 'Thrissur', 'Tiruchirappalli', 'Tirunelveli', 'Tiruppur', 'Tirupati', 'Tumkur',
+      'Udaipur', 'Ujjain', 'Ulhasnagar',
+      'Vadodara', 'Varanasi', 'Vasai-Virar', 'Vellore', 'Vijayawada', 'Visakhapatnam',
+      'Warangal',
+      'Yamunanagar'
+    ];
+
+    // Also get cities from database to include any additional cities we have data for
+    const dbCities = await houseModel.distinct("city");
+    
+    // Combine both lists and remove duplicates
+    const combinedCities = [...allIndianCities, ...dbCities];
+    const uniqueCities = [...new Set(combinedCities)].sort((a, b) => a.localeCompare(b));
+
     return res.json({
       success: true,
-      count: cities.length,
-      cities: cities.sort(),
+      count: uniqueCities.length,
+      cities: uniqueCities,
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -186,6 +218,36 @@ export const getAllPropertiesForComparison = async (req, res) => {
       properties: properties
     });
   } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Function to get property details by ID
+export const getPropertyDetailsById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Property ID is required" });
+    }
+
+    // Check if ID is a valid MongoDB ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid property ID format" });
+    }
+
+    const property = await comparatorPropertyModel.findById(id);
+    
+    if (!property) {
+      return res.status(404).json({ success: false, message: "Property not found" });
+    }
+
+    return res.json({
+      success: true,
+      property: property
+    });
+  } catch (error) {
+    console.error("Error fetching property details:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };

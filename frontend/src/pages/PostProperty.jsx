@@ -1,4 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { getCities, getLocalitiesByCity } from '../api/house.js'
+import { TextField, MenuItem, ClickAwayListener } from '@mui/material'
 
 function PostProperty() {
   const [formData, setFormData] = useState({
@@ -20,6 +22,10 @@ function PostProperty() {
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
+  const [cities, setCities] = useState([])
+  const [localities, setLocalities] = useState([])
+  const [cityDropdownOpen, setCityDropdownOpen] = useState(false)
+  const [localityDropdownOpen, setLocalityDropdownOpen] = useState(false)
 
   const countryCodes = [
     { code: '+91', country: 'IND' },
@@ -42,6 +48,53 @@ function PostProperty() {
     { code: '+94', country: 'LKA' },
     { code: '+977', country: 'NPL' }
   ]
+
+  // Fetch cities on component mount
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        const response = await getCities()
+        console.log('Cities response:', response)
+        if (response.success && response.cities) {
+          setCities(response.cities)
+          console.log('Cities loaded:', response.cities.length)
+        } else {
+          setCities([])
+          console.log('No cities found or response not successful')
+        }
+      } catch (error) {
+        console.error('Error fetching cities:', error)
+        setCities([])
+      }
+    }
+    fetchCities()
+  }, [])
+
+  // Fetch localities when city is selected
+  useEffect(() => {
+    const fetchLocalities = async () => {
+      if (formData.city) {
+        try {
+          const response = await getLocalitiesByCity(formData.city)
+          console.log('Localities response for city', formData.city, ':', response)
+          if (response.success && response.localities) {
+            setLocalities(response.localities)
+            console.log('Localities loaded:', response.localities.length)
+          } else {
+            setLocalities([])
+            console.log('No localities found or response not successful')
+          }
+        } catch (error) {
+          console.error('Error fetching localities:', error)
+          setLocalities([])
+        }
+      } else {
+        setLocalities([])
+        console.log('No city selected, clearing localities')
+      }
+    }
+    fetchLocalities()
+  }, [formData.city])
 
   const propertyTypes = {
     residential: [
@@ -72,14 +125,56 @@ function PostProperty() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    })
+    
+    // If city changes, reset locality
+    if (name === 'city') {
+      setFormData({
+        ...formData,
+        city: value,
+        locality: '' // Reset locality when city changes
+      })
+    } else {
+      setFormData({
+        ...formData,
+        [name]: type === 'checkbox' ? checked : value
+      })
+    }
+    
     if (errors[name]) {
       setErrors({
         ...errors,
         [name]: ''
+      })
+    }
+  }
+
+  // Handle city selection from dropdown
+  const handleCitySelect = (city) => {
+    setFormData({
+      ...formData,
+      city: city,
+      locality: '' // Reset locality when city changes
+    })
+    setCityDropdownOpen(false)
+    if (errors.city) {
+      setErrors({
+        ...errors,
+        city: ''
+      })
+    }
+  }
+
+  // Handle locality selection from dropdown
+  const handleLocalitySelect = (locality) => {
+    setFormData({
+      ...formData,
+      locality: locality
+    })
+    setLocalityDropdownOpen(false)
+    if (errors.locality) {
+      setErrors({
+        ...errors,
+        locality: ''
       })
     }
   }
@@ -492,25 +587,57 @@ function PostProperty() {
                   <label htmlFor="city" className="block text-sm font-semibold text-blue-900 mb-1">
                     City <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
-                      errors.city ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
-                    }`}
-                    placeholder="Enter City"
-                  />
-                  {errors.city && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      {errors.city}
-                    </p>
-                  )}
+                  <ClickAwayListener onClickAway={() => setCityDropdownOpen(false)}>
+                    <div className="relative">
+                      <TextField
+                        id="city"
+                        name="city"
+                        value={formData.city}
+                        onChange={(e) => {
+                          handleChange(e)
+                          setCityDropdownOpen(true)
+                        }}
+                        onClick={() => setCityDropdownOpen(true)}
+                        onFocus={() => setCityDropdownOpen(true)}
+                        placeholder="Search and select city"
+                        className="w-full"
+                        size="small"
+                        error={!!errors.city}
+                        helperText={errors.city}
+                        InputProps={{
+                          className: errors.city 
+                            ? 'border-red-400 bg-red-50' 
+                            : 'border-blue-900 hover:border-blue-700 focus:border-blue-900',
+                          style: { borderRadius: '0.5rem' }
+                        }}
+                      />
+                      {cityDropdownOpen && cities.length > 0 && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border-2 border-blue-900 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {cities
+                            .filter(city => 
+                              formData.city.trim() === "" || city.toLowerCase().includes(formData.city.toLowerCase())
+                            )
+                            .map((city, index) => (
+                              <MenuItem
+                                key={index}
+                                onClick={() => handleCitySelect(city)}
+                                className="hover:bg-blue-50 text-sm"
+                              >
+                                {city}
+                              </MenuItem>
+                            ))
+                          }
+                          {cities.filter(city => 
+                            formData.city.trim() !== "" && city.toLowerCase().includes(formData.city.toLowerCase())
+                          ).length === 0 && formData.city.trim() !== "" && (
+                            <MenuItem disabled className="text-gray-500 text-sm">
+                              No cities found
+                            </MenuItem>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </ClickAwayListener>
                 </div>
 
                 {/* Locality */}
@@ -518,25 +645,63 @@ function PostProperty() {
                   <label htmlFor="locality" className="block text-sm font-semibold text-blue-900 mb-1">
                     Locality <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    id="locality"
-                    name="locality"
-                    value={formData.locality}
-                    onChange={handleChange}
-                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
-                      errors.locality ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
-                    }`}
-                    placeholder="Enter Locality"
-                  />
-                  {errors.locality && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      {errors.locality}
-                    </p>
-                  )}
+                  <ClickAwayListener onClickAway={() => setLocalityDropdownOpen(false)}>
+                    <div className="relative">
+                      <TextField
+                        id="locality"
+                        name="locality"
+                        value={formData.locality}
+                        onChange={(e) => {
+                          handleChange(e)
+                          setLocalityDropdownOpen(true)
+                        }}
+                        onClick={() => setLocalityDropdownOpen(true)}
+                        onFocus={() => setLocalityDropdownOpen(true)}
+                        placeholder={formData.city ? "Search and select locality" : "Select city first"}
+                        className="w-full"
+                        size="small"
+                        error={!!errors.locality}
+                        helperText={errors.locality}
+                        disabled={!formData.city}
+                        InputProps={{
+                          className: errors.locality 
+                            ? 'border-red-400 bg-red-50' 
+                            : 'border-blue-900 hover:border-blue-700 focus:border-blue-900',
+                          style: { borderRadius: '0.5rem' }
+                        }}
+                      />
+                      {localityDropdownOpen && localities.length > 0 && formData.city && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border-2 border-blue-900 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {localities
+                            .filter(locality => 
+                              formData.locality.trim() === "" || locality.toLowerCase().includes(formData.locality.toLowerCase())
+                            )
+                            .map((locality, index) => (
+                              <MenuItem
+                                key={index}
+                                onClick={() => handleLocalitySelect(locality)}
+                                className="hover:bg-blue-50 text-sm"
+                              >
+                                {locality}
+                              </MenuItem>
+                            ))
+                          }
+                          {localities.filter(locality => 
+                            formData.locality.trim() !== "" && locality.toLowerCase().includes(formData.locality.toLowerCase())
+                          ).length === 0 && formData.locality.trim() !== "" && (
+                            <MenuItem disabled className="text-gray-500 text-sm">
+                              No localities found
+                            </MenuItem>
+                          )}
+                        </div>
+                      )}
+                      {localityDropdownOpen && !formData.city && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border-2 border-blue-900 rounded-lg shadow-lg p-3">
+                          <p className="text-gray-500 text-sm">Please select a city first</p>
+                        </div>
+                      )}
+                    </div>
+                  </ClickAwayListener>
                 </div>
               </div>
 
