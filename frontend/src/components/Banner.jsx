@@ -104,7 +104,7 @@ export default function Banner({ onScrollToForm }) {
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 w-full">
         <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden px-8 py-12 md:px-12 md:py-16 transition-all hover:shadow-2xl">
           <div className="grid lg:grid-cols-3 gap-10 items-start">
-            {/* Quote + Search */}
+            {/* Left: Quote + Search */}
             <div className="space-y-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-8 leading-snug">
                 Explore properties,
@@ -244,73 +244,65 @@ export default function Banner({ onScrollToForm }) {
               </div>
             </div>
 
-            {/* Middle Column - Services */}
-            <div className="lg:col-span-1 space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900">Services</h2>
-              <div className="space-y-3">
-                <button onClick={() => navigate('/property-valuation')} className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <Building2 className="w-5 h-5 text-blue-800" />
-                  </div>
-                  <span className="font-medium text-gray-800">
-                    Property Valuation Report
-                  </span>
-                </button>
-                <button
-                  onClick={() => handleServiceClick({ isComparator: true })}
-                  className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <BarChart3 className="w-5 h-5 text-blue-800" />
-                  </div>
-                  <span className="font-medium text-gray-800">Property Comparator</span>
-                </button>
-                <button onClick={() => handleServiceClick({ isPriceTrends: true })} className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <Lightbulb className="w-5 h-5 text-blue-800" />
-                  </div>
-                  <span className="font-medium text-gray-800">
-                    Smart Insights
-                  </span>
-                </button>
+            {/* Middle: Services */}
+            <div className="flex flex-col justify-between h-full space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Services</h2>
+                <div className="space-y-3">
+                  {[
+                    { icon: <Building2 className="w-5 h-5 text-blue-800" />, label: "Property Valuation Report", onClick: () => navigate('/property-valuation') },
+                    { icon: <BarChart3 className="w-5 h-5 text-blue-800" />, label: "Property Comparator", onClick: () => handleServiceClick({ isComparator: true }) },
+                    { icon: <Lightbulb className="w-5 h-5 text-blue-800" />, label: "Smart Insights", onClick: () => handleServiceClick({ isPriceTrends: true }) },
+                    { icon: <PieChart className="w-5 h-5 text-blue-800" />, label: "Market Trends", onClick: () => handleServiceClick({ link: '/market-analysis' }) },
+                  ].map((s, idx) => (
+                    <button
+                      key={idx}
+                      onClick={s.onClick}
+                      className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left"
+                    >
+                      <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        {s.icon}
+                      </div>
+                      <span className="font-medium text-gray-800">{s.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <button className="text-blue-800 hover:text-blue-900 font-medium flex items-center gap-2">
+              <button className="text-blue-800 hover:text-blue-900 font-medium flex items-center gap-2 mt-4">
                 More Services →
               </button>
             </div>
 
-            {/* Right Column - Investments */}
-            <div className="lg:col-span-1 space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900">Investments</h2>
-              <div className="space-y-3">
-                <button onClick={() => window.open("https://keerthiga-investments.vercel.app/", "_blank")} className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <PieChart className="w-5 h-5 text-blue-800" />
-                  </div>
-                  <span className="font-medium text-gray-800">
-                    Fractional Investment
-                  </span>
-                </button>
-                <button onClick={() => window.open("https://keerthiga-investments.vercel.app/", "_blank")}className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <Building2 className="w-5 h-5 text-blue-800" />
-                  </div>
-                  <span className="font-medium text-gray-800">
-                    REIT / SM REIT
-                  </span>
-                </button>
-                <button onClick={() => window.open("https://keerthiga-investments.vercel.app/", "_blank")} className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <Briefcase className="w-5 h-5 text-blue-800" />
-                  </div>
-                  <span className="font-medium text-gray-800">
-                    Venture Invest
-                  </span>
-                </button>
+            {/* Right: Investments */}
+            <div className="flex flex-col justify-between h-full space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Investments</h2>
+                <div className="space-y-3">
+                  {[
+                    { icon: <PieChart className="w-5 h-5 text-blue-800" />, label: "Fractional Investment", link: "https://keerthiga-investments.vercel.app/fractional-investment" },
+                    { icon: <Building2 className="w-5 h-5 text-blue-800" />, label: "REIT", link: "https://keerthiga-investments.vercel.app/reit" },
+                    { icon: <Building2 className="w-5 h-5 text-blue-800" />, label: "SM REIT", link: "https://keerthiga-investments.vercel.app/sm-reit" },
+                    { icon: <Briefcase className="w-5 h-5 text-blue-800" />, label: "Venture Invest", link: "https://keerthiga-investments.vercel.app/venture-invest" },
+                  ].map((i, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => window.open(i.link, "_blank")}
+                      className="group w-full bg-blue-50 hover:bg-blue-100 rounded-xl p-4 flex items-center gap-4 transition-all border border-blue-100 hover:border-blue-200 hover:shadow-md text-left"
+                    >
+                      <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        {i.icon}
+                      </div>
+                      <span className="font-medium text-gray-800">{i.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <button className="text-blue-800 hover:text-blue-900 font-medium flex items-center gap-2">
+
+              <button className="text-blue-800 hover:text-blue-900 font-medium flex items-center gap-2 mt-4">
                 More Investments →
               </button>
             </div>
+
           </div>
         </div>
       </div>
