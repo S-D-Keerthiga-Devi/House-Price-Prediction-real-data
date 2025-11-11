@@ -282,7 +282,7 @@ export default function Banner({ onScrollToForm }) {
                     { icon: <PieChart className="w-5 h-5 text-blue-800" />, label: "Fractional Investment", link: "https://keerthiga-investments.vercel.app/fractional-investment" },
                     { icon: <Building2 className="w-5 h-5 text-blue-800" />, label: "REIT", link: "https://keerthiga-investments.vercel.app/reit" },
                     { icon: <Building2 className="w-5 h-5 text-blue-800" />, label: "SM REIT", link: "https://keerthiga-investments.vercel.app/sm-reit" },
-                    { icon: <Briefcase className="w-5 h-5 text-blue-800" />, label: "Venture Invest", link: "https://keerthiga-investments.vercel.app/venture-invest" },
+                    { icon: <Briefcase className="w-5 h-5 text-blue-800" />, label: "Venture Invest", link: "https://keerthiga-investments.vercel.app/venture-investment" },
                   ].map((i, idx) => (
                     <button
                       key={idx}
