@@ -1,4 +1,5 @@
-import { User, Home, FileText, Layers, Wrench, Users, Heart, UserCheck, PlusCircle, Megaphone, Menu, FileSignature } from "lucide-react";
+import { useSelector } from "react-redux";
+import { User, Home, FileText, Layers, Wrench, Users, Heart, UserCheck, PlusCircle, Megaphone, Menu, FileSignature, UserCircle } from "lucide-react";
 
 const menuItems = [
   { id: "UserProfile", label: "User Profile", icon: <User size={18} /> },
@@ -14,11 +15,27 @@ const menuItems = [
 ];
 
 export default function Sidebar({ activeMenu, setActiveMenu }) {
+  const userData = useSelector((state) => state.auth.userData);
+  const displayName = userData?.name || "Guest";
+
   return (
     <aside className="w-64 bg-white border-r shadow-md p-4">
-      <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+      <div className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
         <Menu size={20} /> Dashboard
-      </h2>
+      </div>
+      <div className="mb-6 flex items-center gap-3 rounded-lg bg-blue-50 border border-blue-100 px-3 py-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+          <UserCircle size={22} />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-xs uppercase tracking-wide text-blue-600">
+            Hello
+          </span>
+          <span className="text-sm font-semibold text-blue-900 truncate">
+            {displayName}
+          </span>
+        </div>
+      </div>
       <nav className="flex flex-col gap-2">
         {menuItems.map((item) => (
           <button

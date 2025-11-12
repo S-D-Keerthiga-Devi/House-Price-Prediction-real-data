@@ -7,7 +7,7 @@ const storedCity = localStorage.getItem("selectedCity") || "Gurgaon";
 
 const initialState = {
     status: storedStatus || false,
-    userData: storedUser || { phone: null, countryCode: "+91" }, // default country code
+    userData: storedUser || { name: null, phone: null, countryCode: "+91" }, // default country code
     selectedCity: storedCity
 };
 
