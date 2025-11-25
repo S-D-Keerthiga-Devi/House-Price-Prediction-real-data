@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { submitAdvertise } from '../../api/developerApi'
 
 function AdvertiseWithUs() {
   const [formData, setFormData] = useState({
@@ -12,7 +13,7 @@ function AdvertiseWithUs() {
     city: '',
     agreeTerms: false
   })
-  
+
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
@@ -41,12 +42,12 @@ function AdvertiseWithUs() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    
+
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     })
-    
+
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -57,64 +58,64 @@ function AdvertiseWithUs() {
 
   const validateForm = () => {
     const newErrors = {}
-    
+
     if (!formData.userType) {
       newErrors.userType = 'Please select user type'
     }
-    
+
     if (!formData.lookingTo) {
       newErrors.lookingTo = 'Please select what you are looking to do'
     }
-    
+
     if (!formData.propertyType) {
       newErrors.propertyType = 'Please select property type'
     }
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required'
     }
-    
+
     if (!formData.mobile.trim()) {
       newErrors.mobile = 'Mobile number is required'
     } else if (!/^\d{10}$/.test(formData.mobile.trim())) {
       newErrors.mobile = 'Please enter a valid 10-digit mobile number'
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address'
     }
-    
+
     if (!formData.city.trim()) {
       newErrors.city = 'City is required'
     }
-    
+
     if (!formData.agreeTerms) {
       newErrors.agreeTerms = 'You must agree to the terms and conditions'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
-    
+
     setIsSubmitting(true)
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await submitAdvertise(formData)
+
       setSubmitStatus({
         type: 'success',
         message: 'Thank you! Your request has been submitted successfully. Our team will contact you within 24-48 hours.'
       })
-      
+
       setFormData({
         userType: '',
         lookingTo: '',
@@ -126,11 +127,11 @@ function AdvertiseWithUs() {
         city: '',
         agreeTerms: false
       })
-      
+
       setTimeout(() => {
         setSubmitStatus(null)
       }, 10000)
-      
+
     } catch (error) {
       setSubmitStatus({
         type: 'error',
@@ -153,20 +154,19 @@ function AdvertiseWithUs() {
             Connect with millions of property seekers
           </p>
         </div>
-        
+
         {/* Form Card */}
         <div className="bg-white rounded-xl shadow-xl border border-gray-200">
           <div className="p-4">
             {submitStatus && (
-              <div className={`mb-3 p-2 rounded-lg ${
-                submitStatus.type === 'success' 
-                  ? 'bg-green-50 text-green-800 border border-green-200' 
+              <div className={`mb-3 p-2 rounded-lg ${submitStatus.type === 'success'
+                  ? 'bg-green-50 text-green-800 border border-green-200'
                   : 'bg-red-50 text-red-800 border border-red-200'
-              }`}>
+                }`}>
                 <p className="text-xs">{submitStatus.message}</p>
               </div>
             )}
-            
+
             {/* Form Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* I am a */}
@@ -178,11 +178,10 @@ function AdvertiseWithUs() {
                   {['Individual', 'Agent', 'Builder'].map((type) => (
                     <label
                       key={type}
-                      className={`px-3 py-1.5 border rounded-lg cursor-pointer text-center transition-all text-xs ${
-                        formData.userType === type
+                      className={`px-3 py-1.5 border rounded-lg cursor-pointer text-center transition-all text-xs ${formData.userType === type
                           ? 'border-blue-600 bg-blue-50 text-blue-900 font-medium'
                           : 'border-gray-300 hover:border-blue-400 text-gray-700'
-                      }`}
+                        }`}
                     >
                       <input
                         type="radio"
@@ -210,11 +209,10 @@ function AdvertiseWithUs() {
                   {['Sell', 'Rent'].map((action) => (
                     <label
                       key={action}
-                      className={`px-3 py-1.5 border rounded-lg cursor-pointer text-center transition-all text-xs ${
-                        formData.lookingTo === action
+                      className={`px-3 py-1.5 border rounded-lg cursor-pointer text-center transition-all text-xs ${formData.lookingTo === action
                           ? 'border-blue-600 bg-blue-50 text-blue-900 font-medium'
                           : 'border-gray-300 hover:border-blue-400 text-gray-700'
-                      }`}
+                        }`}
                     >
                       <input
                         type="radio"
@@ -242,11 +240,10 @@ function AdvertiseWithUs() {
                   {['Residential', 'Commercial'].map((type) => (
                     <label
                       key={type}
-                      className={`px-3 py-1.5 border rounded-lg cursor-pointer text-center transition-all text-xs ${
-                        formData.propertyType === type
+                      className={`px-3 py-1.5 border rounded-lg cursor-pointer text-center transition-all text-xs ${formData.propertyType === type
                           ? 'border-blue-600 bg-blue-50 text-blue-900 font-medium'
                           : 'border-gray-300 hover:border-blue-400 text-gray-700'
-                      }`}
+                        }`}
                     >
                       <input
                         type="radio"
@@ -276,9 +273,8 @@ function AdvertiseWithUs() {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                    errors.name ? 'border-red-400 bg-red-50' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${errors.name ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                    }`}
                   placeholder="Your Name"
                 />
                 {errors.name && (
@@ -310,9 +306,8 @@ function AdvertiseWithUs() {
                     name="mobile"
                     value={formData.mobile}
                     onChange={handleChange}
-                    className={`flex-1 px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                      errors.mobile ? 'border-red-400 bg-red-50' : 'border-gray-300'
-                    }`}
+                    className={`flex-1 px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${errors.mobile ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                      }`}
                     placeholder="9876543210"
                   />
                 </div>
@@ -332,9 +327,8 @@ function AdvertiseWithUs() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                    errors.email ? 'border-red-400 bg-red-50' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                    }`}
                   placeholder="your.email@example.com"
                 />
                 {errors.email && (
@@ -353,9 +347,8 @@ function AdvertiseWithUs() {
                   name="city"
                   value={formData.city}
                   onChange={handleChange}
-                  className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                    errors.city ? 'border-red-400 bg-red-50' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-2.5 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${errors.city ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                    }`}
                   placeholder="Your City"
                 />
                 {errors.city && (
@@ -396,7 +389,7 @@ function AdvertiseWithUs() {
             </div>
           </div>
         </div>
-        
+
         {/* Footer */}
         <div className="mt-3 text-center">
           <p className="text-xs text-gray-600">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Home, FileText, Sparkles, CheckCircle2, ArrowRight, ArrowLeft, Upload, Plus } from 'lucide-react'
 import { getCities, getLocalitiesByCity } from '../api/house'
+import { submitPostProperty } from '../api/ownerApi'
 
 function PostProperty() {
   const [currentStep, setCurrentStep] = useState(1)
@@ -26,6 +27,9 @@ function PostProperty() {
     propertyKeywords: [],
     propertyDescription: '',
     agreeTerms: false,
+    ownerName: '',
+    mobile: '',
+    email: '',
   })
   
   const [errors, setErrors] = useState({})
@@ -220,6 +224,17 @@ function PostProperty() {
 
   const validateStep3 = () => {
     const newErrors = {}
+    if (!formData.ownerName.trim()) newErrors.ownerName = 'Owner name is required'
+    if (!formData.mobile.trim()) {
+      newErrors.mobile = 'Mobile number is required'
+    } else if (!/^\d{10}$/.test(formData.mobile.replace(/\D/g, ''))) {
+      newErrors.mobile = 'Please enter a valid 10-digit mobile number'
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required'
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address'
+    }
     if (!formData.agreeTerms) newErrors.agreeTerms = 'You must agree to continue'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -248,10 +263,26 @@ function PostProperty() {
     setIsSubmitting(true)
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Map form data to match the model requirements
+      const submissionData = {
+        ownerName: formData.ownerName.trim(),
+        mobile: formData.mobile.replace(/\D/g, ''), // Remove non-digits
+        email: formData.email.trim(),
+        propertyType: formData.propertyType,
+        city: formData.city,
+        locality: formData.locality,
+        price: formData.price,
+        area: formData.area,
+        bedrooms: formData.rooms,
+        description: formData.propertyDescription || `${formData.transactionType} ${formData.propertyType} in ${formData.locality}, ${formData.city}`
+      }
+
+      await submitPostProperty(submissionData)
       setIsSubmitted(true)
     } catch (error) {
-      alert('Something went wrong. Please try again.')
+      console.error('Error submitting property:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Something went wrong. Please try again.'
+      alert(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -260,28 +291,31 @@ function PostProperty() {
   const handlePostAnother = () => {
     setIsSubmitted(false)
     setCurrentStep(1)
-    setFormData({
-      transactionType: '',
-      buildingType: '',
-      propertyType: '',
-      city: '',
-      projectName: '',
-      locality: '',
-      rooms: '',
-      area: '',
-      price: '',
-      possessionStatus: '',
-      furnishingStatus: '',
-      bathrooms: '',
-      coveredParking: '',
-      openParking: '',
-      floorNumber: '',
-      totalFloors: '',
-      amenities: [],
-      propertyKeywords: [],
-      propertyDescription: '',
-      agreeTerms: false,
-    })
+      setFormData({
+        transactionType: '',
+        buildingType: '',
+        propertyType: '',
+        city: '',
+        projectName: '',
+        locality: '',
+        rooms: '',
+        area: '',
+        price: '',
+        possessionStatus: '',
+        furnishingStatus: '',
+        bathrooms: '',
+        coveredParking: '',
+        openParking: '',
+        floorNumber: '',
+        totalFloors: '',
+        amenities: [],
+        propertyKeywords: [],
+        propertyDescription: '',
+        agreeTerms: false,
+        ownerName: '',
+        mobile: '',
+        email: '',
+      })
     setErrors({})
     window.scrollTo(0, 0)
   }
@@ -800,10 +834,10 @@ function PostProperty() {
               </div>
             )}
 
-            {/* Step 3: Amenities */}
+            {/* Step 3: Amenities & Contact */}
             {currentStep === 3 && (
               <div className="space-y-4">
-                <h2 className="text-xl font-bold mb-4" style={{ color: '#1e3a8a' }}>Amenities & Features</h2>
+                <h2 className="text-xl font-bold mb-4" style={{ color: '#1e3a8a' }}>Amenities & Contact Information</h2>
                 
                 {/* Amenities */}
                 <div>
@@ -859,6 +893,67 @@ function PostProperty() {
                     className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:outline-none focus:border-navy-900 transition-all"
                     placeholder="Describe your property..."
                   ></textarea>
+                </div>
+
+                {/* Contact Information */}
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-sm font-semibold mb-3" style={{ color: '#1e3a8a' }}>Owner Contact Details</h3>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#1e3a8a' }}>
+                        Owner Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="ownerName"
+                        value={formData.ownerName}
+                        onChange={handleChange}
+                        className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
+                          errors.ownerName ? 'border-red-400' : 'border-gray-200 focus:border-navy-900'
+                        }`}
+                        placeholder="Enter owner name"
+                      />
+                      {errors.ownerName && <p className="mt-1 text-xs text-red-600">{errors.ownerName}</p>}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold mb-1.5" style={{ color: '#1e3a8a' }}>
+                          Mobile Number <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="tel"
+                          name="mobile"
+                          value={formData.mobile}
+                          onChange={(e) => setFormData({ ...formData, mobile: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                          maxLength="10"
+                          className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
+                            errors.mobile ? 'border-red-400' : 'border-gray-200 focus:border-navy-900'
+                          }`}
+                          placeholder="10-digit number"
+                        />
+                        {errors.mobile && <p className="mt-1 text-xs text-red-600">{errors.mobile}</p>}
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold mb-1.5" style={{ color: '#1e3a8a' }}>
+                          Email <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
+                            errors.email ? 'border-red-400' : 'border-gray-200 focus:border-navy-900'
+                          }`}
+                          placeholder="your.email@example.com"
+                        />
+                        {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Terms Agreement */}

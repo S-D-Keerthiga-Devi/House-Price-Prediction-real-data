@@ -5,7 +5,7 @@ import LocationCityIcon from "@mui/icons-material/LocationCity";
 import PeopleIcon from "@mui/icons-material/People";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import HomeIcon from "@mui/icons-material/Home";
-import gurgaon from "../assets/gurgaon.jpg"
+import gurgaon from "../assets/gurgaondlf.jpg"
 
 export default function CityInfoCard({ city, averagePrice }) {
   // Mock data for different cities - in a real app, this would come from an API

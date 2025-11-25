@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { submitHomeInterior } from '../../api/ownerApi'
 
 function HomeInterior() {
   const [formData, setFormData] = useState({
@@ -12,7 +13,7 @@ function HomeInterior() {
     city: '',
     serviceNeed: ''
   })
-  
+
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
@@ -33,17 +34,17 @@ function HomeInterior() {
 
   const validateForm = () => {
     const newErrors = {}
-    
+
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required'
     }
-    
+
     if (!formData.mobileNumber.trim()) {
       newErrors.mobileNumber = 'Mobile number is required'
     } else if (!/^\d{10}$/.test(formData.mobileNumber.trim())) {
       newErrors.mobileNumber = 'Please enter a valid 10-digit mobile number'
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -53,28 +54,28 @@ function HomeInterior() {
     if (!formData.interiorType) {
       newErrors.interiorType = 'Please select an interior service type'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
-    
+
     setIsSubmitting(true)
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await submitHomeInterior(formData)
+
       setSubmitStatus({
         type: 'success',
         message: 'Thank you for your interest! Our interior design team will contact you within 24 hours.'
       })
-      
+
       setFormData({
         fullName: '',
         mobileNumber: '',
@@ -86,11 +87,11 @@ function HomeInterior() {
         city: '',
         serviceNeed: ''
       })
-      
+
       setTimeout(() => {
         setSubmitStatus(null)
       }, 10000)
-      
+
     } catch (error) {
       setSubmitStatus({
         type: 'error',
@@ -106,13 +107,13 @@ function HomeInterior() {
       <div className="max-w-2xl mx-auto">
         {/* Header Section */}
         <div className="text-center mb-6">
-          
+
           <h1 className="text-3xl font-bold text-blue-900 mb-2 tracking-tight">
             Home Interior Design
           </h1>
-          
+
         </div>
-        
+
         {/* Form Card */}
         <div className="bg-white rounded-xl shadow-lg border border-blue-200 overflow-hidden">
           {/* Card Header */}
@@ -124,15 +125,14 @@ function HomeInterior() {
               Share your requirements and our design experts will create a personalized solution
             </p>
           </div>
-          
+
           {/* Form Content */}
           <div className="p-5 bg-white">
             {submitStatus && (
-              <div className={`mb-4 p-3 rounded-lg border ${
-                submitStatus.type === 'success' 
-                  ? 'bg-green-50 border-green-600' 
+              <div className={`mb-4 p-3 rounded-lg border ${submitStatus.type === 'success'
+                  ? 'bg-green-50 border-green-600'
                   : 'bg-red-50 border-red-600'
-              }`}>
+                }`}>
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
                     {submitStatus.type === 'success' ? (
@@ -146,16 +146,15 @@ function HomeInterior() {
                     )}
                   </div>
                   <div className="ml-3">
-                    <p className={`text-sm font-medium ${
-                      submitStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
-                    }`}>
+                    <p className={`text-sm font-medium ${submitStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
+                      }`}>
                       {submitStatus.message}
                     </p>
                   </div>
                 </div>
               </div>
             )}
-            
+
             <div className="space-y-4">
               {/* Full Name */}
               <div>
@@ -168,16 +167,15 @@ function HomeInterior() {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${
-                    errors.fullName ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                  }`}
+                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${errors.fullName ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                    }`}
                   placeholder="Enter your full name"
                 />
                 {errors.fullName && (
                   <p className="mt-1 text-xs text-red-600">{errors.fullName}</p>
                 )}
               </div>
-              
+
               {/* Contact Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
@@ -190,16 +188,15 @@ function HomeInterior() {
                     name="mobileNumber"
                     value={formData.mobileNumber}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${
-                      errors.mobileNumber ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                    }`}
+                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${errors.mobileNumber ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                      }`}
                     placeholder="10-digit mobile number"
                   />
                   {errors.mobileNumber && (
                     <p className="mt-1 text-xs text-red-600">{errors.mobileNumber}</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label htmlFor="email" className="block text-xs font-semibold text-blue-900 mb-1">
                     Email Address <span className="text-red-500">*</span>
@@ -210,9 +207,8 @@ function HomeInterior() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${
-                      errors.email ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                    }`}
+                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${errors.email ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                      }`}
                     placeholder="your.email@example.com"
                   />
                   {errors.email && (
@@ -231,9 +227,8 @@ function HomeInterior() {
                   name="interiorType"
                   value={formData.interiorType}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${
-                    errors.interiorType ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                  }`}
+                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${errors.interiorType ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                    }`}
                 >
                   <option value="">Select a service</option>
                   <option value="full-home-interior">Full Home Interior</option>
@@ -331,7 +326,7 @@ function HomeInterior() {
                   />
                 </div>
               </div>
-              
+
               {/* Additional Requirements */}
               <div>
                 <label htmlFor="serviceNeed" className="block text-xs font-semibold text-blue-900 mb-1">
@@ -347,7 +342,7 @@ function HomeInterior() {
                   placeholder="Tell us about your style preferences..."
                 ></textarea>
               </div>
-              
+
               {/* Submit Button */}
               <div className="pt-2">
                 <button
@@ -377,7 +372,7 @@ function HomeInterior() {
             </div>
           </div>
         </div>
-        
+
         {/* Footer Info */}
         <div className="mt-6 text-center space-y-2">
           <p className="text-sm text-gray-700">

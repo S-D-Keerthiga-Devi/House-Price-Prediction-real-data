@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { submitContactDeveloper } from '../../api/dealerApi'
 
 function ContactDevelopers() {
   const [formData, setFormData] = useState({
@@ -11,7 +12,7 @@ function ContactDevelopers() {
     budget: '',
     message: ''
   })
-  
+
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
@@ -32,17 +33,17 @@ function ContactDevelopers() {
 
   const validateForm = () => {
     const newErrors = {}
-    
+
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'Full name is required'
     }
-    
+
     if (!formData.mobileNumber.trim()) {
       newErrors.mobileNumber = 'Mobile number is required'
     } else if (!/^\d{10}$/.test(formData.mobileNumber.trim())) {
       newErrors.mobileNumber = 'Please enter a valid 10-digit mobile number'
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -56,28 +57,28 @@ function ContactDevelopers() {
     if (!formData.message.trim()) {
       newErrors.message = 'Message is required'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
-    
+
     setIsSubmitting(true)
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await submitContactDeveloper(formData)
+
       setSubmitStatus({
         type: 'success',
-        message: 'Thank you for contacting our development team! We will get back to you within 24 hours. For urgent matters, call +91 98765 43210.'
+        message: 'Thank you for contacting our real estate development team! We will get back to you within 24 hours. For urgent matters, call +91 98765 43210.'
       })
-      
+
       setFormData({
         firstName: '',
         mobileNumber: '',
@@ -88,11 +89,11 @@ function ContactDevelopers() {
         budget: '',
         message: ''
       })
-      
+
       setTimeout(() => {
         setSubmitStatus(null)
       }, 10000)
-      
+
     } catch (error) {
       setSubmitStatus({
         type: 'error',
@@ -107,23 +108,22 @@ function ContactDevelopers() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4 py-8 mt-20">
       <div className="bg-white border border-gray-200 rounded-xl shadow-lg max-w-2xl w-full p-5">
         <h2 className="text-2xl font-bold text-blue-900 mb-1 text-center">
-          Contact Developers
+          Contact Real Estate Developers
         </h2>
         <p className="text-blue-700 text-center mb-4 text-xs">
-          Get in touch for custom development solutions
+          Get in touch for custom real estate technology solutions
         </p>
-        
+
         <div className="space-y-3">
           {submitStatus && (
-            <div className={`mb-3 p-3 rounded-lg ${
-              submitStatus.type === 'success' 
-                ? 'bg-green-50 text-green-800' 
+            <div className={`mb-3 p-3 rounded-lg ${submitStatus.type === 'success'
+                ? 'bg-green-50 text-green-800'
                 : 'bg-red-50 text-red-800'
-            }`}>
+              }`}>
               <p className="text-xs">{submitStatus.message}</p>
             </div>
           )}
-          
+
           {/* Name and Mobile */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -136,16 +136,15 @@ function ContactDevelopers() {
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${
-                  errors.firstName ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                }`}
+                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${errors.firstName ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                  }`}
                 placeholder="Full name"
               />
               {errors.firstName && (
                 <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="mobileNumber" className="block text-xs font-semibold text-blue-900 mb-1">
                 Mobile Number <span className="text-red-500">*</span>
@@ -156,9 +155,8 @@ function ContactDevelopers() {
                 name="mobileNumber"
                 value={formData.mobileNumber}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${
-                  errors.mobileNumber ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                }`}
+                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${errors.mobileNumber ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                  }`}
                 placeholder="10-digit number"
               />
               {errors.mobileNumber && (
@@ -166,7 +164,7 @@ function ContactDevelopers() {
               )}
             </div>
           </div>
-          
+
           {/* Email and Company */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -179,9 +177,8 @@ function ContactDevelopers() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${
-                  errors.email ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                }`}
+                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${errors.email ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                  }`}
                 placeholder="email@example.com"
               />
               {errors.email && (
@@ -216,19 +213,20 @@ function ContactDevelopers() {
                 name="inquiryType"
                 value={formData.inquiryType}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${
-                  errors.inquiryType ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                }`}
+                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${errors.inquiryType ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                  }`}
               >
                 <option value="">Select inquiry type</option>
-                <option value="new-project">New Project Development</option>
-                <option value="existing-project">Existing Project Support</option>
-                <option value="consultation">Technical Consultation</option>
-                <option value="maintenance">Maintenance & Updates</option>
-                <option value="bug-fix">Bug Fixes & Issues</option>
-                <option value="feature-request">Feature Request</option>
-                <option value="partnership">Partnership Opportunity</option>
-                <option value="general">General Inquiry</option>
+                <option value="property-listing">Property Listing Website</option>
+                <option value="real-estate-portal">Real Estate Portal</option>
+                <option value="property-management">Property Management System</option>
+                <option value="real-estate-crm">Real Estate CRM</option>
+                <option value="virtual-tour">Virtual Tour Solution</option>
+                <option value="real-estate-app">Real Estate Mobile App</option>
+                <option value="real-estate-analytics">Real Estate Analytics</option>
+                <option value="mls-integration">MLS/Property Database Integration</option>
+                <option value="maintenance-support">Maintenance & Support</option>
+                <option value="other">Other Real Estate Inquiry</option>
               </select>
               {errors.inquiryType && (
                 <p className="mt-1 text-xs text-red-600">{errors.inquiryType}</p>
@@ -247,18 +245,16 @@ function ContactDevelopers() {
                 className="w-full px-3 py-2 border-2 border-blue-900 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
               >
                 <option value="">Select project type</option>
-                <option value="web-app">Web Application</option>
-                <option value="mobile-app">Mobile Application</option>
-                <option value="desktop-app">Desktop Application</option>
-                <option value="api-development">API Development</option>
-                <option value="database-design">Database Design</option>
-                <option value="ui-ux-design">UI/UX Design</option>
-                <option value="ecommerce">E-commerce Platform</option>
-                <option value="cms">Content Management System</option>
-                <option value="crm">CRM System</option>
-                <option value="erp">ERP Solution</option>
-                <option value="blockchain">Blockchain Development</option>
-                <option value="ai-ml">AI/ML Integration</option>
+                <option value="property-website">Property Listing Website</option>
+                <option value="real-estate-portal">Real Estate Portal</option>
+                <option value="property-management">Property Management Software</option>
+                <option value="real-estate-crm">Real Estate CRM</option>
+                <option value="virtual-tour">Virtual Tour Platform</option>
+                <option value="real-estate-mobile">Real Estate Mobile App</option>
+                <option value="analytics-dashboard">Real Estate Analytics Dashboard</option>
+                <option value="mls-integration">MLS/Property Database Integration</option>
+                <option value="agent-portal">Real Estate Agent Portal</option>
+                <option value="customer-portal">Customer Portal</option>
                 <option value="other">Other</option>
               </select>
             </div>
@@ -290,7 +286,7 @@ function ContactDevelopers() {
             </div>
             <div></div>
           </div>
-          
+
           {/* Message */}
           <div>
             <label htmlFor="message" className="block text-xs font-semibold text-blue-900 mb-1">
@@ -302,16 +298,15 @@ function ContactDevelopers() {
               value={formData.message}
               onChange={handleChange}
               rows="2"
-              className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm ${
-                errors.message ? 'border-red-400 bg-red-50' : 'border-blue-900'
-              }`}
-              placeholder="Describe your project requirements..."
+              className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm ${errors.message ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                }`}
+              placeholder="Describe your real estate project requirements..."
             ></textarea>
             {errors.message && (
               <p className="mt-1 text-xs text-red-600">{errors.message}</p>
             )}
           </div>
-          
+
           {/* Submit Button */}
           <div className="pt-2">
             <button
@@ -331,10 +326,10 @@ function ContactDevelopers() {
             </p>
           </div>
         </div>
-        
+
         <div className="mt-4 pt-4 border-t border-blue-200">
-          <h3 className="text-sm font-semibold text-blue-900 mb-1">Development Services</h3>
-          <p className="text-xs text-blue-700">Expert solutions for your technical needs</p>
+          <h3 className="text-sm font-semibold text-blue-900 mb-1">Real Estate Development Services</h3>
+          <p className="text-xs text-blue-700">Specialized solutions for property technology needs</p>
         </div>
       </div>
     </div>

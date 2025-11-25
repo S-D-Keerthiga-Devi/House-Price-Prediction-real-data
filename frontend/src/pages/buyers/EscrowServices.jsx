@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { submitEscrowService } from '../../api/buyerApi'
 
 function EscrowServices() {
   const [formData, setFormData] = useState({
@@ -8,7 +9,7 @@ function EscrowServices() {
     email: '',
     serviceNeed: ''
   })
-  
+
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
@@ -29,47 +30,44 @@ function EscrowServices() {
 
   const validateForm = () => {
     const newErrors = {}
-    
+
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required'
     }
-    
+
     if (!formData.mobileNumber.trim()) {
       newErrors.mobileNumber = 'Mobile number is required'
     } else if (!/^\d{10}$/.test(formData.mobileNumber.trim())) {
       newErrors.mobileNumber = 'Please enter a valid 10-digit mobile number'
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
-    
+
     setIsSubmitting(true)
-    
+
     try {
-      // Replace with your actual API endpoint
-      // const response = await axios.post('/api/escrow', formData)
-      
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await submitEscrowService(formData)
+
       setSubmitStatus({
         type: 'success',
         message: 'Your form has been submitted successfully! Our Escrow team will review your request and contact you shortly. For immediate assistance, please call us at +91 9876543210.'
       })
-      
+
       setFormData({
         firstName: '',
         lastName: '',
@@ -77,11 +75,11 @@ function EscrowServices() {
         email: '',
         serviceNeed: ''
       })
-      
+
       setTimeout(() => {
         setSubmitStatus(null)
       }, 10000)
-      
+
     } catch (error) {
       setSubmitStatus({
         type: 'error',
@@ -110,7 +108,7 @@ function EscrowServices() {
           </p>
           <div className="mt-4 h-1 w-24 bg-blue-900 mx-auto rounded-full"></div>
         </div>
-        
+
         {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-900 overflow-hidden">
           {/* Card Header */}
@@ -122,15 +120,14 @@ function EscrowServices() {
               Fill in your details and our team will reach out to you promptly
             </p>
           </div>
-          
+
           {/* Form Content */}
           <div className="p-8 sm:p-10 bg-white">
             {submitStatus && (
-              <div className={`mb-8 p-5 rounded-xl border-2 ${
-                submitStatus.type === 'success' 
-                  ? 'bg-green-50 border-green-600' 
+              <div className={`mb-8 p-5 rounded-xl border-2 ${submitStatus.type === 'success'
+                  ? 'bg-green-50 border-green-600'
                   : 'bg-red-50 border-red-600'
-              }`}>
+                }`}>
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
                     {submitStatus.type === 'success' ? (
@@ -144,16 +141,15 @@ function EscrowServices() {
                     )}
                   </div>
                   <div className="ml-4">
-                    <p className={`text-sm font-medium leading-relaxed ${
-                      submitStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
-                    }`}>
+                    <p className={`text-sm font-medium leading-relaxed ${submitStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
+                      }`}>
                       {submitStatus.message}
                     </p>
                   </div>
                 </div>
               </div>
             )}
-            
+
             <form onSubmit={handleSubmit} className="space-y-7">
               {/* Name Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -167,9 +163,8 @@ function EscrowServices() {
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
-                      errors.firstName ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
-                    }`}
+                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${errors.firstName ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
+                      }`}
                     placeholder="Enter your first name"
                   />
                   {errors.firstName && (
@@ -181,7 +176,7 @@ function EscrowServices() {
                     </p>
                   )}
                 </div>
-                
+
                 <div>
                   <label htmlFor="lastName" className="block text-sm font-semibold text-blue-900 mb-2">
                     Last Name
@@ -197,7 +192,7 @@ function EscrowServices() {
                   />
                 </div>
               </div>
-              
+
               {/* Contact Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -210,9 +205,8 @@ function EscrowServices() {
                     name="mobileNumber"
                     value={formData.mobileNumber}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
-                      errors.mobileNumber ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
-                    }`}
+                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${errors.mobileNumber ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
+                      }`}
                     placeholder="10-digit mobile number"
                   />
                   {errors.mobileNumber && (
@@ -224,7 +218,7 @@ function EscrowServices() {
                     </p>
                   )}
                 </div>
-                
+
                 <div>
                   <label htmlFor="email" className="block text-sm font-semibold text-blue-900 mb-2">
                     Email Address <span className="text-red-500">*</span>
@@ -235,9 +229,8 @@ function EscrowServices() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${
-                      errors.email ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
-                    }`}
+                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all ${errors.email ? 'border-red-400 bg-red-50' : 'border-blue-900 hover:border-blue-700'
+                      }`}
                     placeholder="your.email@example.com"
                   />
                   {errors.email && (
@@ -250,7 +243,7 @@ function EscrowServices() {
                   )}
                 </div>
               </div>
-              
+
               {/* Service Need */}
               <div>
                 <label htmlFor="serviceNeed" className="block text-sm font-semibold text-blue-900 mb-2">
@@ -266,7 +259,7 @@ function EscrowServices() {
                   placeholder="Please describe your requirements in detail..."
                 ></textarea>
               </div>
-              
+
               {/* Submit Button */}
               <div className="pt-4">
                 <button
@@ -295,7 +288,7 @@ function EscrowServices() {
             </form>
           </div>
         </div>
-        
+
         {/* Footer Info */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-700">

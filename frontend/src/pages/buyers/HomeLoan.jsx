@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { submitHomeLoan } from '../../api/buyerApi';
 
 function HomeLoan() {
   const [formData, setFormData] = useState({
@@ -7,9 +8,10 @@ function HomeLoan() {
     city: '',
     propertyFinalized: ''
   });
-  
+
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,12 +29,32 @@ function HomeLoan() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('Form submitted successfully!');
+      await submitHomeLoan(formData);
+
+      setSubmitStatus({
+        type: 'success',
+        message: 'Thank you! Your request has been submitted successfully. Our team will contact you shortly.'
+      });
+
+      setFormData({
+        loanAmount: '',
+        mobileNumber: '',
+        city: '',
+        propertyFinalized: ''
+      });
+
+      setTimeout(() => {
+        setSubmitStatus(null);
+      }, 10000);
+
     } catch (error) {
       console.error('Error submitting form:', error);
+      setSubmitStatus({
+        type: 'error',
+        message: 'Something went wrong. Please try again.'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -47,7 +69,16 @@ function HomeLoan() {
         <p className="text-blue-700 text-center mb-6 text-sm">
           Compare rates from top lenders
         </p>
-        
+
+        {submitStatus && (
+          <div className={`mb-4 p-3 rounded-lg ${submitStatus.type === 'success'
+            ? 'bg-green-50 text-green-800 border border-green-200'
+            : 'bg-red-50 text-red-800 border border-red-200'
+            }`}>
+            <p className="text-sm text-center">{submitStatus.message}</p>
+          </div>
+        )}
+
         <div className="space-y-4">
           {/* Loan Amount */}
           <div>
@@ -138,7 +169,7 @@ function HomeLoan() {
               </label>
             </div>
           </div>
-          
+
           {/* Submit Button */}
           <div className="pt-3">
             <button

@@ -1,3 +1,5 @@
+import houseModel from "../models/houseModel.js";
+
 export const estimateValuation = async (req, res) => {
   try {
     const {
@@ -30,8 +32,68 @@ export const estimateValuation = async (req, res) => {
     const unitFactor = areaUnit === 'Sq. M.' ? 10.7639 : areaUnit === 'Sq. Yd.' ? 9 : 1;
     const areaSqft = Number(area) * unitFactor;
 
-    // Base rate heuristic by property type
-    let baseRate = 6500; // default per sqft
+    // Fetch base rate from database for this city and location
+    let baseRate = 6500; // default fallback per sqft
+    let rateSource = 'estimated'; // Track source: 'database_exact', 'database_city', 'estimated'
+    let dbLocation = location;
+    
+    try {
+      // First try: Get the latest rate for exact city and location match from database
+      const latestRecord = await houseModel
+        .findOne({
+          city: { $regex: new RegExp(`^${city}$`, "i") },
+          location: { $regex: new RegExp(`^${location}$`, "i") }
+        })
+        .sort({ year: -1, month: -1 }) // Get most recent record
+        .select('rate_sqft property_category location');
+
+      if (latestRecord && latestRecord.rate_sqft) {
+        baseRate = Number(latestRecord.rate_sqft);
+        rateSource = 'database_exact';
+        dbLocation = latestRecord.location;
+      } else {
+        // Second try: Partial location match (case-insensitive substring search)
+        const partialMatch = await houseModel
+          .findOne({
+            city: { $regex: new RegExp(`^${city}$`, "i") },
+            location: { $regex: new RegExp(location, "i") }
+          })
+          .sort({ year: -1, month: -1 })
+          .select('rate_sqft property_category location');
+
+        if (partialMatch && partialMatch.rate_sqft) {
+          baseRate = Number(partialMatch.rate_sqft);
+          rateSource = 'database_exact';
+          dbLocation = partialMatch.location;
+        } else {
+          // Third try: Get average rate for the city from database
+          const cityRecords = await houseModel
+            .find({
+              city: { $regex: new RegExp(`^${city}$`, "i") }
+            })
+            .select('rate_sqft location')
+            .limit(100); // Sample size
+          
+          if (cityRecords && cityRecords.length > 0) {
+            const rates = cityRecords
+              .map(r => Number(r.rate_sqft))
+              .filter(r => r > 0 && !isNaN(r));
+            
+            if (rates.length > 0) {
+              const avgRate = rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
+              baseRate = Math.round(avgRate);
+              rateSource = 'database_city';
+            }
+          }
+        }
+      }
+    } catch (dbError) {
+      console.error('Error fetching rate from database:', dbError);
+      // Continue with default baseRate
+      rateSource = 'estimated';
+    }
+
+    // Property type adjustment based on database property_category if available
     const typeAdj = {
       Apartment: 1.0,
       Villa: 1.35,
@@ -89,7 +151,15 @@ export const estimateValuation = async (req, res) => {
       areaSqft
     };
 
-    return res.json({ success: true, city, location, ratePerSqft, estimatedPrice, breakdown });
+    return res.json({ 
+      success: true, 
+      city, 
+      location: dbLocation || location, 
+      ratePerSqft, 
+      estimatedPrice, 
+      breakdown,
+      dataSource: rateSource // Indicate if data came from database
+    });
   } catch (e) {
     console.error('Valuation error', e);
     return res.status(500).json({ success: false, message: 'Unable to estimate valuation' });

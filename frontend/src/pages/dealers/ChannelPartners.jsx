@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { submitChannelPartner } from '../../api/dealerApi'
 
 function ChannelPartners() {
   const [formData, setFormData] = useState({
@@ -9,7 +10,7 @@ function ChannelPartners() {
     partnershipType: '',
     additionalInfo: ''
   })
-  
+
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
@@ -30,17 +31,17 @@ function ChannelPartners() {
 
   const validateForm = () => {
     const newErrors = {}
-    
+
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required'
     }
-    
+
     if (!formData.mobileNumber.trim()) {
       newErrors.mobileNumber = 'Mobile number is required'
     } else if (!/^\d{10}$/.test(formData.mobileNumber.trim())) {
       newErrors.mobileNumber = 'Please enter a valid 10-digit mobile number'
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -54,28 +55,28 @@ function ChannelPartners() {
     if (!formData.partnershipType) {
       newErrors.partnershipType = 'Please select a partnership type'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
-    
+
     setIsSubmitting(true)
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await submitChannelPartner(formData)
+
       setSubmitStatus({
         type: 'success',
         message: 'Thank you for your interest in becoming a Channel Partner! Our partnerships team will review your application and contact you within 24-48 hours.'
       })
-      
+
       setFormData({
         fullName: '',
         mobileNumber: '',
@@ -84,11 +85,11 @@ function ChannelPartners() {
         partnershipType: '',
         additionalInfo: ''
       })
-      
+
       setTimeout(() => {
         setSubmitStatus(null)
       }, 10000)
-      
+
     } catch (error) {
       setSubmitStatus({
         type: 'error',
@@ -103,12 +104,12 @@ function ChannelPartners() {
     <div className="min-h-screen bg-white px-4 sm:px-6 lg:px-8 py-8 mt-20 ">
       <div className="max-w-2xl mx-auto">
         {/* Header Section */}
-        <div className="text-center mb-6">   
+        <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-blue-900 mb-2 tracking-tight">
             Channel Partners Program
-          </h1>     
+          </h1>
         </div>
-        
+
         {/* Form Card */}
         <div className="bg-white rounded-xl shadow-lg border border-blue-200 overflow-hidden">
           {/* Card Header */}
@@ -120,15 +121,14 @@ function ChannelPartners() {
               Share your business details and our team will connect you with exclusive partnership opportunities
             </p>
           </div>
-          
+
           {/* Form Content */}
           <div className="p-5 bg-white">
             {submitStatus && (
-              <div className={`mb-4 p-3 rounded-lg border ${
-                submitStatus.type === 'success' 
-                  ? 'bg-green-50 border-green-600' 
+              <div className={`mb-4 p-3 rounded-lg border ${submitStatus.type === 'success'
+                  ? 'bg-green-50 border-green-600'
                   : 'bg-red-50 border-red-600'
-              }`}>
+                }`}>
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
                     {submitStatus.type === 'success' ? (
@@ -142,16 +142,15 @@ function ChannelPartners() {
                     )}
                   </div>
                   <div className="ml-3">
-                    <p className={`text-sm font-medium ${
-                      submitStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
-                    }`}>
+                    <p className={`text-sm font-medium ${submitStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
+                      }`}>
                       {submitStatus.message}
                     </p>
                   </div>
                 </div>
               </div>
             )}
-            
+
             <div className="space-y-4">
               {/* Full Name */}
               <div>
@@ -164,16 +163,15 @@ function ChannelPartners() {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${
-                    errors.fullName ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                  }`}
+                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${errors.fullName ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                    }`}
                   placeholder="Enter your full name"
                 />
                 {errors.fullName && (
                   <p className="mt-1 text-xs text-red-600">{errors.fullName}</p>
                 )}
               </div>
-              
+
               {/* Contact Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
@@ -186,16 +184,15 @@ function ChannelPartners() {
                     name="mobileNumber"
                     value={formData.mobileNumber}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${
-                      errors.mobileNumber ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                    }`}
+                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${errors.mobileNumber ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                      }`}
                     placeholder="10-digit mobile number"
                   />
                   {errors.mobileNumber && (
                     <p className="mt-1 text-xs text-red-600">{errors.mobileNumber}</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label htmlFor="email" className="block text-xs font-semibold text-blue-900 mb-1">
                     Email Address <span className="text-red-500">*</span>
@@ -206,9 +203,8 @@ function ChannelPartners() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${
-                      errors.email ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                    }`}
+                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${errors.email ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                      }`}
                     placeholder="your.email@example.com"
                   />
                   {errors.email && (
@@ -228,9 +224,8 @@ function ChannelPartners() {
                   name="companyName"
                   value={formData.companyName}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${
-                    errors.companyName ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                  }`}
+                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${errors.companyName ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                    }`}
                   placeholder="Enter your company name"
                 />
                 {errors.companyName && (
@@ -248,9 +243,8 @@ function ChannelPartners() {
                   name="partnershipType"
                   value={formData.partnershipType}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${
-                    errors.partnershipType ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                  }`}
+                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-900 focus:border-transparent text-sm ${errors.partnershipType ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                    }`}
                 >
                   <option value="">Select partnership type</option>
                   <option value="silver">Silver Partner</option>
@@ -267,7 +261,7 @@ function ChannelPartners() {
                   <p className="mt-1 text-xs text-red-600">{errors.partnershipType}</p>
                 )}
               </div>
-              
+
               {/* Additional Information */}
               <div>
                 <label htmlFor="additionalInfo" className="block text-xs font-semibold text-blue-900 mb-1">
@@ -283,7 +277,7 @@ function ChannelPartners() {
                   placeholder="Tell us about your company's strengths and partnership goals..."
                 ></textarea>
               </div>
-              
+
               {/* Submit Button */}
               <div className="pt-2">
                 <button
@@ -320,7 +314,7 @@ function ChannelPartners() {
             </div>
           </div>
         </div>
-        
+
         {/* Footer Info */}
         <div className="mt-6 text-center space-y-2">
           <div className="flex justify-center space-x-6 text-sm text-gray-700">

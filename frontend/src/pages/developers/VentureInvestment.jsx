@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { submitVentureInvestment } from '../../api/developerApi';
 
 function VentureInvestment() {
   const [formData, setFormData] = useState({
@@ -9,9 +10,10 @@ function VentureInvestment() {
     industryPreference: '',
     riskTolerance: ''
   });
-  
+
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -29,12 +31,35 @@ function VentureInvestment() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('Thank you! Our team will contact you within 24 hours.');
+      await submitVentureInvestment(formData);
+
+      setSubmitStatus({
+        type: 'success',
+        message: 'Thank you! Your investment interest has been recorded. Our team will contact you within 24 hours.'
+      });
+
+      // Reset form
+      setFormData({
+        firstName: '',
+        mobileNumber: '',
+        email: '',
+        investmentAmount: '',
+        industryPreference: '',
+        riskTolerance: ''
+      });
+
+      setTimeout(() => {
+        setSubmitStatus(null);
+      }, 10000);
+
     } catch (error) {
       console.error('Error submitting form:', error);
+      setSubmitStatus({
+        type: 'error',
+        message: 'Something went wrong. Please try again.'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -49,7 +74,16 @@ function VentureInvestment() {
         <p className="text-blue-700 text-center mb-6 text-sm">
           Invest in high-growth startups
         </p>
-        
+
+        {submitStatus && (
+          <div className={`mb-4 p-3 rounded-lg ${submitStatus.type === 'success'
+            ? 'bg-green-50 text-green-800 border border-green-200'
+            : 'bg-red-50 text-red-800 border border-red-200'
+            }`}>
+            <p className="text-sm text-center">{submitStatus.message}</p>
+          </div>
+        )}
+
         <div className="space-y-4">
           {/* Full Name and Mobile Number */}
           <div className="grid grid-cols-2 gap-4">
@@ -144,12 +178,11 @@ function VentureInvestment() {
                 <option value="">Select industry</option>
                 <option value="technology">Technology</option>
                 <option value="fintech">Fintech</option>
-                <option value="healthcare">Healthcare</option>
-                <option value="ecommerce">E-commerce</option>
-                <option value="saas">SaaS</option>
-                <option value="ai-ml">AI & ML</option>
-                <option value="clean-energy">Clean Energy</option>
-                <option value="edtech">EdTech</option>
+                <option value="proptech">PropTech</option>
+                <option value="reit">REIT</option>
+                <option value="commercial">Commercial</option>
+                <option value="fractional">Fractional</option>
+                <option value="other-real-estate">Other Real Estate Ventures</option>
                 <option value="diverse">Diversified</option>
               </select>
             </div>
@@ -196,7 +229,7 @@ function VentureInvestment() {
               </label>
             </div>
           </div>
-          
+
           {/* Submit Button */}
           <div className="pt-3">
             <button
@@ -215,7 +248,7 @@ function VentureInvestment() {
             </p>
           </div>
         </div>
-        
+
         <div className="mt-6 pt-6 border-t border-blue-200">
           <h3 className="text-lg font-semibold text-blue-900 mb-1">Startup Investment</h3>
           <p className="text-sm text-blue-700">Curated opportunities from top startups</p>

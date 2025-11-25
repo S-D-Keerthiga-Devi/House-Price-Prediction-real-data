@@ -82,6 +82,7 @@ const Header = () => {
     const shouldGoToEmergingLocalities = showEmergingLocalitiesMessage;
     const shouldGoToHeatmaps = showHeatmapsMessage;
     const shouldGoToPriceToIncome = showPriceToIncomeMessage;
+    const shouldGoToComparator = showComparatorMessage;
 
     // Navigate to the appropriate Page route with city in query
     if (shouldGoToHeatmaps) {
@@ -92,6 +93,8 @@ const Header = () => {
       navigate(`/emerging-localities-page?city=${encodeURIComponent(city)}`);
     } else if (shouldGoToPriceTrends) {
       navigate(`/price-trends?city=${encodeURIComponent(city)}`);
+    } else if (shouldGoToComparator) {
+      navigate(`/comparator?city=${encodeURIComponent(city)}`);
     }
 
     // Then clear prompts
@@ -163,7 +166,7 @@ const Header = () => {
     const handleHeatmapsClick = () => {
       clearAllPrompts();
       setShowHeatmapsMessage(true);
-      
+
       // Optional: scroll/focus on some element
       const locationInput = document.getElementById("location-input");
       if (locationInput) {
@@ -185,7 +188,7 @@ const Header = () => {
     const handlePriceToIncomeClick = () => {
       clearAllPrompts();
       setShowPriceToIncomeMessage(true);
-      
+
       // Optional: scroll/focus on some element
       const locationInput = document.getElementById("location-input");
       if (locationInput) {
@@ -206,7 +209,7 @@ const Header = () => {
     const handleComparatorClick = () => {
       clearAllPrompts();
       setShowComparatorMessage(true);
-      
+
       // Optional: scroll/focus on some element
       const locationInput = document.getElementById("location-input");
       if (locationInput) {
@@ -373,7 +376,7 @@ const Header = () => {
     })();
     return () => { cancelled = true; };
   }, [selectedCity]);
-  
+
   // Handle dropdown closing
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -382,17 +385,17 @@ const Header = () => {
         setCenterOpen(false);
       }
     };
-    
+
     const handleEscKey = (event) => {
       if (event.key === 'Escape') {
         setCenterOpen(false);
       }
     };
-    
+
     // Add event listeners with capture phase to ensure they run before other handlers
     document.addEventListener('mousedown', handleClickOutside, true);
     document.addEventListener('keydown', handleEscKey);
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside, true);
       document.removeEventListener('keydown', handleEscKey);
@@ -481,7 +484,7 @@ const Header = () => {
               <div className="absolute left-full ml-2 mr-2 top-1/2 transform -translate-y-1/2 
               bg-purple-600 text-white text-sm px-4 py-3 rounded-lg shadow-lg z-50 
               whitespace-nowrap max-w-md">
-            
+
                 <div className="flex items-center gap-2">
                   <span>Choose a city to explore Price To Income Index!</span>
                   <button

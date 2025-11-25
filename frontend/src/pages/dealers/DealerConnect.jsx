@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { submitDealerConnect } from '../../api/dealerApi'
 
 function DealerConnect() {
   const [formData, setFormData] = useState({
@@ -13,7 +14,7 @@ function DealerConnect() {
     annualRevenue: '',
     additionalInfo: ''
   })
-  
+
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
@@ -34,17 +35,17 @@ function DealerConnect() {
 
   const validateForm = () => {
     const newErrors = {}
-    
+
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'Full name is required'
     }
-    
+
     if (!formData.mobileNumber.trim()) {
       newErrors.mobileNumber = 'Mobile number is required'
     } else if (!/^\d{10}$/.test(formData.mobileNumber.trim())) {
       newErrors.mobileNumber = 'Please enter a valid 10-digit mobile number'
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -58,28 +59,28 @@ function DealerConnect() {
     if (!formData.dealershipType) {
       newErrors.dealershipType = 'Please select a dealership type'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
-    
+
     setIsSubmitting(true)
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await submitDealerConnect(formData)
+
       setSubmitStatus({
         type: 'success',
         message: 'Thank you for your interest! Our partnership team will review your dealership profile and contact you within 24 hours. For immediate assistance, call +91 98765 43210.'
       })
-      
+
       setFormData({
         firstName: '',
         mobileNumber: '',
@@ -92,11 +93,11 @@ function DealerConnect() {
         annualRevenue: '',
         additionalInfo: ''
       })
-      
+
       setTimeout(() => {
         setSubmitStatus(null)
       }, 10000)
-      
+
     } catch (error) {
       setSubmitStatus({
         type: 'error',
@@ -116,18 +117,17 @@ function DealerConnect() {
         <p className="text-blue-700 text-center mb-4 text-xs">
           Partner with us to expand your business
         </p>
-        
+
         <div className="space-y-3">
           {submitStatus && (
-            <div className={`mb-3 p-3 rounded-lg ${
-              submitStatus.type === 'success' 
-                ? 'bg-green-50 text-green-800' 
+            <div className={`mb-3 p-3 rounded-lg ${submitStatus.type === 'success'
+                ? 'bg-green-50 text-green-800'
                 : 'bg-red-50 text-red-800'
-            }`}>
+              }`}>
               <p className="text-xs">{submitStatus.message}</p>
             </div>
           )}
-          
+
           {/* Name and Mobile */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -140,16 +140,15 @@ function DealerConnect() {
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${
-                  errors.firstName ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                }`}
+                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${errors.firstName ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                  }`}
                 placeholder="Full name"
               />
               {errors.firstName && (
                 <p className="mt-1 text-xs text-red-600">{errors.firstName}</p>
               )}
             </div>
-            
+
             <div>
               <label htmlFor="mobileNumber" className="block text-xs font-semibold text-blue-900 mb-1">
                 Mobile Number <span className="text-red-500">*</span>
@@ -160,9 +159,8 @@ function DealerConnect() {
                 name="mobileNumber"
                 value={formData.mobileNumber}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${
-                  errors.mobileNumber ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                }`}
+                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${errors.mobileNumber ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                  }`}
                 placeholder="10-digit number"
               />
               {errors.mobileNumber && (
@@ -170,7 +168,7 @@ function DealerConnect() {
               )}
             </div>
           </div>
-          
+
           {/* Email and Business Name */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -183,9 +181,8 @@ function DealerConnect() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${
-                  errors.email ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                }`}
+                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${errors.email ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                  }`}
                 placeholder="email@example.com"
               />
               {errors.email && (
@@ -203,9 +200,8 @@ function DealerConnect() {
                 name="businessName"
                 value={formData.businessName}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${
-                  errors.businessName ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                }`}
+                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${errors.businessName ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                  }`}
                 placeholder="Business name"
               />
               {errors.businessName && (
@@ -225,22 +221,17 @@ function DealerConnect() {
                 name="dealershipType"
                 value={formData.dealershipType}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${
-                  errors.dealershipType ? 'border-red-400 bg-red-50' : 'border-blue-900'
-                }`}
+                className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm ${errors.dealershipType ? 'border-red-400 bg-red-50' : 'border-blue-900'
+                  }`}
               >
                 <option value="">Select dealership type</option>
-                <option value="automobile">Automobile</option>
-                <option value="real-estate">Real Estate</option>
-                <option value="electronics">Electronics & Appliances</option>
-                <option value="machinery">Industrial Machinery</option>
-                <option value="construction">Construction Equipment</option>
-                <option value="agricultural">Agricultural Equipment</option>
-                <option value="luxury-goods">Luxury Goods</option>
-                <option value="furniture">Furniture & Home Decor</option>
-                <option value="retail">Retail & FMCG</option>
-                <option value="wholesale">Wholesale Distribution</option>
-                <option value="franchise">Franchise</option>
+                <option value="real-estate-agent">Real Estate Agent</option>
+                <option value="property-consultant">Property Consultant</option>
+                <option value="broker">Broker</option>
+                <option value="developer">Developer</option>
+                <option value="channel-partner">Channel Partner</option>
+                <option value="franchisee">Franchisee</option>
+                <option value="property-management">Property Management</option>
                 <option value="other">Other</option>
               </select>
               {errors.dealershipType && (
@@ -269,7 +260,7 @@ function DealerConnect() {
               </select>
             </div>
           </div>
-          
+
           {/* Additional Information */}
           <div>
             <label htmlFor="additionalInfo" className="block text-xs font-semibold text-blue-900 mb-1">
@@ -285,7 +276,7 @@ function DealerConnect() {
               placeholder="Tell us about your dealership goals..."
             ></textarea>
           </div>
-          
+
           {/* Submit Button */}
           <div className="pt-2">
             <button
@@ -305,7 +296,7 @@ function DealerConnect() {
             </p>
           </div>
         </div>
-        
+
         <div className="mt-4 pt-4 border-t border-blue-200">
           <h3 className="text-sm font-semibold text-blue-900 mb-1">Partnership Program</h3>
           <p className="text-xs text-blue-700">Exclusive opportunities for verified dealers</p>

@@ -11,6 +11,10 @@ import rentAgreementRouter from "./routes/rentAgreementRoutes.js";
 import interiorDesignRouter from "./routes/interiorDesignRoutes.js";
 import valuationRouter from "./routes/valuationRoutes.js";
 import escrowRouter from "./routes/escrowRoutes.js";
+import buyerRouter from "./routes/buyerRoutes.js";
+import developerRouter from "./routes/developerRoutes.js";
+import dealerRouter from "./routes/dealerRoutes.js";
+import ownerRouter from "./routes/ownerRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 4000
@@ -21,16 +25,16 @@ app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(cookieParser());
 app.use(cors({
-    origin: function(origin, callback) {
-      if (!origin) return callback(null, true); // allows tools like Postman
-      if (allowedOrigins.indexOf(origin) === -1) {
-        return callback(new Error('Not allowed by CORS'), false);
-      }
-      return callback(null, true);
-    },
-    credentials: true
-  }));
-  
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // allows tools like Postman
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error('Not allowed by CORS'), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
+
 
 // API Endpoints
 app.get('/', (req, res) => res.send("API is Working"))
@@ -42,5 +46,9 @@ app.use('/api/rent-agreement', rentAgreementRouter);
 app.use('/api/interior', interiorDesignRouter);
 app.use('/api/valuation', valuationRouter);
 app.use('/api/escrow', escrowRouter);
+app.use('/api/buyer', buyerRouter);
+app.use('/api/developer', developerRouter);
+app.use('/api/dealer', dealerRouter);
+app.use('/api/owner', ownerRouter);
 
 app.listen(port, () => console.log(`server started on PORT ${port}`))

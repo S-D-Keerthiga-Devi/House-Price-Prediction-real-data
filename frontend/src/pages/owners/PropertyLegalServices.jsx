@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { submitLegalServices } from '../../api/ownerApi'
 
 function PropertyLegalServices() {
   const [formData, setFormData] = useState({
@@ -10,7 +11,7 @@ function PropertyLegalServices() {
     propertyLocation: '',
     serviceNeed: ''
   })
-  
+
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState(null)
@@ -31,17 +32,17 @@ function PropertyLegalServices() {
 
   const validateForm = () => {
     const newErrors = {}
-    
+
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required'
     }
-    
+
     if (!formData.mobileNumber.trim()) {
       newErrors.mobileNumber = 'Mobile number is required'
     } else if (!/^\d{10}$/.test(formData.mobileNumber.trim())) {
       newErrors.mobileNumber = 'Please enter a valid 10-digit mobile number'
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -51,28 +52,28 @@ function PropertyLegalServices() {
     if (!formData.serviceType) {
       newErrors.serviceType = 'Please select a service type'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
-    
+
     setIsSubmitting(true)
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      await submitLegalServices(formData)
+
       setSubmitStatus({
         type: 'success',
         message: 'Your request has been submitted successfully! Our legal team will contact you within 24 hours.'
       })
-      
+
       setFormData({
         fullName: '',
         mobileNumber: '',
@@ -82,11 +83,11 @@ function PropertyLegalServices() {
         propertyLocation: '',
         serviceNeed: ''
       })
-      
+
       setTimeout(() => {
         setSubmitStatus(null)
       }, 10000)
-      
+
     } catch (error) {
       setSubmitStatus({
         type: 'error',
@@ -106,7 +107,7 @@ function PropertyLegalServices() {
             Property Legal Services
           </h1>
         </div>
-        
+
         {/* Form Card */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           {/* Card Header */}
@@ -118,15 +119,14 @@ function PropertyLegalServices() {
               Fill in your details and our legal experts will reach out to you promptly
             </p>
           </div>
-          
+
           {/* Form Content */}
           <div className="p-5 bg-white">
             {submitStatus && (
-              <div className={`mb-4 p-3 rounded-lg border ${
-                submitStatus.type === 'success' 
-                  ? 'bg-green-50 border-green-600' 
+              <div className={`mb-4 p-3 rounded-lg border ${submitStatus.type === 'success'
+                  ? 'bg-green-50 border-green-600'
                   : 'bg-red-50 border-red-600'
-              }`}>
+                }`}>
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
                     {submitStatus.type === 'success' ? (
@@ -140,16 +140,15 @@ function PropertyLegalServices() {
                     )}
                   </div>
                   <div className="ml-3">
-                    <p className={`text-sm font-medium ${
-                      submitStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
-                    }`}>
+                    <p className={`text-sm font-medium ${submitStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
+                      }`}>
                       {submitStatus.message}
                     </p>
                   </div>
                 </div>
               </div>
             )}
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Full Name */}
               <div>
@@ -162,16 +161,15 @@ function PropertyLegalServices() {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm ${
-                    errors.fullName ? 'border-red-400 bg-red-50' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm ${errors.fullName ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                    }`}
                   placeholder="Enter your full name"
                 />
                 {errors.fullName && (
                   <p className="mt-1 text-xs text-red-600">{errors.fullName}</p>
                 )}
               </div>
-              
+
               {/* Contact Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
@@ -184,16 +182,15 @@ function PropertyLegalServices() {
                     name="mobileNumber"
                     value={formData.mobileNumber}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm ${
-                      errors.mobileNumber ? 'border-red-400 bg-red-50' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm ${errors.mobileNumber ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                      }`}
                     placeholder="10-digit mobile number"
                   />
                   {errors.mobileNumber && (
                     <p className="mt-1 text-xs text-red-600">{errors.mobileNumber}</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label htmlFor="email" className="block text-xs font-semibold text-gray-700 mb-1">
                     Email Address <span className="text-red-500">*</span>
@@ -204,9 +201,8 @@ function PropertyLegalServices() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm ${
-                      errors.email ? 'border-red-400 bg-red-50' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                      }`}
                     placeholder="your.email@example.com"
                   />
                   {errors.email && (
@@ -225,9 +221,8 @@ function PropertyLegalServices() {
                   name="serviceType"
                   value={formData.serviceType}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm ${
-                    errors.serviceType ? 'border-red-400 bg-red-50' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm ${errors.serviceType ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                    }`}
                 >
                   <option value="">Select a service</option>
                   <option value="title-search">Title Search & Verification</option>
@@ -281,7 +276,7 @@ function PropertyLegalServices() {
                   />
                 </div>
               </div>
-              
+
               {/* Service Need */}
               <div>
                 <label htmlFor="serviceNeed" className="block text-xs font-semibold text-gray-700 mb-1">
@@ -297,7 +292,7 @@ function PropertyLegalServices() {
                   placeholder="Please describe your requirements..."
                 ></textarea>
               </div>
-              
+
               {/* Submit Button */}
               <div className="pt-2">
                 <button
@@ -326,7 +321,7 @@ function PropertyLegalServices() {
             </form>
           </div>
         </div>
-        
+
         {/* Footer Info */}
         <div className="mt-6 text-center space-y-2">
           <p className="text-sm text-gray-700">

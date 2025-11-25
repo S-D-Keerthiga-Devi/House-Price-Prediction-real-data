@@ -34,6 +34,8 @@ const Listings = () => {
   const navigate = useNavigate();
   const { selectedCity } = useCity();
 
+
+
   useEffect(() => {
     const fetchProperties = async () => {
       setLoading(true);
@@ -47,16 +49,16 @@ const Listings = () => {
             property_ids: propertyIds,
           });
           console.log("Property IDs response:", response);
-          
+
           if (!response || !response.success) {
             setError(response?.message || "Failed to fetch properties");
             setProperties([]);
             setTotalPages(0);
             return;
           }
-          
+
           const propertiesData = response.data || response.properties || [];
-          
+
           // Ensure unique IDs for properties that don't have them
           const propertiesWithIds = propertiesData.map(
             (prop, index) => ({
@@ -64,12 +66,12 @@ const Listings = () => {
               id: prop.id || prop._id || `temp-id-${Date.now()}-${index}`,
             })
           );
-          
+
           // Remove duplicate property names
           const uniqueProperties = propertiesWithIds.filter((property, index, self) =>
-            index === self.findIndex((p) => 
+            index === self.findIndex((p) =>
               (p.id || p._id) === (property.id || property._id) ||
-              `${(p.property_name||'').toLowerCase()}|${(p.location||'').toLowerCase()}|${(p.city||'').toLowerCase()}` === `${(property.property_name||'').toLowerCase()}|${(property.location||'').toLowerCase()}|${(property.city||'').toLowerCase()}`
+              `${(p.property_name || '').toLowerCase()}|${(p.location || '').toLowerCase()}|${(p.city || '').toLowerCase()}` === `${(property.property_name || '').toLowerCase()}|${(property.location || '').toLowerCase()}|${(property.city || '').toLowerCase()}`
             )
           );
 
@@ -88,7 +90,7 @@ const Listings = () => {
             }
             return { ...p, display_name: base };
           });
-          
+
           console.log("Unique Properties after deduplication:", withDisplayNames);
           setProperties(withDisplayNames);
           setTotalPages(1);
@@ -99,7 +101,7 @@ const Listings = () => {
             page: page,
             limit: 10,
           });
-          
+
           // Check if response is successful and has the expected structure
           if (!response || !response.success) {
             console.error("API request failed:", response);
@@ -108,10 +110,10 @@ const Listings = () => {
             setTotalPages(0);
             return;
           }
-          
+
           const propertiesData = response.data || response.properties || [];
           console.log("Properties data:", propertiesData);
-          
+
           if (!Array.isArray(propertiesData)) {
             console.error("Invalid properties data structure:", propertiesData);
             setError("Invalid data format received from server");
@@ -119,42 +121,42 @@ const Listings = () => {
             setTotalPages(0);
             return;
           }
-            
-        // Ensure unique IDs for properties that don't have them
-        const propertiesWithIds = propertiesData.map(
-          (prop, index) => ({
-            ...prop,
-            id: prop.id || prop._id || `temp-id-${Date.now()}-${index}`,
-          })
-        );
-        console.log("Properties with IDs:", propertiesWithIds);
-        
-        // Remove duplicates using stable keys (prefer id/_id, else name+location+city)
-        const seenKeys = new Set();
-        const uniqueProperties = propertiesWithIds.filter((p) => {
-          const key = (p.id || p._id) || `${(p.property_name||'').toLowerCase()}|${(p.location||'').toLowerCase()}|${(p.city||'').toLowerCase()}`;
-          if (seenKeys.has(key)) return false;
-          seenKeys.add(key);
-          return true;
-        });
-        // Create unique display names per card
-        const nameCounts = uniqueProperties.reduce((acc, p) => {
-          const base = (p.property_name && p.property_name.trim()) || `Property in ${p.location || p.city || ''}`;
-          acc[base] = (acc[base] || 0) + 1;
-          return acc;
-        }, {});
-        const runningCounts = {};
-        const withDisplayNames = uniqueProperties.map((p) => {
-          const base = (p.property_name && p.property_name.trim()) || `Property in ${p.location || p.city || ''}`;
-          if (nameCounts[base] > 1) {
-            runningCounts[base] = (runningCounts[base] || 0) + 1;
-            return { ...p, display_name: `${base} #${runningCounts[base]}` };
-          }
-          return { ...p, display_name: base };
-        });
 
-        console.log("Unique Properties after deduplication:", withDisplayNames);
-        setProperties(withDisplayNames);
+          // Ensure unique IDs for properties that don't have them
+          const propertiesWithIds = propertiesData.map(
+            (prop, index) => ({
+              ...prop,
+              id: prop.id || prop._id || `temp-id-${Date.now()}-${index}`,
+            })
+          );
+          console.log("Properties with IDs:", propertiesWithIds);
+
+          // Remove duplicates using stable keys (prefer id/_id, else name+location+city)
+          const seenKeys = new Set();
+          const uniqueProperties = propertiesWithIds.filter((p) => {
+            const key = (p.id || p._id) || `${(p.property_name || '').toLowerCase()}|${(p.location || '').toLowerCase()}|${(p.city || '').toLowerCase()}`;
+            if (seenKeys.has(key)) return false;
+            seenKeys.add(key);
+            return true;
+          });
+          // Create unique display names per card
+          const nameCounts = uniqueProperties.reduce((acc, p) => {
+            const base = (p.property_name && p.property_name.trim()) || `Property in ${p.location || p.city || ''}`;
+            acc[base] = (acc[base] || 0) + 1;
+            return acc;
+          }, {});
+          const runningCounts = {};
+          const withDisplayNames = uniqueProperties.map((p) => {
+            const base = (p.property_name && p.property_name.trim()) || `Property in ${p.location || p.city || ''}`;
+            if (nameCounts[base] > 1) {
+              runningCounts[base] = (runningCounts[base] || 0) + 1;
+              return { ...p, display_name: `${base} #${runningCounts[base]}` };
+            }
+            return { ...p, display_name: base };
+          });
+
+          console.log("Unique Properties after deduplication:", withDisplayNames);
+          setProperties(withDisplayNames);
           setTotalPages(response.totalPages || 1);
         }
       } catch (err) {
@@ -199,6 +201,8 @@ const Listings = () => {
     return `${area} sq ft`;
   };
 
+
+
   if (loading) {
     return (
       <div
@@ -234,8 +238,8 @@ const Listings = () => {
               {/* Image Section */}
               <div className="relative h-32 bg-gray-100">
                 {property.image_url ? (
-                  <img 
-                    src={property.image_url} 
+                  <img
+                    src={property.image_url}
                     alt={property.property_name || 'Property Image'}
                     className="w-full h-full object-cover"
                   />
@@ -258,7 +262,7 @@ const Listings = () => {
                 <p className="text-xs text-gray-600 mb-2 truncate">
                   {property.location || "N/A"}, {property.city || "N/A"}
                 </p>
-                
+
                 <div className="flex items-center text-gray-500 text-xs mb-2 space-x-3">
                   <div className="flex items-center">
                     <Bed className="w-3 h-3 mr-1" />
@@ -280,12 +284,13 @@ const Listings = () => {
                       <p className="text-xs text-gray-500 truncate">{formatRate(property.rate_sqft)}</p>
                     )}
                   </div>
-                  <button 
+                  <button
                     onClick={() => navigate(`/property-details/${property.id || property._id}`)}
                     className="bg-blue-800 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-blue-700 transition-colors duration-300"
                   >
                     View
                   </button>
+
                 </div>
               </div>
             </div>
@@ -301,6 +306,8 @@ const Listings = () => {
           />
         </div>
       </div>
+
+
     </div>
   );
 };

@@ -20,7 +20,8 @@ const RentAgreement = () => {
   const partyLabels = (type) => {
     const isLease = type === 'Lease Agreement';
     return {
-      title: isLease ? 'LEASE DEED' : 'RENT AGREEMENT',
+      title: isLease ? 'LEASE AGREEMENT' : 'RENT AGREEMENT',
+      documentName: isLease ? 'Lease Deed' : 'Rent Agreement',
       partyA: isLease ? 'Lessor' : 'Landlord',
       partyB: isLease ? 'Lessee' : 'Tenant',
       partyAUpper: isLease ? 'LESSOR' : 'LANDLORD',
@@ -540,7 +541,7 @@ const RentAgreement = () => {
 
             <div className="mb-6 text-center">
               <p className="text-gray-700">
-                This Lease Deed/Rent Agreement is executed at <strong>{formData.agreementCity}</strong> on day, <strong>{formData.executionDate}</strong>.
+                This {labels.documentName} is executed at <strong>{formData.agreementCity}</strong> on day, <strong>{formData.executionDate}</strong>.
               </p>
             </div>
 
@@ -737,7 +738,7 @@ const RentAgreement = () => {
             <div className="mt-8 p-4 bg-blue-50 rounded">
               <h2 className="text-xl font-bold text-center mb-4 text-blue-900">ANNEXURE 1</h2>
               <p className="mb-4 text-gray-800">
-                Items provided by the LESSOR at the time of execution of Lease Deed between the LESSOR and the LESSEE are as follows:
+                Items provided by the LESSOR at the time of execution of {labels.documentName} between the LESSOR and the LESSEE are as follows:
               </p>
 
               <div className="grid grid-cols-2 gap-3">
@@ -972,7 +973,7 @@ const RentAgreement = () => {
 
         <div className="bg-white rounded-lg shadow-xl p-6 mb-6">
           <div className="bg-blue-100 rounded-lg p-4 mb-6">
-            <h2 className="text-2xl font-bold text-gray-800 text-center">LEASE DEED</h2>
+            <h2 className="text-2xl font-bold text-gray-800 text-center">{partyLabels(formData.agreementType).title}</h2>
           </div>
 
           <h3 className="text-xl font-bold text-gray-800 mb-4">Landlord Details</h3>

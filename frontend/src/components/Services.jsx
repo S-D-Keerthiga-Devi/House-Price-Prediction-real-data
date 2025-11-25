@@ -37,6 +37,7 @@ const smartServicesTabs = {
     { name: "Comparator", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/comparator", isComparator: true },
     { name: "AI Interior Design", icon: <Paintbrush className="w-10 h-10 text-blue-600" />, link: "/interior"},
     { name: "Home Loan", icon: <Banknote className="w-10 h-10 text-amber-600" />, link: "/home-loan"},
+    { name: "Facility Management", icon: <Briefcase className="w-10 h-10 text-green-600" />, link: "/property-manage" }
   ],
   Developers: [
     { name: "Advertize With Us", icon: <Building2 className="w-10 h-10 text-orange-600" />, link: "/advertise-with-us" },
@@ -54,7 +55,6 @@ const smartServicesTabs = {
   ],
   Owners: [
     { name: "Know Your Property Value", icon: <Scale className="w-10 h-10 text-blue-600" />, link: "/know-property" },
-    { name: "Facility Management", icon: <Briefcase className="w-10 h-10 text-green-600" />, link: "/property-manage" },
     { name: "Home Interior", icon: <Lightbulb className="w-10 h-10 text-orange-600" />, link: "/home-interior" },
     { name: "Post Property", icon: <Building2 className="w-10 h-10 text-purple-600" />, link: "/post-property" },
     { name: "Property Legal Services", icon: <Gavel className="w-10 h-10 text-red-600" />, link: "/property-legal" },

@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getPropertyDetailsById } from "../../api/house";
-import { 
-  Bed, 
-  Bath, 
-  Home, 
-  MapPin, 
-  Ruler, 
-  Car, 
-  Building2, 
+import {
+  Bed,
+  Bath,
+  Home,
+  MapPin,
+  Ruler,
+  Car,
+  Building2,
   Calendar,
   DollarSign,
   TrendingUp,
   ArrowLeft,
-  Home as HomeIcon
+  Home as HomeIcon,
+  X
 } from "lucide-react";
 import { CircularProgress, Alert } from "@mui/material";
 
@@ -24,18 +25,23 @@ const ViewDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Contact Modal State
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [contactForm, setContactForm] = useState({ name: '', phone: '' });
+  const [submitStatus, setSubmitStatus] = useState(null);
+
   useEffect(() => {
     const fetchPropertyDetails = async () => {
       setLoading(true);
       setError(null);
       try {
         const response = await getPropertyDetailsById(id);
-        
+
         if (!response || !response.success) {
           setError(response?.message || "Failed to fetch property details");
           return;
         }
-        
+
         setProperty(response.property);
       } catch (err) {
         setError("An error occurred while fetching property details. Please try again later.");
@@ -70,6 +76,30 @@ const ViewDetails = () => {
   const formatPercentage = (value) => {
     if (value === null || value === undefined) return "N/A";
     return `${value.toFixed(2)}%`;
+  };
+
+  const handleContactClick = () => {
+    setContactModalOpen(true);
+    setSubmitStatus(null);
+    setContactForm({ name: '', phone: '' });
+  };
+
+  const handleContactClose = () => {
+    setContactModalOpen(false);
+  };
+
+  const handleContactChange = (e) => {
+    const { name, value } = e.target;
+    setContactForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    // Simulate API call
+    setSubmitStatus({ type: 'success', message: 'Request submitted successfully! We will contact you shortly.' });
+    setTimeout(() => {
+      handleContactClose();
+    }, 2000);
   };
 
   if (loading) {
@@ -371,13 +401,85 @@ const ViewDetails = () => {
               <p className="text-blue-100 mb-4">
                 Get in touch with us to schedule a viewing or get more information.
               </p>
-              <button className="w-full bg-white text-blue-600 font-semibold py-3 px-6 rounded-lg hover:bg-blue-50 transition-colors">
+              <button
+                onClick={handleContactClick}
+                className="w-full bg-white text-blue-600 font-semibold py-3 px-6 rounded-lg hover:bg-blue-50 transition-colors"
+              >
                 Contact Now
               </button>
             </div>
           </div>
         </div>
       </div>
+      {/* Contact Modal */}
+      {contactModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full relative shadow-2xl">
+            <button
+              onClick={handleContactClose}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              <X size={24} />
+            </button>
+
+            <h2 className="text-2xl font-bold text-blue-900 mb-2">Interested in this property?</h2>
+            <p className="text-gray-600 mb-4">Get in touch with us to schedule a viewing or get more information.</p>
+
+            {property && (
+              <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-100">
+                <p className="font-semibold text-blue-800 truncate">
+                  {property.bedrooms ? `${property.bedrooms}BHK ` : ''}
+                  Property in {property.location || property.city || "N/A"}
+                </p>
+                <p className="text-sm text-gray-600 truncate">{property.location}, {property.city}</p>
+              </div>
+            )}
+
+            {submitStatus ? (
+              <div className="p-4 bg-green-100 text-green-800 rounded text-center border border-green-200">
+                {submitStatus.message}
+              </div>
+            ) : (
+              <form onSubmit={handleContactSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={contactForm.name}
+                    onChange={handleContactChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Your Name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-gray-500">+91</span>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={contactForm.phone}
+                      onChange={handleContactChange}
+                      required
+                      pattern="[0-9]{10}"
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="10-digit Mobile Number"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="w-full bg-blue-900 text-white py-2 rounded font-semibold hover:bg-blue-800 transition shadow-md"
+                >
+                  Contact Now
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
