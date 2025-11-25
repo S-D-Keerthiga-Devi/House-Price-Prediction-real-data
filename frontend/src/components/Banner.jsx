@@ -39,6 +39,13 @@ export default function Banner({ onScrollToForm }) {
       return;
     }
 
+    if (service.isEmergingLocalities) {
+      // Dispatch custom event to trigger message box in header for Comparators
+      const event = new CustomEvent('showEmergingLocalitiesMessage');
+      window.dispatchEvent(event);
+      return;
+    }
+
     // Handle navigation for all services that have a link
     if (service.link) {
       navigate(service.link);
@@ -253,7 +260,7 @@ export default function Banner({ onScrollToForm }) {
                     { icon: <Building2 className="w-5 h-5 text-blue-800" />, label: "Property Valuation Report", onClick: () => navigate('/property-valuation') },
                     { icon: <BarChart3 className="w-5 h-5 text-blue-800" />, label: "Property Comparator", onClick: () => handleServiceClick({ isComparator: true }) },
                     { icon: <Lightbulb className="w-5 h-5 text-blue-800" />, label: "Smart Insights", onClick: () => handleServiceClick({ isPriceTrends: true }) },
-                    { icon: <PieChart className="w-5 h-5 text-blue-800" />, label: "Market Trends", onClick: () => handleServiceClick({ link: '/market-analysis' }) },
+                    { icon: <PieChart className="w-5 h-5 text-blue-800" />, label: "Market Trends", onClick: () => handleServiceClick({ isEmergingLocalities: true }) },
                   ].map((s, idx) => (
                     <button
                       key={idx}

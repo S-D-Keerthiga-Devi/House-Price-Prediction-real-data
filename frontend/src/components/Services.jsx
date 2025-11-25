@@ -42,8 +42,8 @@ const smartServicesTabs = {
   Developers: [
     { name: "Advertize With Us", icon: <Building2 className="w-10 h-10 text-orange-600" />, link: "/advertise-with-us" },
     { name: "Venture Investment", icon: <TrendingUp className="w-10 h-10 text-blue-600" />, link: "/venture-invest" },
-    { name: "Data Insights", icon: <BarChart2 className="w-10 h-10 text-green-600" />, link: "/data-insights" },
-    { name: "Market Trends", icon: <TrendingUp className="w-10 h-10 text-purple-600" />, link: "/market-trends" },
+    { name: "Data Insights", icon: <BarChart2 className="w-10 h-10 text-green-600" />, link: "/price-trends", isPriceTrends: true },
+    { name: "Market Trends", icon: <TrendingUp className="w-10 h-10 text-purple-600" />, link: "/emerging-localities-page", isEmergingLocalities: true },
     { name: "Property Valuation", icon: <Home className="w-10 h-10 text-pink-600" />, link: "/property-valuation" },
   ],
   Dealers: [
