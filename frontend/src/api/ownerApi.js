@@ -1,10 +1,8 @@
-import axios from 'axios';
-
-const API_URL = 'http://localhost:4000/api/owner';
+import axiosInstance from '../utlis/axiosInstance';
 
 export const submitPostProperty = async (formData) => {
     try {
-        const response = await axios.post(`${API_URL}/post-property`, formData);
+        const response = await axiosInstance.post('/api/owner/post-property', formData);
         return response.data;
     } catch (error) {
         throw error.response ? error.response.data : error;
@@ -13,7 +11,7 @@ export const submitPostProperty = async (formData) => {
 
 export const submitHomeInterior = async (formData) => {
     try {
-        const response = await axios.post(`${API_URL}/home-interior`, formData);
+        const response = await axiosInstance.post('/api/owner/home-interior', formData);
         return response.data;
     } catch (error) {
         throw error.response ? error.response.data : error;
@@ -22,7 +20,7 @@ export const submitHomeInterior = async (formData) => {
 
 export const submitLegalServices = async (formData) => {
     try {
-        const response = await axios.post(`${API_URL}/legal-services`, formData);
+        const response = await axiosInstance.post('/api/owner/legal-services', formData);
         return response.data;
     } catch (error) {
         throw error.response ? error.response.data : error;

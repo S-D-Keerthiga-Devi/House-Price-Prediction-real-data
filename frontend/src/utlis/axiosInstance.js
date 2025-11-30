@@ -1,7 +1,7 @@
 import axios from "axios"
-// console.log("Backend URL:", import.meta.env.VITE_BACKEND_URL);
+console.log("DEBUG: VITE_BACKEND_URL is:", import.meta.env.VITE_BACKEND_URL);
 const instance = axios.create({
-    baseURL: import.meta.env.VITE_BACKEND_URL || "http://localhost:4000",
+    baseURL: import.meta.env.VITE_BACKEND_URL || "https://house-price-prediction-real-data.onrender.com",
     withCredentials: true
 })
 
@@ -27,5 +27,5 @@ instance.interceptors.response.use(
         return Promise.reject(error);
     }
 );
-  
+
 export default instance;

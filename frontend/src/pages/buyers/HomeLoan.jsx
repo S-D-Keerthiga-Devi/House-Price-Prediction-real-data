@@ -28,6 +28,7 @@ function HomeLoan() {
   };
 
   const handleSubmit = async () => {
+    console.log("DEBUG: Submitting Home Loan Form - Version 2025-11-30-v1");
     setIsSubmitting(true);
 
     try {

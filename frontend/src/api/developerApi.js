@@ -1,10 +1,8 @@
-import axios from 'axios';
-
-const API_URL = 'http://localhost:4000/api/developer';
+import axiosInstance from '../utlis/axiosInstance';
 
 export const submitAdvertise = async (formData) => {
     try {
-        const response = await axios.post(`${API_URL}/advertise`, formData);
+        const response = await axiosInstance.post('/api/developer/advertise', formData);
         return response.data;
     } catch (error) {
         throw error.response ? error.response.data : error;
@@ -13,7 +11,7 @@ export const submitAdvertise = async (formData) => {
 
 export const submitVentureInvestment = async (formData) => {
     try {
-        const response = await axios.post(`${API_URL}/venture-investment`, formData);
+        const response = await axiosInstance.post('/api/developer/venture-investment', formData);
         return response.data;
     } catch (error) {
         throw error.response ? error.response.data : error;
