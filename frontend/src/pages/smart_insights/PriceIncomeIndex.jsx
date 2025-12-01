@@ -1,303 +1,206 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState, useEffect } from 'react';
 import {
-  BarChart,
+  ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
-  Cell,
-} from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Home, MapPin, TrendingUp } from "lucide-react";
-import { useLocation } from "react-router-dom";
-import dayjs from "dayjs";
-import { houseRates } from "../../api/house.js";
-import { useCity } from "../../context/CityContext";
+  LabelList
+} from 'recharts';
+import axiosInstance from '../../utlis/axiosInstance';
 
-// -------------------------
-// Utility: Convert records into quarterly growth with better labels
-// -------------------------
-const computeQuarterlyGrowth = (records) => {
-  if (!records || records.length === 0) return [];
-
-  // Group records into quarters
-  const grouped = {};
-  records.forEach((rec) => {
-    // Use the quarter and year directly from the database if available
-    // Otherwise calculate it from month and year
-    let q;
-    let quarterLabel;
-    
-    if (rec.month && rec.year) {
-      const monthNum = typeof rec.month === 'string' 
-        ? getMonthNumber(rec.month) 
-        : rec.month;
-      const quarterNum = Math.ceil(monthNum / 3);
-      
-      // Create quarter label with month range
-      const startMonth = getMonthName((quarterNum - 1) * 3 + 1);
-      const endMonth = getMonthName(quarterNum * 3);
-      quarterLabel = `${startMonth}-${endMonth} ${rec.year}`;
-      q = `Q${quarterNum}-${rec.year}`; // For grouping purposes
-    } else if (rec.quarter && rec.year) {
-      const quarterNum = parseInt(rec.quarter.replace('Q', ''));
-      const startMonth = getMonthName((quarterNum - 1) * 3 + 1);
-      const endMonth = getMonthName(quarterNum * 3);
-      quarterLabel = `${startMonth}-${endMonth} ${rec.year}`;
-      q = `${rec.quarter}-${rec.year}`;
-    } else {
-      // Skip records with missing data
-      return;
-    }
-    
-    if (!grouped[q]) {
-      grouped[q] = {
-        values: [],
-        label: quarterLabel
-      };
-    }
-    
-    // Use rate_sqft as the price metric
-    if (rec.rate_sqft) {
-      grouped[q].values.push(rec.rate_sqft);
-    }
-  });
-
-  // Filter out quarters with no data
-  const quartersWithData = Object.keys(grouped).filter(q => grouped[q].values.length > 0);
-
-  // Average price per quarter
-  const quarters = quartersWithData
-    .sort((a, b) => {
-      const [qa, ya] = a.split("-");
-      const [qb, yb] = b.split("-");
-      if (ya !== yb) return parseInt(ya) - parseInt(yb);
-      return qa.localeCompare(qb);
-    })
-    .map((q) => {
-      const avgPrice =
-        grouped[q].values.reduce((sum, val) => sum + val, 0) / grouped[q].values.length;
-      return { 
-        quarter: grouped[q].label, // Use the formatted label
-        quarterKey: q, // Keep the original key for sorting
-        avgPrice 
-      };
-    });
-
-  // Calculate growth
-  const withGrowth = quarters.map((d, i) => {
-    if (i === 0) return { ...d, growth: 0 };
-    const prev = quarters[i - 1].avgPrice;
-    const growth = ((d.avgPrice - prev) / prev) * 100;
-    return { ...d, growth: parseFloat(growth.toFixed(2)) };
-  });
-
-  console.log("Quarters with data:", quartersWithData);
-  console.log("Processed quarterly data:", withGrowth);
-  
-  return withGrowth;
-};
-
-// Helper function to convert month names to numbers
-const getMonthNumber = (monthName) => {
-  const months = {
-    'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
-    'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
-  };
-  return months[monthName] || 1; // Default to 1 if not found
-};
-
-// Helper function to convert month numbers to names
-const getMonthName = (monthNum) => {
-  const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-  ];
-  return months[monthNum - 1] || 'Jan'; // Default to Jan if not found
-};
-
-// -------------------------
-// Main Component
-// -------------------------
-export default function PriceIncomeIndex() {
-  const [timeSeriesData, setTimeSeriesData] = useState([]);
+const PriceIncomeIndex = ({ city }) => {
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const { search } = useLocation();
-  const params = new URLSearchParams(search);
-  
-  // Get city from URL or localStorage, with fallback to default
-  const [selectedCity, setSelectedCity] = useState(() => {
-    const cityFromURL = params.get("city");
-    if (cityFromURL) {
-      // Save to localStorage when coming from URL
-      localStorage.setItem("selectedCity", cityFromURL);
-      return cityFromURL;
-    }
-    // Try to get from localStorage, fallback to default
-    return localStorage.getItem("selectedCity") || "Gurgaon";
-  });
-
-  // Fetch data when city changes
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
       try {
-        const response = await houseRates(selectedCity);
-        console.log("API Response:", response); // Debug log
-        
-        // Check if response is an array (successful data) or an object (error)
-        if (Array.isArray(response)) {
-          // Process the data
-          const processed = computeQuarterlyGrowth(response);
-          console.log("Processed data:", processed); // Debug log
-          setTimeSeriesData(processed);
-        } else if (response && response.data && Array.isArray(response.data)) {
-          // If response is wrapped in a data property
-          const processed = computeQuarterlyGrowth(response.data);
-          console.log("Processed data from response.data:", processed); // Debug log
-          setTimeSeriesData(processed);
+        console.log('Fetching price-to-income data...');
+        const response = await axiosInstance.get('/api/smart-insights/price-to-income');
+        console.log('Full response:', response);
+        console.log('Response data:', response.data);
+        console.log('Response data.success:', response.data.success);
+        console.log('Response data.data:', response.data.data);
+
+        if (response.data.success) {
+          setData(response.data.data);
+          console.log('Data set successfully:', response.data.data);
         } else {
-          console.error("Invalid data format:", response);
-          setTimeSeriesData([]);
+          console.error('Response success is false');
+          setError('Failed to fetch data');
         }
       } catch (err) {
-        console.error("Error loading data:", err);
-        setTimeSeriesData([]);
+        console.error('Error fetching smart insights data:', err);
+        console.error('Error details:', err.response);
+        setError('An error occurred while fetching data');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
+
     fetchData();
-  }, [selectedCity]);
+  }, [city]);
 
-  // Stats
-  const stats = useMemo(() => {
-    if (!timeSeriesData.length) return { avg: 0, max: 0, min: 0, trend: 0 };
 
-    const growthValues = timeSeriesData.map((d) => d.growth);
-    const avg =
-      growthValues.reduce((sum, val) => sum + val, 0) / growthValues.length;
-    const max = Math.max(...growthValues);
-    const min = Math.min(...growthValues);
-    const recent =
-      growthValues.slice(-2).reduce((s, v) => s + v, 0) /
-      Math.min(2, growthValues.length);
-    const earlier =
-      growthValues.slice(0, 2).reduce((s, v) => s + v, 0) /
-      Math.min(2, growthValues.length);
-    const trend = recent - earlier;
-    return { avg, max, min, trend };
-  }, [timeSeriesData]);
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px] bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-900"></div>
+      </div>
+    );
+  }
 
-  // Bar colors
-  const getBarColor = (growth) => {
-    if (growth > 5) return "#1e3a8a";
-    if (growth > 3) return "#1e40af";
-    if (growth > 1) return "#3b82f6";
-    return "#60a5fa";
-  };
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px] bg-gray-50">
+        <div className="text-red-600 text-xl font-semibold">{error}</div>
+      </div>
+    );
+  }
 
-  // Custom Tooltip
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      return (
-        <div className="bg-blue-900 text-white p-4 rounded-lg shadow-xl">
-          <p className="font-semibold">{label}</p>
-          <p>
-            Growth: <span className="font-bold">{data.value}%</span>
+  // Check if city is Gurgaon (case-insensitive)
+  if (!city || city.toLowerCase() !== 'gurgaon') {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex justify-center items-center">
+        <div className="text-center">
+          <div className="text-gray-400 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto opacity-50">
+              <line x1="12" y1="20" x2="12" y2="10"></line>
+              <line x1="18" y1="20" x2="18" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="16"></line>
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-700 mb-2">No Data Available</h2>
+          <p className="text-gray-500">
+            Price to Income Index data is currently only available for <strong>Gurgaon</strong>.
+          </p>
+          <p className="text-gray-400 text-sm mt-2">
+            Please select Gurgaon to view this chart.
           </p>
         </div>
-      );
-    }
-    return null;
-  };
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">{stats.avg.toFixed(1)}%</div>
-            <div className="text-sm">Average Growth</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-700">
-              {stats.max.toFixed(1)}%
-            </div>
-            <div className="text-sm">Highest Quarter</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-red-600">
-              {stats.min.toFixed(1)}%
-            </div>
-            <div className="text-sm">Lowest Quarter</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div
-              className={`text-2xl font-bold ${
-                stats.trend > 0 ? "text-green-700" : "text-red-600"
-              }`}
-            >
-              {stats.trend > 0 ? "+" : ""}
-              {stats.trend.toFixed(1)}%
-            </div>
-            <div className="text-sm">Recent Trend</div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-8">
+        <h1 className="text-4xl font-bold text-blue-900 text-center mb-8 uppercase tracking-wide">
+          Improved Affordability {city ? `in ${city}` : ''}
+        </h1>
 
-      {/* Chart */}
-      <Card className="border">
-        <CardHeader>
-          <CardTitle className="flex gap-2 items-center">
-            <TrendingUp className="h-6 w-6" />
-            Quarterly Growth Trends
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          {loading ? (
-            <div className="flex items-center justify-center h-[350px]">
-              <p>Loading {selectedCity} data...</p>
-            </div>
-          ) : timeSeriesData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={380}>
-                <BarChart data={timeSeriesData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="quarter" label={{ value: 'Quarter', position: 'insideBottom', offset: -5 }} />
-                  <YAxis domain={['auto', 'auto']} tickFormatter={(v)=>`${v}%`} label={{ value: 'Growth %', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="growth" radius={[6, 6, 0, 0]} barSize={40}>
-                    {timeSeriesData.map((entry, i) => (
-                      <Cell key={`cell-${i}`} fill={getBarColor(entry.growth)} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="mt-4 text-sm text-gray-600 flex items-center gap-6">
-                <div className="flex items-center gap-2"><span className="inline-block w-4 h-3 bg-[#1e3a8a]"></span> Growth &gt; 5%</div>
-                <div className="flex items-center gap-2"><span className="inline-block w-4 h-3 bg-[#1e40af]"></span> 3% - 5%</div>
-                <div className="flex items-center gap-2"><span className="inline-block w-4 h-3 bg-[#3b82f6]"></span> 1% - 3%</div>
-                <div className="flex items-center gap-2"><span className="inline-block w-4 h-3 bg-[#60a5fa]"></span> &lt; 1%</div>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-[350px]">
-              <p>No data available for {selectedCity}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <div className="h-[600px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={data}
+              margin={{
+                top: 20,
+                right: 30,
+                left: 20,
+                bottom: 20,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="year"
+                angle={-45}
+                textAnchor="end"
+                height={60}
+                tick={{ fill: '#333', fontSize: 12 }}
+              />
+
+              {/* Left Y-Axis for Property Cost & Affordability */}
+              <YAxis
+                yAxisId="left"
+                label={{
+                  value: 'Property Value (Rs. Lac) & Affordability',
+                  angle: -90,
+                  position: 'insideLeft',
+                  style: { textAnchor: 'middle', fill: '#333', fontSize: 14, fontWeight: 'bold' }
+                }}
+                domain={[0, 50]}
+                tickCount={11}
+              />
+
+              {/* Right Y-Axis for Annual Income */}
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                label={{
+                  value: 'Annual Income (Rs. Lac)',
+                  angle: 90,
+                  position: 'insideRight',
+                  style: { textAnchor: 'middle', fill: '#333', fontSize: 14, fontWeight: 'bold' }
+                }}
+                domain={[0, 12]}
+                tickCount={7}
+                tickFormatter={(value) => value.toFixed(2)}
+              />
+
+              <Tooltip
+                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', border: '1px solid #ccc' }}
+              />
+              <Legend verticalAlign="bottom" height={36} />
+
+              {/* Bar for Property Cost - Navy Blue */}
+              <Bar
+                yAxisId="left"
+                dataKey="propertyCost"
+                name="Property Cost (Rs. Lac)"
+                fill="#1e3a8a" // Navy Blue
+                stroke="#000"
+                strokeWidth={0}
+                barSize={30}
+              >
+                <LabelList dataKey="affordability" position="top" fill="#1e3a8a" fontSize={10} formatter={(val) => val.toFixed(1)} content={renderCustomLabel} />
+              </Bar>
+
+              {/* Line for Affordability - Light Blue/Cyan for contrast on Navy */}
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="affordability"
+                name="Affordability"
+                stroke="#0ea5e9" // Sky Blue
+                strokeWidth={3}
+                dot={{ r: 4, fill: '#0ea5e9', strokeWidth: 2, stroke: '#fff' }}
+              />
+
+              {/* Line for Annual Income - Dark Gray or Black for contrast */}
+              <Line
+                yAxisId="right"
+                type="monotone"
+                dataKey="annualIncome"
+                name="Annual Income (Rs. Lac)"
+                stroke="#475569" // Slate 600
+                strokeWidth={3}
+                dot={{ r: 4, fill: '#475569', strokeWidth: 2, stroke: '#fff' }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+// Custom label renderer to mimic the teal boxes in the original image
+const renderCustomLabel = (props) => {
+  const { x, y, width, value } = props;
+  return (
+    <g>
+      <rect x={x + width / 2 - 15} y={y - 25} width={30} height={20} fill="#1e3a8a" stroke="none" />
+      <text x={x + width / 2} y={y - 10} fill="#fff" textAnchor="middle" dominantBaseline="middle" fontSize={10} fontWeight="bold">
+        {value}
+      </text>
+    </g>
+  );
+};
+
+export default PriceIncomeIndex;

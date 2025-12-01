@@ -786,7 +786,7 @@ export default function PriceIncomeIndexPage() {
       case "price-income-index":
         return (
           <div className="max-w-7xl mx-auto">
-            <PriceIncomeIndex />
+            <PriceIncomeIndex city={selectedCity} />
           </div>
         );
 

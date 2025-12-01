@@ -15,6 +15,7 @@ import buyerRouter from "./routes/buyerRoutes.js";
 import developerRouter from "./routes/developerRoutes.js";
 import dealerRouter from "./routes/dealerRoutes.js";
 import ownerRouter from "./routes/ownerRoutes.js";
+import smartInsightsRouter from "./routes/smartInsightsRoutes.js";
 
 const app = express();
 const port = process.env.PORT || 4000
@@ -50,5 +51,7 @@ app.use('/api/buyer', buyerRouter);
 app.use('/api/developer', developerRouter);
 app.use('/api/dealer', dealerRouter);
 app.use('/api/owner', ownerRouter);
+app.use('/api/smart-insights', smartInsightsRouter);
+
 
 app.listen(port, () => console.log(`server started on PORT ${port}`))
