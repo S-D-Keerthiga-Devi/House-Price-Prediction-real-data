@@ -234,9 +234,9 @@ const Listings = () => {
         </h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {properties.map((property) => (
-            <div key={property.id || property._id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border border-gray-200 flex flex-col h-80">
+            <div key={property.id || property._id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border border-gray-200 flex flex-col h-64">
               {/* Image Section */}
-              <div className="relative h-32 bg-gray-100">
+              <div className="relative h-24 bg-gray-100">
                 {property.image_url ? (
                   <img
                     src={property.image_url}

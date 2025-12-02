@@ -22,42 +22,46 @@ import {
   ArrowUp,
   Calculator,
   Paintbrush,
-  Banknote
-} from "lucide-react"; 
+  Banknote,
+  Bed,
+  Bath
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { getAllPropertiesForComparison } from "../api/house";
+import { useCity } from "../context/CityContext";
 
 // Smart Services Tabs
 const smartServicesTabs = {
   Buyers: [
-    { name: "Property Valuation", icon: <Home className="w-10 h-10 text-blue-600" />, link: "/property-valuation" },
-    { name: "EMI Calculator", icon: <Calculator className="w-10 h-10 text-yellow-500" />, link: "/emi-calculator" },
-    { name: "Rent Agreement", icon: <FileText className="w-10 h-10 text-green-600" />, link: "/rent-agreement" },
-    { name: "Auctioned Property", icon: <Gavel className="w-10 h-10 text-orange-600" />, link: "/auctioned-property" },
-    { name: "Escrow Services", icon: <Scale className="w-10 h-10 text-purple-600" />, link: "/escrow-services" },
-    { name: "Comparator", icon: <Columns3 className="w-10 h-10 text-pink-600" />, link: "/comparator", isComparator: true },
-    { name: "AI Interior Design", icon: <Paintbrush className="w-10 h-10 text-blue-600" />, link: "/interior"},
-    { name: "Home Loan", icon: <Banknote className="w-10 h-10 text-amber-600" />, link: "/home-loan"},
-    { name: "Facility Management", icon: <Briefcase className="w-10 h-10 text-green-600" />, link: "/property-manage" }
+    { name: "Property Valuation", icon: <Home className="w-6 h-6 text-blue-600" />, link: "/property-valuation" },
+    { name: "EMI Calculator", icon: <Calculator className="w-6 h-6 text-yellow-500" />, link: "/emi-calculator" },
+    { name: "Rent Agreement", icon: <FileText className="w-6 h-6 text-green-600" />, link: "/rent-agreement" },
+    { name: "Auctioned Property", icon: <Gavel className="w-6 h-6 text-orange-600" />, link: "/auctioned-property" },
+    { name: "Escrow Services", icon: <Scale className="w-6 h-6 text-purple-600" />, link: "/escrow-services" },
+    { name: "Comparator", icon: <Columns3 className="w-6 h-6 text-pink-600" />, link: "/comparator", isComparator: true },
+    { name: "AI Interior Design", icon: <Paintbrush className="w-6 h-6 text-blue-600" />, link: "/interior" },
+    { name: "Home Loan", icon: <Banknote className="w-6 h-6 text-amber-600" />, link: "/home-loan" },
+    { name: "Facility Management", icon: <Briefcase className="w-6 h-6 text-green-600" />, link: "/property-manage" }
   ],
   Developers: [
-    { name: "Advertize With Us", icon: <Building2 className="w-10 h-10 text-orange-600" />, link: "/advertise-with-us" },
-    { name: "Venture Investment", icon: <TrendingUp className="w-10 h-10 text-blue-600" />, link: "/venture-invest" },
-    { name: "Data Insights", icon: <BarChart2 className="w-10 h-10 text-green-600" />, link: "/price-trends", isPriceTrends: true },
-    { name: "Market Trends", icon: <TrendingUp className="w-10 h-10 text-purple-600" />, link: "/emerging-localities-page", isEmergingLocalities: true },
-    { name: "Property Valuation", icon: <Home className="w-10 h-10 text-pink-600" />, link: "/property-valuation" },
+    { name: "Advertize With Us", icon: <Building2 className="w-6 h-6 text-orange-600" />, link: "/advertise-with-us" },
+    { name: "Venture Investment", icon: <TrendingUp className="w-6 h-6 text-blue-600" />, link: "/venture-invest" },
+    { name: "Data Insights", icon: <BarChart2 className="w-6 h-6 text-green-600" />, link: "/price-trends", isPriceTrends: true },
+    { name: "Market Trends", icon: <TrendingUp className="w-6 h-6 text-purple-600" />, link: "/emerging-localities-page", isEmergingLocalities: true },
+    { name: "Property Valuation", icon: <Home className="w-6 h-6 text-pink-600" />, link: "/property-valuation" },
   ],
   Dealers: [
-    { name: "Listings", icon: <ClipboardList className="w-10 h-10 text-blue-600" />, link: "/listings" },
-    { name: "Dealer Connect", icon: <Users className="w-10 h-10 text-green-600" />, link: "/dealer-connect" },
-    { name: "Contact Developers", icon: <Phone className="w-10 h-10 text-orange-600" />, link: "/contact-developers" },
-    { name: "Channel Partners", icon: <Briefcase className="w-10 h-10 text-purple-600" />, link: "/channel-partners" },
-    { name: "Registration & Docs", icon: <ScrollText className="w-10 h-10 text-pink-600" />, link: "/registration-docs" },
+    { name: "Listings", icon: <ClipboardList className="w-6 h-6 text-blue-600" />, link: "/listings" },
+    { name: "Dealer Connect", icon: <Users className="w-6 h-6 text-green-600" />, link: "/dealer-connect" },
+    { name: "Contact Developers", icon: <Phone className="w-6 h-6 text-orange-600" />, link: "/contact-developers" },
+    { name: "Channel Partners", icon: <Briefcase className="w-6 h-6 text-purple-600" />, link: "/channel-partners" },
+    { name: "Registration & Docs", icon: <ScrollText className="w-6 h-6 text-pink-600" />, link: "/registration-docs" },
   ],
   Owners: [
-    { name: "Know Your Property Value", icon: <Scale className="w-10 h-10 text-blue-600" />, link: "/know-property" },
-    { name: "Home Interior", icon: <Lightbulb className="w-10 h-10 text-orange-600" />, link: "/home-interior" },
-    { name: "Post Property", icon: <Building2 className="w-10 h-10 text-purple-600" />, link: "/post-property" },
-    { name: "Property Legal Services", icon: <Gavel className="w-10 h-10 text-red-600" />, link: "/property-legal" },
+    { name: "Know Your Property Value", icon: <Scale className="w-6 h-6 text-blue-600" />, link: "/know-property" },
+    { name: "Home Interior", icon: <Lightbulb className="w-6 h-6 text-orange-600" />, link: "/home-interior" },
+    { name: "Post Property", icon: <Building2 className="w-6 h-6 text-purple-600" />, link: "/post-property" },
+    { name: "Property Legal Services", icon: <Gavel className="w-6 h-6 text-red-600" />, link: "/property-legal" },
   ],
 };
 
@@ -137,30 +141,30 @@ const curatedServices = [
 
 // Section Component
 const ServiceSection = ({ title, description, services, bgColor, onServiceClick }) => (
-  <div className={`${bgColor} px-6 py-14`}>
+  <div className={`${bgColor} px-6 py-8`}>
     <div className="max-w-7xl mx-auto">
-      <div className="text-left mb-6">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">{title}</h2>
-        <p className="text-gray-700 text-lg max-w-2xl">{description}</p>
-        <div className="mt-3 w-20 h-1 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full"></div>
+      <div className="text-left mb-4">
+        <h2 className="text-xl font-bold text-gray-900 mb-1">{title}</h2>
+        <p className="text-gray-600 text-sm max-w-2xl">{description}</p>
+        <div className="mt-2 w-16 h-0.5 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full"></div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
         {services.map((service, idx) => {
           const cardContent = (
             <Card
               key={idx}
-              className="overflow-hidden shadow-md hover:shadow-lg cursor-pointer transition-all duration-300 transform hover:-translate-y-2 border border-gray-200 group"
+              className="overflow-hidden shadow-sm hover:shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-1 border border-gray-200 group w-full aspect-square"
               onClick={() => onServiceClick && onServiceClick(service)}
             >
-              <div className="h-32 sm:h-36 md:h-40 bg-gray-100">
+              <div className="h-[70%] bg-gray-100">
                 <img
                   src={service.image}
                   alt={service.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
-              <CardContent className="p-4 text-center">
-                <p className="text-sm font-semibold text-gray-800 group-hover:text-black transition">
+              <CardContent className="p-1 text-center h-[30%] flex items-center justify-center">
+                <p className="text-[8px] font-medium text-gray-800 group-hover:text-black transition leading-tight">
                   {service.name}
                 </p>
               </CardContent>
@@ -179,12 +183,67 @@ const Services = () => {
     // Get the saved tab from localStorage or default to "Buyers"
     return localStorage.getItem("activeServicesTab") || "Buyers";
   });
-  const navigate = useNavigate()
-  
+  const navigate = useNavigate();
+
+  // Safely get selectedCity with fallback
+  let selectedCity = null;
+  try {
+    const cityContext = useCity();
+    selectedCity = cityContext?.selectedCity;
+  } catch (error) {
+    // CityProvider not available, use default
+    selectedCity = null;
+  }
+
+  const [listings, setListings] = useState([]);
+  const [loadingListings, setLoadingListings] = useState(true);
+
   // Save the active tab to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("activeServicesTab", activeTab);
   }, [activeTab]);
+
+  // Fetch listings data
+  useEffect(() => {
+    const fetchListings = async () => {
+      setLoadingListings(true);
+      try {
+        const city = selectedCity || "pune";
+        const response = await getAllPropertiesForComparison({
+          city: city,
+          page: 1,
+          limit: 5, // Only fetch 5 properties
+        });
+
+        if (response && response.success) {
+          const propertiesData = response.data || response.properties || [];
+
+          // Ensure unique IDs
+          const propertiesWithIds = propertiesData.map((prop, index) => ({
+            ...prop,
+            id: prop.id || prop._id || `temp-id-${Date.now()}-${index}`,
+          }));
+
+          // Remove duplicates
+          const seenKeys = new Set();
+          const uniqueProperties = propertiesWithIds.filter((p) => {
+            const key = (p.id || p._id) || `${(p.property_name || '').toLowerCase()}|${(p.location || '').toLowerCase()}|${(p.city || '').toLowerCase()}`;
+            if (seenKeys.has(key)) return false;
+            seenKeys.add(key);
+            return true;
+          });
+
+          setListings(uniqueProperties.slice(0, 5)); // Limit to 5
+        }
+      } catch (err) {
+        console.error("Error fetching listings:", err);
+      } finally {
+        setLoadingListings(false);
+      }
+    };
+
+    fetchListings();
+  }, [selectedCity]);
 
   const handleServiceClick = (service) => {
     if (service.isPriceTrends) {
@@ -193,62 +252,75 @@ const Services = () => {
       window.dispatchEvent(event);
       return;
     }
-    
+
     if (service.isEmergingLocalities) {
       const event = new CustomEvent('showEmergingLocalitiesMessage');
       window.dispatchEvent(event);
       return;
     }
 
-    if(service.isHeatmaps){
+    if (service.isHeatmaps) {
       const event = new CustomEvent('showHeatmapsMessage');
       window.dispatchEvent(event);
       return;
     }
 
-    if(service.isPriceToIncome){
+    if (service.isPriceToIncome) {
       const event = new CustomEvent('showPriceToIncomeMessage');
       window.dispatchEvent(event);
       return;
     }
 
-    if(service.isComparator){
+    if (service.isComparator) {
       // Dispatch custom event to trigger message box in header for Heatmaps
       const event = new CustomEvent('showComparatorMessage');
       window.dispatchEvent(event);
       return;
     }
-    
+
     // Handle navigation for all services that have a link
     if (service.link) {
       navigate(service.link);
     }
   };
 
+  const formatPrice = (price) => {
+    if (!price || price === 0 || price === "0") return "Price on Request";
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const formatRate = (rate) => {
+    if (!rate || rate === 0 || rate === "0") return "";
+    return `${formatPrice(rate)}/sq ft`;
+  };
+
   return (
     <div>
       {/* Smart Services */}
-      <div className="px-6 py-14 bg-white">
+      <div className="px-6 py-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-left mb-6">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Smart Services</h2>
-            <p className="text-gray-700 text-lg max-w-2xl">
+          <div className="text-left mb-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Smart Services</h2>
+            <p className="text-gray-600 text-sm max-w-2xl">
               Explore tailored services for Developers, Dealers, and Buyers.
             </p>
-            <div className="mt-3 w-20 h-1 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full"></div>
+            <div className="mt-2 w-16 h-0.5 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full"></div>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-4 mb-8">
+          <div className="flex gap-3 mb-6">
             {Object.keys(smartServicesTabs).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                  activeTab === tab
-                    ? "bg-blue-900 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === tab
+                  ? "bg-blue-900 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
               >
                 {tab}
               </button>
@@ -256,19 +328,19 @@ const Services = () => {
           </div>
 
           {/* Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
             {smartServicesTabs[activeTab].map((service, idx) => {
               const cardContent = (
                 <Card
                   key={idx}
-                  className="overflow-hidden shadow-md hover:shadow-lg cursor-pointer transition-all duration-300 transform hover:-translate-y-2 border border-gray-200 group"
+                  className="overflow-hidden shadow-sm hover:shadow-md cursor-pointer transition-all duration-300 transform hover:-translate-y-1 border border-gray-200 group w-full aspect-square"
                   onClick={() => handleServiceClick(service)}
                 >
-                  <div className="flex items-center justify-center h-28 bg-gray-50">
+                  <div className="flex items-center justify-center h-[70%] bg-gray-50">
                     {service.icon}
                   </div>
-                  <CardContent className="p-4 text-center">
-                    <p className="text-sm font-semibold text-gray-800 group-hover:text-black transition">
+                  <CardContent className="p-1 text-center h-[30%] flex items-center justify-center">
+                    <p className="text-[8px] font-medium text-gray-800 group-hover:text-black transition leading-tight">
                       {service.name}
                     </p>
                   </CardContent>
@@ -289,6 +361,114 @@ const Services = () => {
         bgColor="bg-gray-50"
         onServiceClick={handleServiceClick}
       />
+
+      {/* Listings Section */}
+      <div className="px-6 py-8 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-left mb-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Listings</h2>
+            <p className="text-gray-600 text-sm max-w-2xl">
+              Explore our curated property listings tailored to your needs.
+            </p>
+            <div className="mt-2 w-16 h-0.5 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full"></div>
+          </div>
+
+          {loadingListings ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-800"></div>
+            </div>
+          ) : listings.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {listings.map((property) => (
+                  <div
+                    key={property.id || property._id}
+                    className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border border-gray-200 flex flex-col h-64 cursor-pointer"
+                    onClick={() => navigate(`/property-details/${property.id || property._id}`)}
+                  >
+                    {/* Image Section */}
+                    <div className="relative h-24 bg-gray-100">
+                      {property.image_url ? (
+                        <img
+                          src={property.image_url}
+                          alt={property.property_name || 'Property Image'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
+                          <Home className="w-10 h-10 text-blue-400" />
+                        </div>
+                      )}
+                      <div className="absolute top-2 left-2 bg-blue-800 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                        {property.property_type || 'Residential'}
+                      </div>
+                    </div>
+
+                    {/* Content Section */}
+                    <div className="p-3 flex-grow">
+                      <h3 className="text-sm font-bold text-gray-800 mb-1 truncate">
+                        {property.bedrooms ? `${property.bedrooms}BHK ` : ''}
+                        {property.property_name || `Property in ${property.location || property.city}`}
+                      </h3>
+                      <p className="text-xs text-gray-600 mb-2 truncate">
+                        {property.location || "N/A"}, {property.city || "N/A"}
+                      </p>
+
+                      <div className="flex items-center text-gray-500 text-xs mb-2 space-x-3">
+                        <div className="flex items-center">
+                          <Bed className="w-3 h-3 mr-1" />
+                          <span>{property.bedrooms || 0} Beds</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Bath className="w-3 h-3 mr-1" />
+                          <span>{property.bathrooms || property.bathroom || 0} Baths</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Price and Action Section */}
+                    <div className="p-3 bg-gray-50 border-t border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-sm font-bold text-blue-800 truncate">{formatPrice(property.price_value)}</p>
+                          {property.rate_sqft && property.rate_sqft !== 0 && property.rate_sqft !== "0" && (
+                            <p className="text-xs text-gray-500 truncate">{formatRate(property.rate_sqft)}</p>
+                          )}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/property-details/${property.id || property._id}`);
+                          }}
+                          className="bg-blue-800 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-blue-700 transition-colors duration-300"
+                        >
+                          View
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* See More Button */}
+              <div className="flex justify-center mt-6">
+                <button
+                  onClick={() => navigate('/listings')}
+                  className="flex items-center gap-2 text-blue-800 text-sm font-semibold hover:text-blue-600 transition-colors duration-300"
+                >
+                  See More Listings
+                  <ArrowUp className="w-4 h-4 rotate-90" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500">No listings available at the moment.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
       <ServiceSection
         title="What's Buzzing Today?"
         description="Discover the latest trends shaping modern real estate."

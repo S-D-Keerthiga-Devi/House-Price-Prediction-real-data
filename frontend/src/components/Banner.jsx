@@ -283,7 +283,17 @@ export default function Banner({ onScrollToForm }) {
             {/* Right: Investments */}
             <div className="flex flex-col justify-between h-full space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Investments</h2>
+                <div className="flex items-center gap-3 mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">Investments</h2>
+                  <a
+                    href="https://keerthiga-investments.vercel.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-800 hover:text-blue-600 text-sm font-semibold underline transition-colors"
+                  >
+                    Click here
+                  </a>
+                </div>
                 <div className="space-y-3">
                   {[
                     { icon: <PieChart className="w-5 h-5 text-blue-800" />, label: "Fractional Investment", link: "https://keerthiga-investments.vercel.app/fractional-investment" },
